@@ -1,0 +1,84 @@
+<idea-plugin url="http://www.intellij.org/twiki/bin/view/Main/ClearcasePlugin">
+   <name>ClearcasePlugin</name>
+   <description>Allows using ClearCase from within IDEA</description>
+   <version>1.36.0</version>
+   <vendor email="bibou644-jetbrains@yahoo.com">Jacques Morel</vendor>
+   <idea-version since-build="3431"/>
+   <change-notes>
+      <![CDATA[=== 1.36.0, 2005.08.22 by Vince Mallet<br>
+                  * New context menu item: Compare with Previous Version<br>
+                  * Upgraded NewNativeClearcase implementation to eclipsecase 1.03<br>
+               === 1.35.0, 2005.08.12 by Vince Mallet<br>
+                  * Commit Project dialog can now remove files from ClearCase<br>
+                  * Commit Project dialog now better at honoring configured ExcludedFromVcs elements<br>
+      ]]>
+   </change-notes>
+
+   <project-components>
+      <component>
+         <implementation-class>net.sourceforge.transparent.TransparentVcs</implementation-class>
+      </component>
+      <component>
+         <implementation-class>net.sourceforge.transparent.TransparentConfiguration</implementation-class>
+         <option name="workspace" value="true"/>
+      </component>
+      <component>
+         <implementation-class>net.sourceforge.transparent.actions.checkin.CheckInConfig</implementation-class>
+         <option name="workspace" value="true"/>
+      </component>
+      <component>
+         <implementation-class>org.intellij.plugins.ExcludedPathsFromVcsConfiguration</implementation-class>
+         <option name="workspace" value="true"/>
+      </component>
+   </project-components>
+
+   <actions>
+      <action id="ClearCase.CheckOut" class="net.sourceforge.transparent.actions.CheckOutAction" text="_Check Out" description="Check out file"/>
+      <action id="ClearCase.Hijack" class="net.sourceforge.transparent.actions.HijackAction" text="_Hijack" description="Hijack file"/>
+      <group id="ClearCaseProject">
+         <!--<action id="ClearCase.CheckInProject"-->
+            <!--class="net.sourceforge.transparent.actions.checkin.CheckInProjectAction"-->
+            <!--text="Check In Project..."-->
+            <!--description="Check in project changes to external VCS">-->
+            <!--<keyboard-shortcut first-keystroke="control K" keymap="$default"/>-->
+         <!--</action>-->
+<!--         <action id="ClearCase.UpdateProject" class="net.sourceforge.transparent.actions.UpdateProjectAction" text="_Update Project..."
+            description="Update project snapshot"/> -->
+         <action id="ClearCase.FindProjectCheckouts" class="net.sourceforge.transparent.actions.FindProjectCheckoutsAction" text="_Find Project Checkouts..." description="Find project checkout files"/>
+         <action id="ClearCase.MergeProject" class="net.sourceforge.transparent.actions.MergeProjectAction" text="_Merge Project..." description="Merge main changes into project"/>
+         <add-to-group group-id="VcsGlobalGroup" anchor="first" />
+      </group>
+      <group id="ClearCaseFile" text="ClearCase" class="net.sourceforge.transparent.ClearCaseGroup">
+         <separator/>
+<!--         <action id="ClearCase.Checkin" class="net.sourceforge.transparent.actions.checkin.CheckInFileAction" text="Check In" description="Check in to external VCS"/> -->
+         <action id="ClearCase.Add" class="net.sourceforge.transparent.actions.AddAction" text="_Add" description="Add file"/>
+<!--         <action id="ClearCase.CheckOutOrHijack" class="net.sourceforge.transparent.actions.CheckOutOrHijackAction" text="_Check Out" description="Check out file"/> -->
+         <!--
+         <action id="ClearCase.CheckOut" class="net.sourceforge.transparent.actions.CheckOutAction" text="_Check Out" description="Check out file"/>
+         <action id="ClearCase.Hijack" class="net.sourceforge.transparent.actions.HijackAction" text="_Hijack" description="Hijack file"/>
+         -->
+         <action id="ClearCase.UndoCheckOut" class="net.sourceforge.transparent.actions.UndoCheckOutAction" text="_Undo Check Out" description="Revert back to the previous version"/>
+         <action id="ClearCase.Update" class="net.sourceforge.transparent.actions.UpdateFileAction" text="U_pdate" description="Update current file"/>
+<!--         <action id="ClearCase.MarkAsUpToDate" class="net.sourceforge.transparent.actions.MarkFileAsUpToDateAction" text="_Mark File As Up-To-Date" description="Mark file so it won't show up in Check In Project"/> -->
+         <separator/>
+         <reference id="Vcs.ShowTabbedFileHistory"/>
+         <action id="ClearCase.History" class="net.sourceforge.transparent.actions.HistoryAction" text="_History..." description="Open history window"/>
+         <action id="ClearCase.VersionTree" class="net.sourceforge.transparent.actions.VersionTreeAction" text="_Version Tree..." description="Open version tree window"/>
+         <action id="ClearCase.CompareWithPrevious" class="net.sourceforge.transparent.actions.CompareWithPreviousAction" text="Compare with Previous Version..." description="Open diff with predecessor window"/>
+<!--         <action id="ClearCase.Differences" class="net.sourceforge.transparent.actions.DifferencesAction" text="_Differences..." description="Diff checked out version"/>-->
+         <action id="ClearCase.Properties" class="net.sourceforge.transparent.actions.PropertiesAction" text="_Properties..." description="Show properties window"/>
+         <separator/>
+         <action id="ClearCase.FindCheckouts" class="net.sourceforge.transparent.actions.FindCheckoutsAction" text="_Find Checkouts..." description="Find checkout files"/>
+         <separator/>
+         <action id="ClearCase.About" class="net.sourceforge.transparent.actions.AboutAction" text="About..." description="About transparent plugin"/>
+         <add-to-group group-id="VcsGroup" anchor="last" />
+      </group>
+<!--
+       <group id="ClearCaseProjectCheckinPopup">
+          <reference id="ClearCase.MarkAsUpToDate"/>
+          <add-to-group group-id="Vcs.CheckinProjectPopup" anchor="last"/>
+       </group>
+-->
+   </actions>
+</idea-plugin>
+
