@@ -36,12 +36,6 @@
       <action id="ClearCase.CheckOut" class="net.sourceforge.transparent.actions.CheckOutAction" text="_Check Out" description="Check out file"/>
       <action id="ClearCase.Hijack" class="net.sourceforge.transparent.actions.HijackAction" text="_Hijack" description="Hijack file"/>
       <group id="ClearCaseProject">
-         <!--<action id="ClearCase.CheckInProject"-->
-            <!--class="net.sourceforge.transparent.actions.checkin.CheckInProjectAction"-->
-            <!--text="Check In Project..."-->
-            <!--description="Check in project changes to external VCS">-->
-            <!--<keyboard-shortcut first-keystroke="control K" keymap="$default"/>-->
-         <!--</action>-->
 <!--         <action id="ClearCase.UpdateProject" class="net.sourceforge.transparent.actions.UpdateProjectAction" text="_Update Project..."
             description="Update project snapshot"/> -->
          <action id="ClearCase.FindProjectCheckouts" class="net.sourceforge.transparent.actions.FindProjectCheckoutsAction" text="_Find Project Checkouts..." description="Find project checkout files"/>
