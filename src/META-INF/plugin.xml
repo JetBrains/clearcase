@@ -26,10 +26,6 @@
          <implementation-class>net.sourceforge.transparent.actions.checkin.CheckInConfig</implementation-class>
          <option name="workspace" value="true"/>
       </component>
-      <component>
-         <implementation-class>org.intellij.plugins.ExcludedPathsFromVcsConfiguration</implementation-class>
-         <option name="workspace" value="true"/>
-      </component>
    </project-components>
 
    <actions>

@@ -1,14 +1,17 @@
 package net.sourceforge.transparent;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vcs.VcsShowConfirmationOption;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.*;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -112,23 +115,25 @@ public class VFSListener extends VirtualFileAdapter
     //  Take into account only processable files. Do not pay attention on all
     //  other file which can be created as e.g. build process artifacts.
 
-    TransparentConfiguration config = TransparentConfiguration.getInstance( project );
-    if( !config.isFileExcluded( event.getFile().getName() ) )
+    if( !host.isFileIgnored( event.getFile() ) )
     {
+      VcsShowConfirmationOption confirmOption = host.getAddConfirmation();
+
       //  In the case when we need to perform "Add" vcs action right upon
       //  the file's creation, put the file into the host's cache until it
       //  will be analyzed by the ChangeProvider.
-      if( host.getAddConfirmation().getValue() == VcsShowConfirmationOption.Value.DO_ACTION_SILENTLY )
+      if( confirmOption.getValue() == VcsShowConfirmationOption.Value.DO_ACTION_SILENTLY )
         host.add2NewFile( path );
       else
-      if( host.getAddConfirmation().getValue() == VcsShowConfirmationOption.Value.SHOW_CONFIRMATION )
+      if( confirmOption.getValue() == VcsShowConfirmationOption.Value.SHOW_CONFIRMATION )
       {
-        /*
-        int result = Messages.showOkCancelDialog( project, VssBundle.message("action.Vss.Add.description") + "?",
-                                                  VssBundle.message("dialog.title.info"), Messages.getQuestionIcon() );
-        */
-        int result = Messages.showOkCancelDialog( project, "Add file to the ClearCase?", "Add File", Messages.getQuestionIcon() );
-        if( result == 0 )
+        List<VirtualFile> files = new ArrayList<VirtualFile>();
+        files.add( event.getFile() );
+        Collection<VirtualFile> filesToProcess = AbstractVcsHelper.getInstance( project ).selectFilesToProcess( files, "Add file(s) to the ClearCase?", null,
+                                                                       "Add file(s) to the ClearCase?",
+                                                                       "Do you want to schedule the following file for addition to Subversion?\n{0}",
+                                                                       confirmOption );
+        if( filesToProcess != null )
           host.add2NewFile( path );
       }
     }

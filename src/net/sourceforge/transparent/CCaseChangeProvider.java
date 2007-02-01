@@ -111,7 +111,6 @@ public class CCaseChangeProvider implements ChangeProvider
 
   private void collectSuspiciousFiles( final FilePath filePath, final List<String> writableFiles )
   {
-    final TransparentConfiguration config = TransparentConfiguration.getInstance( project );
     final ProjectFileIndex fileIndex = ProjectRootManager.getInstance( project ).getFileIndex();
 
     VirtualFile vf = VcsUtil.getVirtualFile( filePath.getPath() );
@@ -121,7 +120,7 @@ public class CCaseChangeProvider implements ChangeProvider
         {
           public boolean processFile( VirtualFile file )
           {
-            if( isFileCCaseProcessable( config, file ) )
+            if( isFileCCaseProcessable( file ) )
             {
               String path = file.getPath();
               writableFiles.add( path );
@@ -240,7 +239,6 @@ public class CCaseChangeProvider implements ChangeProvider
 
   private void iterateOverDirtyFiles( final VcsDirtyScope scope )
   {
-    final TransparentConfiguration config = TransparentConfiguration.getInstance( project );
     for( FilePath path : scope.getDirtyFiles() )
     {
       //-----------------------------------------------------------------------
@@ -253,7 +251,7 @@ public class CCaseChangeProvider implements ChangeProvider
       VirtualFile file = VcsUtil.getVirtualFile( path.getPath() );
       String fileName = path.getPath();
 
-      if( isFileCCaseProcessable( config, file ) )
+      if( isFileCCaseProcessable( file ) )
       {
         if( isProperNotification( path ) )
         {
@@ -369,12 +367,13 @@ public class CCaseChangeProvider implements ChangeProvider
     foldersAbcent.clear();
   }
 
-  private boolean isFileCCaseProcessable( TransparentConfiguration config, VirtualFile file )
+  private boolean isFileCCaseProcessable( VirtualFile file )
   {
     return (file != null) && file.isWritable() && !file.isDirectory() &&
            VcsUtil.isPathUnderProject( project, file.getPath() ) &&
-           host.getFileFilter().accept( file ) &&
-           !config.isFileExcluded( file.getName() );
+//           host.getFileFilter().accept( file ) &&
+           !host.isFileIgnored( file );
+//         !config.isFileExcluded( file.getName() );
 //         && regularFileFilter.accept(file)
           /*
            VssUtil.isUnderVss( file, project ) &&

@@ -9,6 +9,7 @@ import com.intellij.openapi.util.InvalidDataException;
 import com.intellij.openapi.util.JDOMExternalizable;
 import com.intellij.openapi.util.WriteExternalException;
 import com.intellij.openapi.vcs.*;
+import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.history.VcsHistoryProvider;
@@ -20,8 +21,6 @@ import com.intellij.openapi.wm.WindowManager;
 import com.intellij.util.containers.HashSet;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.actions.CheckoutDialog;
-import org.intellij.plugins.ExcludedFileFilter;
-import org.intellij.plugins.ExcludedPathsFromVcsConfiguration;
 import org.intellij.plugins.util.LogUtil;
 import org.jdom.Element;
 import org.jetbrains.annotations.NonNls;
@@ -32,7 +31,6 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -55,9 +53,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   private ClearCase clearcase;
   private TransparentConfiguration transparentConfig;
-  private ExcludedPathsFromVcsConfiguration excludedPathsConfiguration;
-  private ExcludedFileFilter fileFilter = new ExcludedFileFilter();
-  private ExcludedFilesListener excludedFilesListener;
 
   private CCaseCheckinEnvironment checkinEnvironment;
   private CCaseUpdateEnvironment updateEnvironment;
@@ -69,8 +64,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   private VcsShowConfirmationOption addConfirmation;
   private VcsShowConfirmationOption removeConfirmation;
   private VirtualFileListener listener;
-
-  private boolean started;
 
   public TransparentVcs( Project project )
   {
@@ -101,14 +94,11 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public VcsShowConfirmationOption getAddConfirmation()   {  return addConfirmation;     }
   public VcsShowConfirmationOption getRemoveConfirmation(){  return removeConfirmation;  }
 
-  public ExcludedFileFilter        getFileFilter()        { return fileFilter; }
-
   public static TransparentVcs getInstance( Project project ) { return project.getComponent(TransparentVcs.class); }
 
   public void projectOpened()
   {
     initTransparentConfiguration();
-    initExcludedFilesConfiguration();
 
     changeProvider = new CCaseChangeProvider( myProject, this );
     updateEnvironment = new CCaseUpdateEnvironment( myProject );
@@ -125,10 +115,12 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public void projectClosed() {}
 
-  //  Attach different component only in the case when current VCS becomes
-  //  "active" that is mapped to some module in the project. Otherwise some
-  //  listeners and other components may interfere with other useful code or
-  //  downgrade the performance.
+  /**
+   *  Attach different component only in the case when current VCS becomes
+   *  "active" that is mapped to some module in the project. Otherwise some
+   *  listeners and other components may interfere with other useful code or
+   *  downgrade the performance.
+   */
   public void activate()
   {
     //  Control the appearance of project items so that we can easily
@@ -144,57 +136,44 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public void initComponent()     {}
   public void disposeComponent()  {}
+  public void start() throws VcsException {}
+  public void shutdown() throws VcsException {}
 
-  public void initTransparentConfiguration() {
-      transparentConfig = TransparentConfiguration.getInstance(myProject);
-      transparentConfig.addListener(new PropertyChangeListener() {
-          public void propertyChange(PropertyChangeEvent evt) {
-              transparentConfigurationChanged();
-          }
-      });
-      transparentConfigurationChanged();
+  public void initTransparentConfiguration()
+  {
+    transparentConfig = TransparentConfiguration.getInstance(myProject);
+    transparentConfig.addListener(new PropertyChangeListener() {
+        public void propertyChange(PropertyChangeEvent evt) {
+            transparentConfigurationChanged();
+        }
+    });
+    transparentConfigurationChanged();
   }
 
-  public void initExcludedFilesConfiguration() {
-      excludedPathsConfiguration = ExcludedPathsFromVcsConfiguration.getInstance(myProject);
-      excludedPathsConfiguration.addListener(new PropertyChangeListener() {
-          public void propertyChange(PropertyChangeEvent evt) {
-              excludedPathsConfigurationChanged();
-          }
-      });
-      excludedPathsConfigurationChanged();
-  }
-
-  public void excludedPathsConfigurationChanged() {
-      //TODO: replace Collections.EMPTY_LIST with Collections.emptyList() as soon as we can compile for target 1.5 (no retroweaver)
-      fileFilter = new ExcludedFileFilter(excludedPathsConfiguration.getExcludedPaths(), Collections.EMPTY_LIST);
-      debug("reloading excluded file filter to " + fileFilter);
-  }
-
-  public void transparentConfigurationChanged() {
-      if (!getTransparentConfig().offline) {
-          resetClearCaseFromConfiguration();
-      }
+  public void transparentConfigurationChanged()
+  {
+    if (!getTransparentConfig().offline)
+      resetClearCaseFromConfiguration();
   }
 
   private void resetClearCaseFromConfiguration()
   {
-      if (clearcase == null
-              || !getTransparentConfig().implementation.equals(clearcase.getName())) {
-          try {
-              debug("Changing Clearcase interface to " + getTransparentConfig().implementation);
-              clearcase = new ClearCaseDecorator((ClearCase) Class.forName(getTransparentConfig().implementation).newInstance());
-          } catch (Throwable e) {
-              Messages.showMessageDialog(WindowManager.getInstance().suggestParentWindow(getProject()),
-                                         e.getMessage() + "\nSelecting CommandLineImplementation instead",
-                                         "Error while selecting " +
-                                         getTransparentConfig().implementation +
-                                         "implementation",
-                                         Messages.getErrorIcon());
-              getTransparentConfig().implementation = CommandLineClearCase.class.getName();
-              clearcase = new ClearCaseDecorator(new CommandLineClearCase());
-          }
+    if (clearcase == null || !getTransparentConfig().implementation.equals(clearcase.getName()))
+    {
+      try {
+        debug("Changing Clearcase interface to " + getTransparentConfig().implementation);
+        clearcase = new ClearCaseDecorator((ClearCase) Class.forName(getTransparentConfig().implementation).newInstance());
+      } catch (Throwable e) {
+        Messages.showMessageDialog(WindowManager.getInstance().suggestParentWindow(getProject()),
+                                   e.getMessage() + "\nSelecting CommandLineImplementation instead",
+                                   "Error while selecting " +
+                                   getTransparentConfig().implementation +
+                                   "implementation",
+                                   Messages.getErrorIcon());
+        getTransparentConfig().implementation = CommandLineClearCase.class.getName();
+        clearcase = new ClearCaseDecorator(new CommandLineClearCase());
       }
+    }
   }
 
   public void  setClearCase( ClearCase clearCase ) {  clearcase = clearCase;  }
@@ -214,43 +193,19 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public boolean fileExistsInVcs(FilePath path) {  return fileExistsInVcs( path.getVirtualFile() );  }
   public boolean fileExistsInVcs(VirtualFile file)
   {
-    /*
-    String output = cleartoolWithOutput( "describe", file.getPath() );
-    return (output.indexOf( "private file" ) == -1);
-    */
     ClearCaseFile ccFile = new ClearCaseFile( file, clearcase );
     return ccFile.isElement();
+  }
+
+  public boolean isFileIgnored( VirtualFile file )
+  {
+    ChangeListManager mgr = ChangeListManager.getInstance( myProject );
+    return mgr.isIgnoredFile( file );
   }
 
   public void add2NewFile( VirtualFile file ) {  add2NewFile( file.getPath() );       }
   public void add2NewFile( String path )      {  newFiles.add( path.toLowerCase() );  }
   public boolean containsNew( String path )   {  return newFiles.contains( path.toLowerCase() );   }
-
-  public void start() throws VcsException
-  {
-      debug("enter: start()");
-//      modificationAttemptListener = new TransparentModificationAttemptListener(this);
-//      modificationAttemptListener.start();
-      excludedFilesListener = new ExcludedFilesListener(this);
-      excludedFilesListener.start();
-      started = true;
-  }
-
-  public void shutdown() throws VcsException
-  {
-      debug("enter: shutdown()");
-      /*
-      if (modificationAttemptListener != null) {
-          modificationAttemptListener.stop();
-          modificationAttemptListener = null;
-      }
-      */
-      if (excludedFilesListener != null) {
-          excludedFilesListener.stop();
-          excludedFilesListener = null;
-      }
-      started = false;
-  }
 
   public static byte[] getFileContent(String path) throws VcsException {
     debug("enter: getFileContent(" + path + ")");
@@ -260,8 +215,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public void checkinFile( String path, Object parameters ) throws VcsException
   {
     debug("enter: checkinFile(" + path + ")");
-    if (!fileFilter.accept(path))
-      return;
 
     try {
       ClearCaseFile file = getFile(path);
@@ -277,9 +230,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public boolean checkoutFile( String path, boolean keepHijacked ) throws VcsException
   {
-      if (!fileFilter.accept(path))
-          return false;
-
       String comment = "";
       if( myCheckoutOptions.getValue() )
       {
@@ -305,18 +255,15 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public void undoCheckoutFile(String path) throws VcsException
   {
-    if( fileFilter.accept( path ) )
+    try
     {
-      try
-      {
-        ClearCaseFile file = getFile( path );
-        file.undoCheckOut();
-        refreshIDEA( file );
-      }
-      catch (Throwable e)
-      {
-          handleException(e);
-      }
+      ClearCaseFile file = getFile( path );
+      file.undoCheckOut();
+      refreshIDEA( file );
+    }
+    catch (Throwable e)
+    {
+        handleException(e);
     }
   }
 
@@ -330,57 +277,26 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public void addFile(String parentPath, String fileName, Object parameters) throws VcsException
   {
-      debug("enter: addFile(" + parentPath + "," + fileName + ")");
+    debug("enter: addFile(" + parentPath + "," + fileName + ")");
 
-      if (!fileFilter.accept(parentPath + File.separator + fileName))
-          return;
-
-      try {
-          ClearCaseFile file = new ClearCaseFile(new File(parentPath, fileName), getClearCase());
-          file.add((String) parameters, false);
-      } catch (Throwable e) {
-          handleException(e);
-      }
+    try
+    {
+      ClearCaseFile file = new ClearCaseFile(new File(parentPath, fileName), getClearCase());
+      file.add((String) parameters, false);
+    }
+    catch (Throwable e) {  handleException(e);  }
   }
 
     public void removeFile(String path, final Object parameters) throws VcsException
     {
-        debug("enter: removeFile(" + path + ")");
-        if (!fileFilter.accept(path))
-            return;
-
-        try {
-            final File file = new File(path);
-            executeAndHandleOtherFileInTheWay(file, new Runnable() {
-                public void run() {
-                    final ClearCaseFile ccFile = getFile(file);
-                    ccFile.delete((String) parameters, false);
-                }
-            });
-        } catch (Throwable e) {
-            handleException(e);
-        }
-    }
-
-    public void renameAndCheckInFile(final String path, final String newName, final Object parameters) throws VcsException
-    {
-      debug("enter: renameAndCheckInFile(" + path + ",\n" + "                            " + newName + ")");
-
-      if (!fileFilter.accept(path))
-          return;
+      debug("enter: removeFile(" + path + ")");
 
       try {
-          final File oldFile = new File(path);
-          final File newFile = new File(oldFile.getParent(), newName);
-
-          executeAndHandleOtherFileInTheWay(oldFile, new Runnable() {
+          final File file = new File(path);
+          executeAndHandleOtherFileInTheWay(file, new Runnable() {
               public void run() {
-                  renameFile(newFile, oldFile);
-                  ClearCaseFile oldCCFile = getFile(oldFile);
-                  if (!oldCCFile.isCheckedIn()) {
-                      oldCCFile.checkIn((String) parameters, isCheckInToUseHijack());
-                  }
-                  oldCCFile.rename(newName, (String) parameters, false);
+                  final ClearCaseFile ccFile = getFile(file);
+                  ccFile.delete((String) parameters, false);
               }
           });
       } catch (Throwable e) {
@@ -388,33 +304,52 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       }
     }
 
+    public void renameAndCheckInFile(final String path, final String newName, final Object parameters) throws VcsException
+    {
+      debug("enter: renameAndCheckInFile(" + path + ",\n" + "                            " + newName + ")");
+
+      try {
+        final File oldFile = new File(path);
+        final File newFile = new File(oldFile.getParent(), newName);
+
+        executeAndHandleOtherFileInTheWay(oldFile, new Runnable() {
+            public void run() {
+                renameFile(newFile, oldFile);
+                ClearCaseFile oldCCFile = getFile(oldFile);
+                if (!oldCCFile.isCheckedIn()) {
+                    oldCCFile.checkIn((String) parameters, isCheckInToUseHijack());
+                }
+                oldCCFile.rename(newName, (String) parameters, false);
+            }
+        });
+      } catch (Throwable e) {  handleException(e);  }
+    }
+
     public void moveRenameAndCheckInFile(String filePath, String newParentPath,
                                          String newName, final Object parameters) throws VcsException
     {
-        debug("enter: moveRenameAndCheckInFile(" + filePath + ",\n" + "                                " +
-              newParentPath + ",\n" + "                                " + newName + ")");
+      debug("enter: moveRenameAndCheckInFile(" + filePath + ",\n" + "                                " +
+            newParentPath + ",\n" + "                                " + newName + ")");
 
-        if (!fileFilter.accept(filePath))
-            return;
+      try
+      {
+        final File oldFile = new File(filePath);
+        final File newFile = new File(newParentPath, newName);
 
-        try {
-            final File oldFile = new File(filePath);
-            final File newFile = new File(newParentPath, newName);
-
-            executeAndHandleOtherFileInTheWay(oldFile, new Runnable() {
-                public void run() {
-                    renameFile(newFile, oldFile);
-                    ClearCaseFile oldCCFile = getFile(oldFile);
-                    ClearCaseFile newCCFile = getFile(newFile);
-                    if (!oldCCFile.isCheckedIn()) {
-                        oldCCFile.checkIn((String) parameters, isCheckInToUseHijack());
-                    }
-                    oldCCFile.move(newCCFile, (String) parameters, false);
-                }
-            });
-        } catch (Throwable e) {
-            handleException(e);
-        }
+        executeAndHandleOtherFileInTheWay(oldFile, new Runnable() {
+          public void run() {
+              renameFile(newFile, oldFile);
+              ClearCaseFile oldCCFile = getFile(oldFile);
+              ClearCaseFile newCCFile = getFile(newFile);
+              if (!oldCCFile.isCheckedIn()) {
+                  oldCCFile.checkIn((String) parameters, isCheckInToUseHijack());
+              }
+              oldCCFile.move(newCCFile, (String) parameters, false);
+          }
+        });
+      } catch (Throwable e) {
+          handleException(e);
+      }
     }
 
   private static void executeAndHandleOtherFileInTheWay( File targetFile, Runnable command )

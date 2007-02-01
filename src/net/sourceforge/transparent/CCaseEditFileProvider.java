@@ -3,6 +3,7 @@ package net.sourceforge.transparent;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.EditFileProvider;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.io.ReadOnlyAttributeUtil;
 
@@ -22,16 +23,15 @@ public class CCaseEditFileProvider implements EditFileProvider
     this.host = host;
   }
 
-  public String getRequestText() {
-    return "Would you like to invoke 'CheckOut' command?";
-  }
+  public String getRequestText() {  return "Would you like to invoke 'CheckOut' command?";  }
 
   public void editFiles( VirtualFile[] files )
   {
-    for( VirtualFile file : files ) {
-      if( host.getFileFilter().accept( file ) ) { // && shouldCheckoutFile(file)) {
+    ChangeListManager mgr = ChangeListManager.getInstance( host.getProject() );
+    for( VirtualFile file : files )
+    {
+      if( !mgr.isIgnoredFile( file ) )
           checkOutOrHijackFile(file);
-      }
     }
   }
 
