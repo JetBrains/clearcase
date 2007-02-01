@@ -115,7 +115,7 @@ public class VFSListener extends VirtualFileAdapter
     //  Take into account only processable files. Do not pay attention on all
     //  other file which can be created as e.g. build process artifacts.
 
-    if( !host.isFileIgnored( event.getFile() ) )
+    if( host.fileIsUnderVcs( event.getFile() ) && !host.isFileIgnored( event.getFile() ) )
     {
       VcsShowConfirmationOption confirmOption = host.getAddConfirmation();
 

@@ -184,13 +184,10 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       return clearcase;
   }
 
-  public boolean fileIsUnderVcs (FilePath path) {  return super.fileIsUnderVcs( path ); }
-  public boolean fileIsUnderVcs (VirtualFile file)
-  {
-    return super.fileIsUnderVcs( VcsUtil.getFilePath( file.getPath() ) );
-  }
+  public boolean fileIsUnderVcs (FilePath path)   {  return VcsUtil.isFileUnderVcs( myProject, path ); }
+  public boolean fileIsUnderVcs (VirtualFile file){  return VcsUtil.isFileUnderVcs( myProject, file ); }
 
-  public boolean fileExistsInVcs(FilePath path) {  return fileExistsInVcs( path.getVirtualFile() );  }
+  public boolean fileExistsInVcs(FilePath path)   {  return fileExistsInVcs( path.getVirtualFile() );  }
   public boolean fileExistsInVcs(VirtualFile file)
   {
     ClearCaseFile ccFile = new ClearCaseFile( file, clearcase );
