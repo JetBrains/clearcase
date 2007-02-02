@@ -1,22 +1,25 @@
 package net.sourceforge.transparent;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import org.jetbrains.annotations.NonNls;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 @NonNls
 public class Runner {
+   private static final Logger LOG = Logger.getInstance("#net.sourceforge.transparent.Runner");
    private static final boolean DEBUG =    false;
    private StringBuffer _buffer =       new StringBuffer();
    private boolean successfull;
 
    private class Consumer implements Runnable {
       private BufferedReader _reader;
-      private boolean _finished =   false;
 
       public Consumer(InputStream inputStream) {
          _reader = new BufferedReader(new InputStreamReader(inputStream));
@@ -30,7 +33,6 @@ public class Runner {
                if (_buffer.length() != 0) _buffer.append("\n"); // not theadsafe, but who cares
                _buffer.append(line);
             }
-            _finished = true;
          } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
          }
@@ -65,13 +67,16 @@ public class Runner {
    }
 
    private void consumeProcessOutputs(Process process) throws InterruptedException {
-      Consumer outputConsumer = new Consumer(process.getInputStream());
-      Consumer errorConsumer =  new Consumer(process.getErrorStream());
-      ApplicationManager.getApplication().executeOnPooledThread(errorConsumer);
-      outputConsumer.run();
-      while (!errorConsumer._finished) {
-         Thread.sleep(100);
-      }
+     Consumer outputConsumer = new Consumer(process.getInputStream());
+     Consumer errorConsumer =  new Consumer(process.getErrorStream());
+     final Future<?> errorDone = ApplicationManager.getApplication().executeOnPooledThread(errorConsumer);
+     outputConsumer.run();
+     try {
+       errorDone.get();
+     }
+     catch (ExecutionException e) {
+       LOG.error(e);
+     }
    }
 
    private boolean endProcess(Process process) throws InterruptedException {
