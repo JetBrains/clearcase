@@ -8,6 +8,7 @@ import com.intellij.openapi.vcs.ui.Refreshable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.OptionsDialog;
 import net.sourceforge.transparent.TransparentVcs;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -17,27 +18,26 @@ import java.util.Collection;
 
 public class CheckoutDialog extends OptionsDialog implements Refreshable
 {
+  @NonNls private final static String TITLE = "Checkout Comment";
+
   private final String              myLabel;
   private final JTextArea           myCommentArea = new JTextArea();
   private final VcsConfiguration    myConfiguration;
   protected Collection<Refreshable> myAdditionalComponents = new ArrayList<Refreshable>();
 
-  public CheckoutDialog( Project project, VcsConfiguration configuration, VirtualFile fileToCheckin )
+  public CheckoutDialog( Project project, VcsConfiguration configuration, VirtualFile fileToCheckout )
   {
     super( project );
     myConfiguration = configuration;
-    myCommentArea.setText(getInitialMessage(fileToCheckin));
-    myLabel = fileToCheckin.getPresentableUrl();
-    setTitle("Checkout Comment");
+    myCommentArea.setText( getInitialMessage( fileToCheckout ) );
+    myLabel = fileToCheckout.getPresentableUrl();
+    setTitle( TITLE );
     init();
   }
 
-  private static String getInitialMessage(VirtualFile fileToCheckin)
+  private static String getInitialMessage( VirtualFile fileToCheckout )
   {
     return "";
-//        CheckinEnvironment environment = myEnvironment;
-//        VcsConfiguration configuration = myConfiguration;
-//        return getInitialMessage(environment, fileToCheckin, configuration);
   }
 
   protected boolean isToBeShown()
@@ -50,7 +50,8 @@ public class CheckoutDialog extends OptionsDialog implements Refreshable
     TransparentVcs.getInstance( myProject ).getCheckoutOptions().setValue( value );
   }
 
-  protected JComponent createCenterPanel() {
+  protected JComponent createCenterPanel()
+  {
     JPanel panel = new JPanel();
     panel.setLayout(new BorderLayout());
 
@@ -89,7 +90,6 @@ public class CheckoutDialog extends OptionsDialog implements Refreshable
     return myCommentArea;
   }
 
-//  protected VcsConfiguration getConfiguration() {   return myConfiguration;   }
   protected boolean shouldSaveOptionsOnCancel()  {   return false;   }
 
   protected void initCommentArea() {

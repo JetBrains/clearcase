@@ -46,10 +46,6 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     this.host = host;
   }
 
-  public boolean  showCheckinDialogInAnyCase()   {  return false;  }
-  public String   prepareCheckinMessage(String text)  {  return text;  }
-  public String   getHelpId() {  return null;   }
-
   public RefreshableOnComponent createAdditionalOptionsPanelForCheckinProject( Refreshable panel )
   {
     @NonNls final JPanel additionalPanel = new JPanel();
@@ -75,8 +71,36 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     };
   }
 
-  public String getDefaultMessageFor( FilePath[] filesToCheckin ) {  return null;    }
-  public String getCheckinOperationName() {  return "Checkin"/*VssBundle.message("action.name.checkin")*/;  }
+  /**
+   * Force to reuse the last checkout's comment for the checkin.
+   */
+  public String getDefaultMessageFor( FilePath[] filesToCheckin )
+  {
+    TransparentConfiguration config = TransparentConfiguration.getInstance( myProject );
+    ClearCase cc = host.getClearCase();
+    HashSet<String> commentsPerFile = new HashSet<String>();
+    for( FilePath path : filesToCheckin )
+    {
+      String fileComment = cc.getCheckoutComment( new File( path.getPresentableUrl() ) );
+      commentsPerFile.add( fileComment );
+    }
+
+    StringBuilder overallComment = null;
+    for( String comment : commentsPerFile )
+    {
+      overallComment.append( comment ).append( "\n-----" );
+    }
+
+    //  If Checkout comment is empty - return null, in this case <caller> will
+    //  inherit last commit's message for this commit.
+    return (overallComment.length() > 0) ? overallComment.toString() : null;
+  }
+
+
+  public boolean showCheckinDialogInAnyCase()   {  return false;  }
+  public String  prepareCheckinMessage(String text)  {  return text;  }
+  public String  getHelpId() {  return null;   }
+  public String  getCheckinOperationName() {  return "Checkin"/*VssBundle.message("action.name.checkin")*/;  }
 
   public List<VcsException> commit(List<Change> changes, String preparedComment)
   {

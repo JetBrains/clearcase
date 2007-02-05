@@ -72,7 +72,7 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
       revisions.add( rev );
     }
 
-    return new VssHistorySession( revisions );
+    return new CCaseHistorySession( revisions );
   }
 
   private class CCaseFileRevision implements VcsFileRevision
@@ -220,9 +220,9 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
     }
   }
 
-  private static class VssHistorySession extends VcsHistorySession
+  private static class CCaseHistorySession extends VcsHistorySession
   {
-    public VssHistorySession( ArrayList<VcsFileRevision> revs )
+    public CCaseHistorySession( ArrayList<VcsFileRevision> revs )
     {
       super( revs );
     }

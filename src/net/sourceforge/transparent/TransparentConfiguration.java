@@ -25,6 +25,8 @@ public class TransparentConfiguration implements ListenerNotifier, JDOMExternali
   public boolean markExternalChangeAsUpToDate = true;
   public boolean checkInUseHijack = true;
   public boolean offline = false;
+  public String lastScr = "";
+  public String scrTextFileName = "";
 
   private PropertyChangeSupport listenerSupport = new PropertyChangeSupport(this);
 
@@ -45,40 +47,42 @@ public class TransparentConfiguration implements ListenerNotifier, JDOMExternali
   @NotNull
   public String getComponentName() {  return "TransparentConfiguration";  }
 
-    private void logConfig() {
-        LOG.debug("##### Loading " + TransparentVcs.class.getName() + " version " + new Version().getVersion() + "###########");
-        LOG.debug("#####    implementation        = " + implementation);
-        LOG.debug("#####    clearcaseRoot         = " + clearcaseRoot);
-        LOG.debug("#####    checkoutReserved      = " + checkoutReserved);
-        LOG.debug("#####    externalChangeUpToDate= " + markExternalChangeAsUpToDate);
-        LOG.debug("#####    checkInUseHijack      = " + checkInUseHijack);
-        LOG.debug("#####    offline               = " + offline);
-    }
+  private void logConfig() {
+    LOG.debug("##### Loading " + TransparentVcs.class.getName() + " version " + new Version().getVersion() + "###########");
+    LOG.debug("#####    implementation        = " + implementation);
+    LOG.debug("#####    clearcaseRoot         = " + clearcaseRoot);
+    LOG.debug("#####    checkoutReserved      = " + checkoutReserved);
+    LOG.debug("#####    externalChangeUpToDate= " + markExternalChangeAsUpToDate);
+    LOG.debug("#####    checkInUseHijack      = " + checkInUseHijack);
+    LOG.debug("#####    offline               = " + offline);
+    LOG.debug("#####    lastScr               = " + offline);
+    LOG.debug("#####    scrTextFileName       = " + offline);
+  }
 
-   public static TransparentConfiguration getInstance(Project project) {
-      return project.getComponent(TransparentConfiguration.class);
-   }
+  public static TransparentConfiguration getInstance(Project project) {
+    return project.getComponent(TransparentConfiguration.class);
+  }
 
-   public PropertyChangeListener[] getListeners() {
-      return listenerSupport.getPropertyChangeListeners();
-   }
+  public PropertyChangeListener[] getListeners() {
+    return listenerSupport.getPropertyChangeListeners();
+  }
 
-   public void addListener(PropertyChangeListener listener) {
-      listenerSupport.addPropertyChangeListener(listener);
-   }
+  public void addListener(PropertyChangeListener listener) {
+    listenerSupport.addPropertyChangeListener(listener);
+  }
 
-   public void notifyListenersOfChange() {
-      logConfig();
-      listenerSupport.firePropertyChange("configuration", null, this);
-   }
+  public void notifyListenersOfChange() {
+    logConfig();
+    listenerSupport.firePropertyChange("configuration", null, this);
+  }
 
-   public void removeListener(PropertyChangeListener listener) {
-      listenerSupport.removePropertyChangeListener(listener);
-   }
+  public void removeListener(PropertyChangeListener listener) {
+    listenerSupport.removePropertyChangeListener(listener);
+  }
 
-   private static final Logger LOG = Logger.getInstance("net.sourceforge.transparent.TransparentConfiguration");
+  private static final Logger LOG = Logger.getInstance("net.sourceforge.transparent.TransparentConfiguration");
 
-   public static String[] getAvailableImplementations() {
+  public static String[] getAvailableImplementations() {
      return new String[]{
 //         NewCommandLineClearCase.class.getName(),
         CommandLineClearCase.class.getName(),
