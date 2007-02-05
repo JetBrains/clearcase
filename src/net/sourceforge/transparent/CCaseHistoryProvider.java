@@ -120,14 +120,15 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
     public void loadContent()
     {
       @NonNls final String TMP_FILE_NAME = "idea_ccase";
+      @NonNls final String EXT = ".tmp";
       @NonNls final String TITLE = "Can not issue History command";
 
       try
       {
-        File tmpFile = File.createTempFile( TMP_FILE_NAME, ".tmp" );
+        File tmpFile = File.createTempFile( TMP_FILE_NAME, EXT );
         tmpFile.deleteOnExit();
         File tmpDir = tmpFile.getParentFile();
-        final File myTmpFile = new File( tmpDir, path.getName() );
+        final File myTmpFile = new File( tmpDir, Long.toString( new Date().getTime()) );
         myTmpFile.deleteOnExit();
 
         final String out = TransparentVcs.cleartoolWithOutput( "get", "-to", myTmpFile.getPath(), path.getPath() + version );
@@ -140,8 +141,8 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
         }
         else
         {
-          String content2 = VcsUtil.getFileContent( myTmpFile );
-          content = content2.getBytes();
+//          String content2 = VcsUtil.getFileContent( myTmpFile );
+          content = VcsUtil.getFileByteContent( myTmpFile );
         }
       }
       catch( IOException e )

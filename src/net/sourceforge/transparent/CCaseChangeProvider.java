@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 
@@ -387,7 +388,6 @@ public class CCaseChangeProvider implements ChangeProvider
     private VirtualFile file;
     private FilePath    revisionPath;
     private Project     project;
-    private File        myTmpFile;
     private String      myServerContent;
 
     public CCaseRevision( FilePath path, Project proj )
@@ -412,6 +412,7 @@ public class CCaseChangeProvider implements ChangeProvider
     private String getServerContent()
     {
       @NonNls final String TITLE = "Error";
+      @NonNls final String EXT = ".tmp";
       String content = "";
 
       //  For files which are in the project but reside outside the repository
@@ -430,11 +431,10 @@ public class CCaseChangeProvider implements ChangeProvider
           //  "get -to <dest_file> <repository_file>@@<version>"
           //-------------------------------------------------------------------
           
-          File tmpFile = File.createTempFile( TMP_FILE_NAME, "." + file.getExtension() );
+          File tmpFile = File.createTempFile( TMP_FILE_NAME, EXT );
           tmpFile.deleteOnExit();
           File tmpDir = tmpFile.getParentFile();
-          myTmpFile = new File( tmpDir, file.getName() );
-          myTmpFile.deleteOnExit();
+          File myTmpFile = new File( tmpDir, Long.toString( new Date().getTime()) );
 
           String out = TransparentVcs.cleartoolWithOutput( "describe", file.getPath() );
           String version = parseLastRepositoryVersion( out );
@@ -451,6 +451,7 @@ public class CCaseChangeProvider implements ChangeProvider
             else
             {
               content = VcsUtil.getFileContent( myTmpFile );
+              myTmpFile.delete();
             }
           }
         }
@@ -460,7 +461,6 @@ public class CCaseChangeProvider implements ChangeProvider
         }
       }
 
-      myTmpFile.delete();
       return content;
     }
 
