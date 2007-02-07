@@ -36,6 +36,11 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
   @NonNls private final static String KEEP_HIJACKED_SIG = "Keeping hijacked object \"";
   @NonNls private final static String UNLOADED_SIG = "Unloaded \"";
   @NonNls private final static String BASE_DELIM = " - base ";
+  @NonNls private final static String MODIFIED_GROUP = "modified";
+  @NonNls private final static String SKIPPED_GROUP = "skipped";
+  @NonNls private final static String PROGRESS_TEXT = "Synching with repository";
+
+  @NonNls private final static String ERROR_MSG_SIG = "valid snapshot view path";
 
   private Project project;
 
@@ -46,14 +51,10 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
 
   public void fillGroups( UpdatedFiles groups )
   {
-    final FileGroup groupModified = new FileGroup(/*VssBundle.message("update.group.name.modified"),
-                                                  VssBundle.message("update.group.name.modified"), */
-                                                  "modified", "modified", false, FileGroup.MODIFIED_ID, false);
+    final FileGroup groupModified = new FileGroup( MODIFIED_GROUP, MODIFIED_GROUP, false, FileGroup.MODIFIED_ID, false);
     groups.registerGroup(groupModified);
 
-    final FileGroup groupSkipped = new FileGroup(/*VssBundle.message("update.group.name.skipped"),
-                                                 VssBundle.message("update.group.name.skipped"), */
-                                                 "Skipped", "Skipped", false, FileGroup.SKIPPED_ID, false);
+    final FileGroup groupSkipped = new FileGroup( SKIPPED_GROUP, SKIPPED_GROUP, false, FileGroup.SKIPPED_ID, false);
     groups.registerGroup(groupSkipped);
   }
 
@@ -61,12 +62,24 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
                                                                                                                                     ProcessCanceledException {
     final ArrayList<VcsException> errors = new ArrayList<VcsException>();
 
-    progressIndicator.setText( "Synching with repository"/*VssBundle.message("message.synch.with.repository")*/ );
+    progressIndicator.setText( PROGRESS_TEXT );
     FileDocumentManager.getInstance().saveAllDocuments();
 
     TransparentConfiguration config = TransparentConfiguration.getInstance( project );
-    String out = TransparentVcs.cleartoolWithOutput( "update", config.clearcaseRoot );
-    parseOutput( out, updatedFiles );
+    try
+    {
+      String out = TransparentVcs.cleartoolWithOutput( "update", config.clearcaseRoot );
+      parseOutput( out, updatedFiles );
+    }
+    catch( ClearCaseException e )
+    {
+      //  Correctly process the case when "Update Project" is done over the
+      //  dynamic view (only snapshot views can handle this operation).
+      if( e.getMessage().indexOf( ERROR_MSG_SIG ) != -1 )
+        errors.add( new VcsException( "You can not update a dynamic view" ) );
+      else
+        errors.add( new VcsException( "Update failed with message: " + e.getMessage() ) );
+    }
 
     return new UpdateSession(){
       public List<VcsException> getExceptions() { return errors; }
