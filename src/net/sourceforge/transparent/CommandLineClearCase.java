@@ -7,6 +7,7 @@ package net.sourceforge.transparent;
 
 import com.intellij.openapi.diagnostic.Logger;
 import org.intellij.plugins.util.FileUtil;
+import org.jetbrains.annotations.NonNls;
 
 import java.io.File;
 
@@ -14,9 +15,8 @@ import java.io.File;
 //            ClearCaseException, Runner, ClearCase, Status, 
 //            CheckedOutStatus
 
-public class CommandLineClearCase
-    implements ClearCase {
-
+public class CommandLineClearCase implements ClearCase
+{
     private static final Logger LOG = Logger.getInstance("net.sourceforge.transparent.CommandLineClearCase");
 
     public CommandLineClearCase() {
@@ -95,25 +95,19 @@ public class CommandLineClearCase
     }
 
     public void move(File file, File target, String comment) {
-        cleartool(new String[] {
-            "mv", "-c", quote(comment), file.getAbsolutePath(), target.getAbsolutePath()
-        });
+      cleartool(new String[] { "mv", "-c", quote(comment), file.getAbsolutePath(), target.getAbsolutePath() });
+
     }
 
-    public boolean isElement(File file) {
-        return getStatus(file) != Status.NOT_AN_ELEMENT;
-    }
+    public boolean isElement(File file) {  return getStatus(file) != Status.NOT_AN_ELEMENT;  }
 
-    public boolean isCheckedOut(File file) {
-        return getStatus(file) == Status.CHECKED_OUT;
-    }
+    public boolean isCheckedOut(File file) {  return getStatus(file) == Status.CHECKED_OUT;  }
 
     public Status getStatus(File file) {
-        Runner runner = cleartool(new String[] {
-            "ls", "-directory", file.getAbsolutePath()
-        }, true);
+        Runner runner = cleartool(new String[] { "ls", "-directory", file.getAbsolutePath() }, true);
         if (!runner.isSuccessfull()) {
-            return Status.NOT_AN_ELEMENT;
+//            return Status.NOT_AN_ELEMENT;
+          throw new ClearCaseException( runner.getOutput() );
         }
         if (runner.getOutput().indexOf("@@") == -1) {
             return Status.NOT_AN_ELEMENT;
@@ -139,8 +133,8 @@ public class CommandLineClearCase
         cleartool(subcmd, false);
     }
 
-    private Runner cleartool(String subcmd[], boolean canFail) {
-        String cmd[] = Runner.getCommand("cleartool", subcmd);
+    private static Runner cleartool(@NonNls String[] subcmd, boolean canFail) {
+        @NonNls String[] cmd = Runner.getCommand("cleartool", subcmd);
         LOG.debug(Runner.getCommandLine(cmd));
         Runner runner = new Runner();
         runner.run(cmd, canFail);

@@ -35,6 +35,10 @@ import java.util.List;
  */
 public class CCaseChangeProvider implements ChangeProvider
 {
+  @NonNls private final static String COLLECT_MSG = "Collecting Writables";
+  @NonNls private final static String SEARCHNEW_MSG = "Searching New";
+  @NonNls private final static String FAIL_2_CONNECT_MSG = "Failed to connect to ClearCase Server: ";
+  @NonNls private final static String FAIL_2_CONNECT_TITLE = "Server Connection Problem";
   private static final Logger LOG = Logger.getInstance("#net.sourceforge.transparent.CCaseChangeProvider");
 
   private Project project;
@@ -65,21 +69,29 @@ public class CCaseChangeProvider implements ChangeProvider
     this.progress = progress;
     initInternals();
 
-    if( isBatchUpdate )
+    try
     {
-      iterateOverProjectStructure( dirtyScope );
-    }
-    iterateOverDirtyDirectories( dirtyScope );
-    iterateOverDirtyFiles( dirtyScope );
+      if( isBatchUpdate )
+      {
+        iterateOverProjectStructure( dirtyScope );
+      }
+      iterateOverDirtyDirectories( dirtyScope );
+      iterateOverDirtyFiles( dirtyScope );
 
-    /**
-     * Transform data accumulated in the internal data structures (filesNew,
-     * filesChanged, filesDeleted, host.renamedFiles) into "Change" format
-     * acceptable by ChangelistBuilder.
-    */
-    addNewOrRenamedFiles( builder );
-    addChangedFiles( builder );
-    addRemovedFiles( builder );
+      /**
+       * Transform data accumulated in the internal data structures (filesNew,
+       * filesChanged, filesDeleted, host.renamedFiles) into "Change" format
+       * acceptable by ChangelistBuilder.
+      */
+      addNewOrRenamedFiles( builder );
+      addChangedFiles( builder );
+      addRemovedFiles( builder );
+    }
+    catch( ClearCaseException e )
+    {
+      final String message = FAIL_2_CONNECT_MSG + e.getMessage();
+      ApplicationManager.getApplication().invokeLater( new Runnable() { public void run() { VcsUtil.showErrorMessage( project, message, FAIL_2_CONNECT_TITLE ); } });
+    }
   }
 
   /**
@@ -99,14 +111,14 @@ public class CCaseChangeProvider implements ChangeProvider
   {
     LOG.info( "-- ChangeProvider - Iterating over project structure starting from scope root: " + path.getPath() );
     if( progress != null )
-      progress.setText( "Collect Writables"/*VssBundle.message( "message.statusbar.collect.writables" )*/ );
+      progress.setText( COLLECT_MSG );
 
     List<String> writableFiles = new ArrayList<String>();
     collectSuspiciousFiles( path, writableFiles );
     LOG.info( "-- ChangeProvider - Found: " + writableFiles.size() + " writable files." );
 
     if( progress != null )
-      progress.setText( "Searching New"/*VssBundle.message( "message.statusbar.searching.new" )*/ );
+      progress.setText( SEARCHNEW_MSG );
     analyzeWritableFiles( path, writableFiles );
   }
 

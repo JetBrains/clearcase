@@ -10,31 +10,22 @@ import java.io.File;
 // Referenced classes of package net.sourceforge.transparent:
 //            Status, CheckedOutStatus
 
-public interface ClearCase {
+public interface ClearCase
+{
+    String getName();
 
-    public abstract String getName();
+    void checkIn(File file, String s);
+    void checkOut(File file, boolean flag, String comment);
+    void undoCheckOut(File file);
+    void add(File file, String s);
+    void delete(File file, String s);
+    void move(File file, File file1, String s);
 
-    public abstract void checkIn(File file, String s);
+    Status getStatus(File file);
+    boolean isElement(File file);
+    boolean isCheckedOut(File file);
 
-    public abstract void checkOut(File file, boolean flag, String comment);
-
-    public abstract void undoCheckOut(File file);
-
-    public abstract void add(File file, String s);
-
-    public abstract void delete(File file, String s);
-
-    public abstract void move(File file, File file1, String s);
-
-    public abstract Status getStatus(File file);
-
-    public abstract boolean isElement(File file);
-
-    public abstract boolean isCheckedOut(File file);
-
-    public abstract void cleartool(String s);
-
-    public abstract CheckedOutStatus getCheckedOutStatus(File file);
-
-    public abstract String getCheckoutComment(File file);
+    void cleartool(String s);
+    CheckedOutStatus getCheckedOutStatus(File file);
+    String getCheckoutComment(File file);
 }
