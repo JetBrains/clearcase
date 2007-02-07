@@ -43,13 +43,13 @@
          <action id="ClearCase.Hijack" class="net.sourceforge.transparent.actions.HijackAction" text="_Hijack" description="Hijack file"/>
          <action id="ClearCase.UndoCheckOut" class="net.sourceforge.transparent.actions.UndoCheckOutAction" text="_Undo Check Out" description="Revert back to the previous version"/>
          <action id="ClearCase.Update" class="net.sourceforge.transparent.actions.UpdateFileAction" text="U_pdate" description="Update current file"/>
-<!--         <action id="ClearCase.MarkAsUpToDate" class="net.sourceforge.transparent.actions.MarkFileAsUpToDateAction" text="_Mark File As Up-To-Date" description="Mark file so it won't show up in Check In Project"/> -->
+<!--     <action id="ClearCase.MarkAsUpToDate" class="net.sourceforge.transparent.actions.MarkFileAsUpToDateAction" text="_Mark File As Up-To-Date" description="Mark file so it won't show up in Check In Project"/> -->
          <separator/>
          <reference id="Vcs.ShowTabbedFileHistory"/>
-         <action id="ClearCase.History" class="net.sourceforge.transparent.actions.HistoryAction" text="_History..." description="Open history window"/>
-         <action id="ClearCase.VersionTree" class="net.sourceforge.transparent.actions.VersionTreeAction" text="_Version Tree..." description="Open version tree window"/>
-         <action id="ClearCase.CompareWithPrevious" class="net.sourceforge.transparent.actions.CompareWithPreviousAction" text="Compare with Previous Version..." description="Open diff with predecessor window"/>
-<!--         <action id="ClearCase.Differences" class="net.sourceforge.transparent.actions.DifferencesAction" text="_Differences..." description="Diff checked out version"/>-->
+        <action id="ClearCase.VersionTree" class="net.sourceforge.transparent.actions.VersionTreeAction" text="_Version Tree..." description="Open version tree window"/>
+<!--     <action id="ClearCase.History" class="net.sourceforge.transparent.actions.HistoryAction" text="_History..." description="Open history window"/> -->
+<!--     <action id="ClearCase.CompareWithPrevious" class="net.sourceforge.transparent.actions.CompareWithPreviousAction" text="Compare with Previous Version..." description="Open diff with predecessor window"/> -->
+<!--     <action id="ClearCase.Differences" class="net.sourceforge.transparent.actions.DifferencesAction" text="_Differences..." description="Diff checked out version"/>-->
          <action id="ClearCase.Properties" class="net.sourceforge.transparent.actions.PropertiesAction" text="_Properties..." description="Show properties window"/>
          <separator/>
          <action id="ClearCase.FindCheckouts" class="net.sourceforge.transparent.actions.FindCheckoutsAction" text="_Find Checkouts..." description="Find checkout files"/>
