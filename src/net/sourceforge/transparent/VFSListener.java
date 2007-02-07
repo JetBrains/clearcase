@@ -115,6 +115,11 @@ public class VFSListener extends VirtualFileAdapter
     host.removedFiles.remove( path );
     host.removedFolders.remove( path );
 
+    //  Do not ask user if the files created came from the vcs per se
+    //  (obviously they are not new).
+    if( event.isFromRefresh() )
+      return;
+
     //  Take into account only processable files. Do not pay attention on all
     //  other file which can be created as e.g. build process artifacts.
 
