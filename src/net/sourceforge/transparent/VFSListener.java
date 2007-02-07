@@ -7,6 +7,7 @@ import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vcs.VcsShowConfirmationOption;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.*;
+import org.jetbrains.annotations.NonNls;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -105,6 +106,8 @@ public class VFSListener extends VirtualFileAdapter
 
   public void fileCreated(VirtualFileEvent event)
   {
+    @NonNls final String TITLE = "Add file(s) to the ClearCase?";
+    @NonNls final String MESSAGE = "Do you want to schedule the following file for addition to ClearCase?\n{0}";
     String path = event.getFile().getPath();
 
     //  In the case when the project content is synchronized over the
@@ -129,10 +132,8 @@ public class VFSListener extends VirtualFileAdapter
       {
         List<VirtualFile> files = new ArrayList<VirtualFile>();
         files.add( event.getFile() );
-        Collection<VirtualFile> filesToProcess = AbstractVcsHelper.getInstance( project ).selectFilesToProcess( files, "Add file(s) to the ClearCase?", null,
-                                                                       "Add file(s) to the ClearCase?",
-                                                                       "Do you want to schedule the following file for addition to Subversion?\n{0}",
-                                                                       confirmOption );
+        Collection<VirtualFile> filesToProcess = AbstractVcsHelper.getInstance( project ).selectFilesToProcess( files, TITLE, null, TITLE,
+                                                                                                                MESSAGE, confirmOption );
         if( filesToProcess != null )
           host.add2NewFile( path );
       }
