@@ -82,7 +82,8 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     for( FilePath path : filesToCheckin )
     {
       String fileComment = cc.getCheckoutComment( new File( path.getPresentableUrl() ) );
-      commentsPerFile.add( fileComment );
+      if( fileComment != null && fileComment.length() > 0 )
+        commentsPerFile.add( fileComment );
     }
 
     StringBuilder overallComment = null;
