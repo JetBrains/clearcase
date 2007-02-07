@@ -227,6 +227,12 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
       super( revs );
     }
 
+    public boolean isContentAvailable(VcsFileRevision revision)
+    {
+      return (revision instanceof CCaseFileRevision) &&
+             !((CCaseFileRevision)revision).getAction().equals( CCaseHistoryParser.BRANCH_COMMAND_SIG );
+    }
+
     protected VcsRevisionNumber calcCurrentRevisionNumber()
     {
       VcsRevisionNumber revision;
