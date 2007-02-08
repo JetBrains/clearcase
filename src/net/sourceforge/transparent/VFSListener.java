@@ -148,7 +148,7 @@ public class VFSListener extends VirtualFileAdapter
   public void beforeFileDeletion(VirtualFileEvent event)
   {
     VirtualFile file = event.getFile();
-    FileStatus status = FileStatusManager.getInstance(project).getStatus( file );
+    FileStatus status = FileStatusManager.getInstance( project ).getStatus( file );
     if( host.fileIsUnderVcs( file ) &&
         ( status != FileStatus.ADDED ) && ( status != FileStatus.UNKNOWN ))
     {

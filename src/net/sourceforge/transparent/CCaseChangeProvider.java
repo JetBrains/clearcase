@@ -334,13 +334,11 @@ public class CCaseChangeProvider implements ChangeProvider
 
   private void addRemovedFiles( final ChangelistBuilder builder )
   {
-    /*
     for( String path : host.removedFolders )
       builder.processLocallyDeletedFile( VcsUtil.getFilePath( path ) );
 
     for( String path : host.removedFiles )
       builder.processLocallyDeletedFile( VcsUtil.getFilePath( path ) );
-    */
   }
 
   private boolean isPathUnderAbsentFolders( String pathToCheck )
@@ -384,13 +382,11 @@ public class CCaseChangeProvider implements ChangeProvider
   {
     return (file != null) && file.isWritable() && !file.isDirectory() &&
            VcsUtil.isPathUnderProject( project, file.getPath() ) &&
-//           host.getFileFilter().accept( file ) &&
            !host.isFileIgnored( file );
+//           host.getFileFilter().accept( file ) &&
 //         !config.isFileExcluded( file.getName() );
 //         && regularFileFilter.accept(file)
-          /*
-           VssUtil.isUnderVss( file, project ) &&
-          */
+//           VssUtil.isUnderVss( file, project ) &&
   }
 
   private class CCaseRevision implements ContentRevision

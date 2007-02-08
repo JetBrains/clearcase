@@ -35,6 +35,7 @@ import java.util.List;
  */
 public class CCaseCheckinEnvironment implements CheckinEnvironment
 {
+  @NonNls private static final String CHECKIN_TITLE = "Checkin";
   @NonNls private static final String SCR_TITLE = "SCR Number";
 
   private Project myProject;
@@ -101,7 +102,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   public boolean showCheckinDialogInAnyCase()   {  return false;  }
   public String  prepareCheckinMessage(String text)  {  return text;  }
   public String  getHelpId() {  return null;   }
-  public String  getCheckinOperationName() {  return "Checkin"/*VssBundle.message("action.name.checkin")*/;  }
+  public String  getCheckinOperationName() {  return CHECKIN_TITLE;  }
 
   public List<VcsException> commit(List<Change> changes, String preparedComment)
   {
@@ -342,7 +343,8 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     try
     {
       String err = TransparentVcs.updateFile( path );
-      System.out.print( err );
+      if( err != null )
+        errors.add( new VcsException( err ) );
     }
     catch( ClearCaseException e ) {  errors.add( new VcsException( e ) );  }
   }
