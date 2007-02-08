@@ -1,5 +1,6 @@
 package net.sourceforge.transparent;
 
+import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FileStatus;
@@ -120,10 +121,9 @@ public class VFSListener extends VirtualFileAdapter
     if( event.isFromRefresh() )
       return;
 
-    //  Take into account only processable files. Do not pay attention on all
-    //  other file which can be created as e.g. build process artifacts.
+    //  Take into account only processable files.
 
-    if( host.fileIsUnderVcs( event.getFile() ) && !host.isFileIgnored( event.getFile() ) )
+    if( isFileProcessable( event.getFile() ))
     {
       VcsShowConfirmationOption confirmOption = host.getAddConfirmation();
 
@@ -182,5 +182,15 @@ public class VFSListener extends VirtualFileAdapter
       if( strFile.startsWith( path ) )
        it.remove();
     }
+  }
+
+  /**
+   * File is not processable if e.g. it was created during "GetLatestVersion",
+   * if it outside the vcs scope or it is in the list of excluded project files.
+   */
+  private boolean isFileProcessable( VirtualFile file )
+  {
+    return host.fileIsUnderVcs( file ) && !host.isFileIgnored( file ) &&
+           !FileTypeManager.getInstance().isFileIgnored( file.getName() );
   }
 }
