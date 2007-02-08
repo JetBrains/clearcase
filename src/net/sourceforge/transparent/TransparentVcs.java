@@ -1,7 +1,9 @@
 package net.sourceforge.transparent;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
@@ -45,6 +47,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   @NonNls private static final String PERSISTENCY_RENAMED_FILE_TAG = "ClearCasePersistencyRenamedFile";
   @NonNls private static final String PERSISTENCY_NEW_FILE_TAG = "ClearCasePersistencyNewFile";
   @NonNls private static final String PATH_DELIMITER = "%%%";
+  @NonNls private static final String CCASE_VER_FILE_SIG = "*.keep";
 
   public HashSet<String> removedFiles;
   public HashSet<String> removedFolders;
@@ -127,6 +130,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     //  track down potential changes in the repository.
     listener = new VFSListener( getProject(), this );
     LocalFileSystem.getInstance().addVirtualFileListener( listener );
+
+    addIgnoredFiles();
   }
 
   public void deactivate()
@@ -172,6 +177,27 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
         getTransparentConfig().implementation = CommandLineClearCase.class.getName();
         clearcase = new ClearCaseDecorator(new CommandLineClearCase());
       }
+    }
+  }
+
+  /**
+   * Automatically add "*.keep" pattern into the list of ignored file so that
+   * they are not becoming the part of the project.
+   */
+  private static void addIgnoredFiles()
+  {
+    String patterns = FileTypeManager.getInstance().getIgnoredFilesList();
+    String newPattern = patterns;
+
+    if( patterns.indexOf(CCASE_VER_FILE_SIG) == -1 )
+      newPattern += (( newPattern.charAt( newPattern.length() - 1 ) == ';') ? "" : ";" ) + CCASE_VER_FILE_SIG;
+
+    if( !newPattern.equals( patterns ))
+    {
+      final String newPat = newPattern;
+      ApplicationManager.getApplication().runWriteAction( new Runnable()
+        { public void run() { FileTypeManager.getInstance().setIgnoredFilesList( newPat ); } }
+      );
     }
   }
 
