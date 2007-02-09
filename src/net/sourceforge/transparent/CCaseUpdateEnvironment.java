@@ -19,6 +19,7 @@ import com.intellij.openapi.vcs.update.UpdatedFiles;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -88,10 +89,14 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
     };
   }
 
-  private static void parseOutput( String output, UpdatedFiles updatedFiles )
+  private void parseOutput( String output, UpdatedFiles updatedFiles )
   {
-    String[] lines = LineTokenizer.tokenize( output.toCharArray(), false, true );
+    String sepSymbol = new String( new char[] { File.separatorChar } );
+    String rootPath = TransparentConfiguration.getInstance( project ).clearcaseRoot;
+    if( !rootPath.endsWith( sepSymbol ) )
+      rootPath += sepSymbol;
 
+    String[] lines = LineTokenizer.tokenize( output.toCharArray(), false, true );
     for( String line : lines )
     {
       if( line.startsWith( LOADING_SIG ) )
@@ -99,8 +104,7 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
         int lastQuote = line.lastIndexOf( "\"" );
         String fileName = line.substring( LOADING_SIG.length(), lastQuote );
 
-        // ToDo: need to convert to proper file name here
-        updatedFiles.getGroupById( FileGroup.UPDATED_ID ).add( fileName );
+        updatedFiles.getGroupById( FileGroup.UPDATED_ID ).add( rootPath + fileName );
       }
       else
       if( line.startsWith( KEEP_HIJACKED_SIG ))
@@ -108,16 +112,14 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
         int lastQuote = line.lastIndexOf( BASE_DELIM );
         String fileName = line.substring( KEEP_HIJACKED_SIG.length(), lastQuote );
 
-        // ToDo: need to convert to proper file name here
-        updatedFiles.getGroupById( FileGroup.SKIPPED_ID ).add( fileName );
+        updatedFiles.getGroupById( FileGroup.SKIPPED_ID ).add( rootPath + fileName );
       }
       else
       if( line.startsWith( UNLOADED_SIG ) )
       {
         String fileName = line.substring( UNLOADED_SIG.length(), line.length() - 2 );
 
-        // ToDo: need to convert to proper file name here
-        updatedFiles.getGroupById( FileGroup.REMOVED_FROM_REPOSITORY_ID ).add( fileName );
+        updatedFiles.getGroupById( FileGroup.REMOVED_FROM_REPOSITORY_ID ).add( rootPath + fileName );
       }
     }
   }
