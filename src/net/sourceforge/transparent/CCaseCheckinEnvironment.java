@@ -77,7 +77,6 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
    */
   public String getDefaultMessageFor( FilePath[] filesToCheckin )
   {
-    TransparentConfiguration config = TransparentConfiguration.getInstance( myProject );
     ClearCase cc = host.getClearCase();
     HashSet<String> commentsPerFile = new HashSet<String>();
     for( FilePath path : filesToCheckin )
@@ -87,7 +86,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
         commentsPerFile.add( fileComment );
     }
 
-    StringBuilder overallComment = null;
+    StringBuilder overallComment = new StringBuilder();
     for( String comment : commentsPerFile )
     {
       overallComment.append( comment ).append( "\n-----" );
