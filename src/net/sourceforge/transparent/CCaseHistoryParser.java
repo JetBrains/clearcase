@@ -13,11 +13,12 @@ import java.util.ArrayList;
 public class CCaseHistoryParser
 {
   @NonNls public static final String BRANCH_COMMAND_SIG = "create branch";
+  @NonNls public static final String CREATE_ELEM_COMMAND_SIG = "create file element";
 
   @NonNls private static final String DATE_DELIM = "   ";
   @NonNls private static final String COMMENT_SIG = "  \"";
   @NonNls private static final String ERROR_SIG = "History parsing error";
-  @NonNls private static String[] actions = { "create file element", BRANCH_COMMAND_SIG, "create version",
+  @NonNls private static String[] actions = { CREATE_ELEM_COMMAND_SIG, BRANCH_COMMAND_SIG, "create version",
                                               /*"checkout version", */"checkin version"};
 
   private CCaseHistoryParser() {}

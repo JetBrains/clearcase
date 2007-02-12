@@ -29,6 +29,10 @@ import java.util.Locale;
  */
 public class CCaseHistoryProvider implements VcsHistoryProvider
 {
+  @NonNls private final static String ACTION_COLUMN = "Action";
+  @NonNls private final static String LABEL_COLUMN = "Label";
+  @NonNls private final static String ERROR_TITLE = "Get History Fail";
+
   private Project project;
 
   public CCaseHistoryProvider( Project project )
@@ -36,7 +40,7 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
     this.project = project;
   }
 
-  private static final ColumnInfo<VcsFileRevision, String> ACTION = new ColumnInfo<VcsFileRevision, String>( "Action" )
+  private static final ColumnInfo<VcsFileRevision, String> ACTION = new ColumnInfo<VcsFileRevision, String>( ACTION_COLUMN )
   {
     public String valueOf(VcsFileRevision vcsFileRevision) {
       if (!(vcsFileRevision instanceof CCaseFileRevision)) return "";
@@ -44,7 +48,7 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
     }
   };
 
-  private static final ColumnInfo<VcsFileRevision, String> LABEL = new ColumnInfo<VcsFileRevision, String>( "Label" )
+  private static final ColumnInfo<VcsFileRevision, String> LABEL = new ColumnInfo<VcsFileRevision, String>( LABEL_COLUMN )
   {
     public String valueOf(VcsFileRevision vcsFileRevision) {
       if (!(vcsFileRevision instanceof CCaseFileRevision)) return "";
@@ -63,16 +67,25 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
 
   public VcsHistorySession createSessionFor( FilePath filePath ) throws VcsException
   {
-    String log = TransparentVcs.cleartoolWithOutput( "lshistory", filePath.getPath() );
-    ArrayList<CCaseHistoryParser.SubmissionData> changes = CCaseHistoryParser.parse( log );
-    ArrayList<VcsFileRevision> revisions = new ArrayList<VcsFileRevision>();
-    for( CCaseHistoryParser.SubmissionData change : changes )
+    CCaseHistorySession session = null;
+    try
     {
-      VcsFileRevision rev = new CCaseFileRevision( change, filePath );
-      revisions.add( rev );
-    }
+      String log = TransparentVcs.cleartoolWithOutput( "lshistory", filePath.getPath() );
+      ArrayList<CCaseHistoryParser.SubmissionData> changes = CCaseHistoryParser.parse( log );
+      ArrayList<VcsFileRevision> revisions = new ArrayList<VcsFileRevision>();
+      for( CCaseHistoryParser.SubmissionData change : changes )
+      {
+        VcsFileRevision rev = new CCaseFileRevision( change, filePath );
+        revisions.add( rev );
+      }
 
-    return new CCaseHistorySession( revisions );
+      session = new CCaseHistorySession( revisions );
+    }
+    catch( ClearCaseException e )
+    {
+      throw new VcsException( e );
+    }
+    return session;
   }
 
   private class CCaseFileRevision implements VcsFileRevision
@@ -121,7 +134,7 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
     {
       @NonNls final String TMP_FILE_NAME = "idea_ccase";
       @NonNls final String EXT = ".tmp";
-      @NonNls final String TITLE = "Can not issue History command";
+      @NonNls final String TITLE = "Can not issue Get command";
 
       try
       {
@@ -141,7 +154,6 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
         }
         else
         {
-//          String content2 = VcsUtil.getFileContent( myTmpFile );
           content = VcsUtil.getFileByteContent( myTmpFile );
         }
       }
@@ -230,7 +242,8 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
     public boolean isContentAvailable(VcsFileRevision revision)
     {
       return (revision instanceof CCaseFileRevision) &&
-             !((CCaseFileRevision)revision).getAction().equals( CCaseHistoryParser.BRANCH_COMMAND_SIG );
+             !((CCaseFileRevision)revision).getAction().equals( CCaseHistoryParser.BRANCH_COMMAND_SIG ) &&
+             !((CCaseFileRevision)revision).getAction().equals( CCaseHistoryParser.CREATE_ELEM_COMMAND_SIG ); 
     }
 
     protected VcsRevisionNumber calcCurrentRevisionNumber()
