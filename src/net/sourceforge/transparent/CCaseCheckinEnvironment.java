@@ -6,6 +6,7 @@ package net.sourceforge.transparent;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
@@ -82,7 +83,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     for( FilePath path : filesToCheckin )
     {
       String fileComment = cc.getCheckoutComment( new File( path.getPresentableUrl() ) );
-      if( fileComment != null && fileComment.length() > 0 )
+      if( StringUtil.isNotEmpty( fileComment ) )
         commentsPerFile.add( fileComment );
     }
 
@@ -103,25 +104,17 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   public String  getHelpId() {  return null;   }
   public String  getCheckinOperationName() {  return CHECKIN_TITLE;  }
 
-  public List<VcsException> commit(List<Change> changes, String preparedComment)
+  public List<VcsException> commit( List<Change> changes, String comment )
   {
     List<VcsException> errors = new ArrayList<VcsException>();
     HashSet<FilePath> processedFiles = new HashSet<FilePath>();
 
-    try
-    {
-      commitNew( changes, processedFiles );
-      commitChanged( changes, processedFiles );
-    }
-    catch( VcsException e )
-    {
-      errors.add( e );
-    }
+    commitNew( changes, comment, processedFiles, errors );
+    commitChanged( changes, comment, processedFiles, errors );
 
     for( FilePath path : processedFiles )
-    {
-      VcsUtil.markFileAsDirty(myProject, path);
-    }
+      VcsUtil.markFileAsDirty( myProject, path );
+
     return errors;
   }
 
@@ -130,7 +123,8 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
    *  Difference between added and modified files is that added file
    *  has no "before" revision.
    */
-  private void commitNew( List<Change> changes, HashSet<FilePath> processedFiles ) throws VcsException
+  private void commitNew( List<Change> changes, String comment,
+                          HashSet<FilePath> processedFiles, List<VcsException> errors )
   {
     ArrayList<FilePath> folders = new ArrayList<FilePath>();
     ArrayList<FilePath> files = new ArrayList<FilePath>();
@@ -150,13 +144,14 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     FilePath[] foldersSorted = folders.toArray( new FilePath[ folders.size() ] );
     foldersSorted = VcsUtil.sortPathsFromOutermost( foldersSorted );
     for( FilePath folder : foldersSorted )
-      host.addDirectory( folder.getVirtualFileParent().getPath(), folder.getName(), null );
+      host.addFile( folder.getVirtualFile(), comment, errors );
 
     for( FilePath file : files )
-      host.addFile( file.getVirtualFileParent().getPath(), file.getName(), null );
+      host.addFile( file.getVirtualFile(), comment, errors );
   }
 
-  private void commitChanged( List<Change> changes, HashSet<FilePath> processedFiles ) throws VcsException
+  private void commitChanged( List<Change> changes, String comment,
+                              HashSet<FilePath> processedFiles, List<VcsException> errors )
   {
     for( Change change : changes )
     {
@@ -178,18 +173,18 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
 
           if( oldFile.getVirtualFileParent().getPath().equals( file.getVirtualFileParent().getPath() ))
           {
-            host.renameAndCheckInFile( prevPath, file.getName(), null );
+            host.renameAndCheckInFile( file.getIOFile(), file.getName(), comment, errors );
           }
           else
           {
             String newFolder = file.getVirtualFileParent().getPath();
-            host.moveRenameAndCheckInFile( prevPath, newFolder, file.getName(), null );
+            host.moveRenameAndCheckInFile( prevPath, newFolder, file.getName(), comment, errors );
           }
           host.renamedFiles.remove( newPath );
         }
         else
         {
-          host.checkinFile( file.getPath(), null );
+          host.checkinFile( file, comment, errors );
         }
 
         processedFiles.add( file );
@@ -270,7 +265,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
         }
         else
         {
-          undoCheckout( path, errors );
+          host.undoCheckoutFile( filePath.getVirtualFile(), errors );
         }
         processedFiles.add( filePath );
       }
@@ -286,21 +281,10 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     List<VcsException> errors = new ArrayList<VcsException>();
     for( File file : files )
     {
-      String path = file.getPath();
-      try
+      String path = VcsUtil.getCanonicalPath( file );
+      if( host.removedFiles.contains( path ) || host.removedFolders.contains( path ) )
       {
-        if( host.removedFiles.contains( path ) )
-        {
-          host.removeFile( path, null );
-        }
-        else
-        {
-          host.removeDirectory( path, null );
-        }
-      }
-      catch( VcsException e )
-      {
-        errors.add( e );
+        host.removeFile( file, null, errors );
       }
 
       host.removedFiles.remove( path );
@@ -316,8 +300,10 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
 
     for( FilePath filePath : paths )
     {
-      File file = filePath.getIOFile();
-      updateFile( file.getPath(), errors );
+      //  For ClearCase to get back the locally removed file, it is
+      //  necessary to issue "Undo Checkout" command. This will revert it
+      //  it to the state before the checking out on deletion.
+      host.undoCheckoutFile( filePath.getIOFile(), errors );
       mgr.fileDirty( filePath );
     }
     return errors;
@@ -346,12 +332,6 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
         errors.add( new VcsException( err ) );
     }
     catch( ClearCaseException e ) {  errors.add( new VcsException( e ) );  }
-  }
-
-  private void undoCheckout( String path, List<VcsException> errors )
-  {
-    try {  host.undoCheckoutFile( path );  }
-    catch( VcsException e ) {  errors.add( new VcsException( e ) );  }
   }
 
   private static boolean isUnknownFileError( List<VcsException> errors )

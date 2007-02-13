@@ -6,6 +6,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.io.ReadOnlyAttributeUtil;
+import org.jetbrains.annotations.NonNls;
 
 /**
  * Created by IntelliJ IDEA.
@@ -16,6 +17,8 @@ import com.intellij.util.io.ReadOnlyAttributeUtil;
  */
 public class CCaseEditFileProvider implements EditFileProvider
 {
+  @NonNls private final static String REQUEST_TEXT = "Would you like to invoke 'CheckOut' command?";
+
   private TransparentVcs host;
 
   public CCaseEditFileProvider(TransparentVcs host )
@@ -23,7 +26,7 @@ public class CCaseEditFileProvider implements EditFileProvider
     this.host = host;
   }
 
-  public String getRequestText() {  return "Would you like to invoke 'CheckOut' command?";  }
+  public String getRequestText() {  return REQUEST_TEXT;  }
 
   public void editFiles( VirtualFile[] files )
   {
@@ -35,48 +38,42 @@ public class CCaseEditFileProvider implements EditFileProvider
     }
   }
 
-  public void checkOutOrHijackFile(VirtualFile file)
+  public void checkOutOrHijackFile( VirtualFile file )
   {
-      try {
-          makeFileWritable(file);
-      }
-      catch (Throwable e) {
-        Messages.showErrorDialog( "Exception while " + (shouldHijackFile(file) ? "hijacking " : "checking out ") + file.getPresentableUrl(),
-                                  "message.title.could.not.start.process" );
-          /*
-          vcsHelper.showErrors(Arrays.asList(new VcsException[] {
-              new VcsException(e)
-          }), "Exception while " + (shouldHijackFile(file) ? "hijacking " : "checking out ") + file.getPresentableUrl());
-          */
-      }
+    try
+    {
+      makeFileWritable( file );
+    }
+    catch( Throwable e )
+    {
+      String message = "Exception while " + (shouldHijackFile(file) ? "hijacking " : "checking out ") +
+                       file.getPresentableUrl() + "\n" + e.getMessage();
+      Messages.showErrorDialog( message, "message.title.could.not.start.process" );
+    }
+  }
+
+  private void makeFileWritable( VirtualFile file ) throws VcsException
+  {
+    if( shouldHijackFile( file ) )
+      hijackFile( file );
+    else
+      host.checkoutFile( file, false );
+  }
+
+  public static void hijackFile( VirtualFile file ) throws VcsException
+  {
+    try {  ReadOnlyAttributeUtil.setReadOnlyAttribute( file, false );  }
+    catch( Exception e ) {  throw new VcsException( e );  }
   }
 
   public boolean shouldHijackFile( VirtualFile file )
   {
-      return host.getTransparentConfig().offline || !isElement( file);
+    return host.getTransparentConfig().offline || !isElement( file );
   }
 
   private boolean isElement( VirtualFile file )
   {
     ClearCaseFile ccFile = new ClearCaseFile( file, host.getClearCase() );
     return ccFile.isElement();
-  }
-
-  private void makeFileWritable(VirtualFile file) throws VcsException
-  {
-    if( shouldHijackFile( file ) )
-        hijackFile( file );
-    else
-        host.checkoutFile( file.getPresentableUrl(), false );
-  }
-
-  public static void hijackFile(VirtualFile file) throws VcsException {
-    try {
-      ReadOnlyAttributeUtil.setReadOnlyAttribute( file, false );
-//          new FileUtil().setFileWritability(file, true);
-    }
-    catch (Exception e) {
-        throw new VcsException(e);
-    }
   }
 }

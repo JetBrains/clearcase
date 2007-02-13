@@ -11,8 +11,8 @@ import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 
-// Referenced classes of package net.sourceforge.transparent.actions:
-//            SynchronousAction, ActionContext
+import java.util.ArrayList;
+import java.util.List;
 
 public class UndoCheckOutAction extends SynchronousAction
 {
@@ -23,7 +23,11 @@ public class UndoCheckOutAction extends SynchronousAction
 
   protected void perform( VirtualFile file, AnActionEvent e ) throws VcsException
   {
-    getHost( e ).undoCheckoutFile( file.getPath() );
+    List<VcsException> errors = new ArrayList<VcsException>();
+    getHost( e ).undoCheckoutFile( file, errors );
+
+    if( errors.size() > 0 )
+      throw errors.get( 0 );
   }
 
   protected String getActionName() {  return "Undo Checkout";   }

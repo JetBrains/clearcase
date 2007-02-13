@@ -10,6 +10,7 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.InvalidDataException;
 import com.intellij.openapi.util.JDOMExternalizable;
 import com.intellij.openapi.util.WriteExternalException;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
@@ -41,13 +42,16 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public static final Logger LOG = LogUtil.getLogger();
   @NonNls public static final String TEMPORARY_FILE_SUFFIX = ".deleteAndAdd";
   @NonNls public static final String CLEARTOOL_CMD = "cleartool";
+  @NonNls private static final String HIJACKED_EXT = ".hijacked";
 
   @NonNls private static final String PERSISTENCY_REMOVED_FILE_TAG = "ClearCasePersistencyRemovedFile";
   @NonNls private static final String PERSISTENCY_REMOVED_FOLDER_TAG = "ClearCasePersistencyRemovedFolder";
   @NonNls private static final String PERSISTENCY_RENAMED_FILE_TAG = "ClearCasePersistencyRenamedFile";
   @NonNls private static final String PERSISTENCY_NEW_FILE_TAG = "ClearCasePersistencyNewFile";
   @NonNls private static final String PATH_DELIMITER = "%%%";
-  @NonNls private static final String CCASE_VER_FILE_SIG = "*.keep";
+  @NonNls private static final String CCASE_KEEP_FILE_SIG = "*.keep";
+  @NonNls private static final String CCASE_KEEP_FILE_MID_SIG = "*.keep.*";
+  @NonNls private static final String CCASE_CONTRIB_FILE_SIG = "*.contrib";
 
   public HashSet<String> removedFiles;
   public HashSet<String> removedFolders;
@@ -166,7 +170,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     if (clearcase == null || !getTransparentConfig().implementation.equals(clearcase.getName()))
     {
       try {
-        debug("Changing Clearcase interface to " + getTransparentConfig().implementation);
         clearcase = new ClearCaseDecorator((ClearCase) Class.forName(getTransparentConfig().implementation).newInstance());
       } catch (Throwable e) {
         Messages.showMessageDialog( WindowManager.getInstance().suggestParentWindow(getProject()),
@@ -189,13 +192,19 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     String patterns = FileTypeManager.getInstance().getIgnoredFilesList();
     String newPattern = patterns;
 
-    if( patterns.indexOf(CCASE_VER_FILE_SIG) == -1 )
-      newPattern += (( newPattern.charAt( newPattern.length() - 1 ) == ';') ? "" : ";" ) + CCASE_VER_FILE_SIG;
+    if( patterns.indexOf(CCASE_KEEP_FILE_SIG) == -1 )
+      newPattern += (( newPattern.charAt( newPattern.length() - 1 ) == ';') ? "" : ";" ) + CCASE_KEEP_FILE_SIG;
+
+    if( patterns.indexOf(CCASE_KEEP_FILE_MID_SIG) == -1 )
+      newPattern += (( newPattern.charAt( newPattern.length() - 1 ) == ';') ? "" : ";" ) + CCASE_KEEP_FILE_MID_SIG;
+
+    if( patterns.indexOf(CCASE_CONTRIB_FILE_SIG) == -1 )
+      newPattern += (( newPattern.charAt( newPattern.length() - 1 ) == ';') ? "" : ";" ) + CCASE_CONTRIB_FILE_SIG;
 
     if( !newPattern.equals( patterns ))
     {
       final String newPat = newPattern;
-      ApplicationManager.getApplication().runWriteAction( new Runnable()
+      ApplicationManager.getApplication().invokeLater( new Runnable()
         { public void run() { FileTypeManager.getInstance().setIgnoredFilesList( newPat ); } }
       );
     }
@@ -229,148 +238,202 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public void add2NewFile( String path )      {  newFiles.add( path.toLowerCase() );  }
   public boolean containsNew( String path )   {  return newFiles.contains( path.toLowerCase() );   }
 
-  public static byte[] getFileContent(String path) throws VcsException {
-    debug("enter: getFileContent(" + path + ")");
-    return new byte[0];
+  private boolean isCheckInToUseHijack() {
+    return transparentConfig.offline || transparentConfig.checkInUseHijack;
   }
 
-  public void checkinFile( String path, Object parameters ) throws VcsException
-  {
-    debug("enter: checkinFile(" + path + ")");
 
-    try {
-      ClearCaseFile file = getFile(path);
-      file.checkIn((String) parameters, isCheckInToUseHijack());
-    } catch (Throwable e) {
-      handleException(e);
+  public void checkinFile( FilePath path, String comment, List<VcsException> errors )
+  {
+    checkinFile( path.getIOFile(), comment, errors );
+  }
+  public void checkinFile( File ioFile, String comment, List<VcsException> errors )
+  {
+    VirtualFile vFile = VcsUtil.getVirtualFile( ioFile );
+
+    try
+    {
+      FileStatusManager fsmgr = FileStatusManager.getInstance( myProject );
+      if( (fsmgr.getStatus( vFile ) == FileStatus.HIJACKED) && isCheckInToUseHijack() )
+      {
+        checkoutFile( ioFile, true, false, comment );
+      }
+      getClearCase().checkIn( ioFile, comment );
+
+    }
+    catch( Throwable e )
+    {
+      handleException( e, vFile, errors );
     }
   }
 
-  private boolean isCheckInToUseHijack() {
-      return transparentConfig.offline || transparentConfig.checkInUseHijack;
-  }
-
-  public boolean checkoutFile( String path, boolean keepHijacked ) throws VcsException
+  public boolean checkoutFile( File ioFile, boolean keepHijacked ) throws VcsException
   {
-      String comment = "";
-      if( myCheckoutOptions.getValue() )
-      {
-          CheckoutDialog dialog = new CheckoutDialog( getProject(), getConfiguration(),
-                                                      VcsUtil.getVirtualFile( path ) );
-          dialog.show();
-          if (dialog.getExitCode() == CheckoutDialog.CANCEL_EXIT_CODE) {
-              return false;
-          }
-          comment = dialog.getComment();
-      }
+    return checkoutFile( ioFile, keepHijacked, transparentConfig.checkoutReserved, "" );
+  }
+  public boolean checkoutFile( VirtualFile file, boolean keepHijacked ) throws VcsException
+  {
+    File ioFile = new File( file.getPath() );
+    return checkoutFile( ioFile, keepHijacked, transparentConfig.checkoutReserved, "" );
+  }
+  public boolean checkoutFile( File ioFile, boolean keepHijacked, boolean isReserved, String comment )
+  {
+    VirtualFile file = VcsUtil.getVirtualFile( ioFile );
+    if( myCheckoutOptions.getValue() )
+    {
+      CheckoutDialog dialog = new CheckoutDialog( getProject(), getConfiguration(), file );
+      dialog.show();
+      if( dialog.getExitCode() == CheckoutDialog.CANCEL_EXIT_CODE )
+        return false;
 
-      try {
-          ClearCaseFile file = getFile(path);
-          file.checkOut(transparentConfig.checkoutReserved, keepHijacked, comment);
-          refreshIDEA(file);
-          return file.isCheckedOut();
-      } catch (Throwable e) {
-          handleException(e);
-          return false;
-      }
+      comment = dialog.getComment();
+    }
+
+    File newFile = null;
+    if( keepHijacked )
+    {
+      newFile = new File( ioFile.getParentFile().getAbsolutePath(), ioFile.getName() + HIJACKED_EXT );
+      ioFile.renameTo( newFile );
+    }
+    getClearCase().checkOut( ioFile, isReserved, comment );
+    if( newFile != null )
+    {
+      ioFile.delete();
+      newFile.renameTo( ioFile );
+    }
+
+    refreshIdeaFile( file );
+    return true;
   }
 
-  public void undoCheckoutFile(String path) throws VcsException
+  public void undoCheckoutFile( VirtualFile vFile, List<VcsException> errors )
+  {
+    File ioFile = new File( vFile.getPath() );
+    undoCheckoutFile( vFile, ioFile, errors );
+  }
+
+  public void undoCheckoutFile( File file, List<VcsException> errors )
+  {
+    undoCheckoutFile( null, file, errors );
+  }
+
+  private void undoCheckoutFile( VirtualFile vFile, File ioFile, List<VcsException> errors )
   {
     try
     {
-      ClearCaseFile file = getFile( path );
-      file.undoCheckOut();
-      refreshIDEA( file );
+      getClearCase().undoCheckOut( ioFile );
+      if( vFile != null )
+        refreshIdeaFile( vFile );
+    }
+    catch( Throwable e )
+    {
+      handleException( e, vFile, errors );
+    }
+  }
+
+  public void addFile( VirtualFile file, @NonNls String comment, List<VcsException> errors )
+  {
+    File ioFile = new File( file.getPath() );
+    File ioParent = ioFile.getParentFile();
+    if( ioParent != null )
+    {
+      String parentComment = addToComment( comment, "Adding " + file.getName() );
+
+      if( StringUtil.isEmpty( comment ) )
+        comment = "Initial Checkin";
+
+      checkoutFile( ioParent, false, false, parentComment );
+      getClearCase().add( ioFile, comment);
+      getClearCase().checkIn( ioFile, comment);
+      checkinFile( ioParent, parentComment, errors );
+    }
+  }
+
+  public void removeFile( final File file, final String comment, final List<VcsException> errors )
+  {
+    try
+    {
+      Runnable action = new Runnable()
+      {
+        public void run()
+        {
+          //  We can remove only non-checkedout files???
+          Status status = getFileStatus( file );
+          if( status == Status.CHECKED_OUT )
+            undoCheckoutFile( file, errors );
+
+          File ioParent = file.getParentFile();
+          if( ioParent.exists() )
+          {
+            String deleteComment = "Deleting " + file.getName();
+            String parentComment = addToComment( comment, deleteComment );
+
+            checkoutFile( ioParent, false, false, parentComment );
+            getClearCase().delete( file, StringUtil.isNotEmpty( comment ) ? comment : deleteComment );
+            checkinFile( ioParent, parentComment, errors );
+          }
+        }
+      };
+      executeAndHandleOtherFileInTheWay( file, action );
     }
     catch (Throwable e)
     {
-        handleException(e);
+      handleException( e, (VirtualFile)null, errors );
     }
   }
 
-  public static void refreshIDEA( ClearCaseFile file )
+  public void renameAndCheckInFile( final File oldFile, final String newName,
+                                    String comment, final List<VcsException> errors )
   {
-    VirtualFile virtualFile = VcsUtil.getVirtualFile( file.getFile() );
-    if (virtualFile != null) {
-        virtualFile.refresh(true, false);
-    }
-  }
-
-  public void addFile(String parentPath, String fileName, Object parameters) throws VcsException
-  {
-    debug("enter: addFile(" + parentPath + "," + fileName + ")");
-
+    final File newFile = new File( oldFile.getParent(), newName );
     try
     {
-      ClearCaseFile file = new ClearCaseFile(new File(parentPath, fileName), getClearCase());
-      file.add((String) parameters, false);
-    }
-    catch (Throwable e) {  handleException(e);  }
-  }
+      @NonNls final String modComment = StringUtil.isEmpty(comment) ? "Renamed " + oldFile.getName() + " to " + newName : comment;
 
-  public void removeFile(String path, final Object parameters) throws VcsException
-  {
-    debug("enter: removeFile(" + path + ")");
+      Runnable action = new Runnable() {
+        public void run() {
+          File ioParent = oldFile.getParentFile();
+          if( ioParent.exists() )
+          {
+            renameFile(newFile, oldFile);
+            checkinFile( oldFile, modComment, errors );
 
-    try {
-      final File file = new File(path);
-      executeAndHandleOtherFileInTheWay(file, new Runnable() {
-          public void run() {
-              final ClearCaseFile ccFile = getFile(file);
-              ccFile.delete((String) parameters, false);
+            getClearCase().checkOut( ioParent, false, modComment );
+            getClearCase().move( oldFile, newFile, modComment );
+            getClearCase().checkIn( ioParent, modComment );
           }
-      });
-    } catch (Throwable e) {
-      handleException(e);
+        }
+      };
+      executeAndHandleOtherFileInTheWay(oldFile, action );
+    }
+    catch( Throwable e )
+    {
+      handleException( e, newFile, errors );
     }
   }
 
-  public void renameAndCheckInFile(final String path, final String newName, final Object parameters) throws VcsException
+  public void moveRenameAndCheckInFile(String filePath, String newParentPath, String newName,
+                                       String comment, final List<VcsException> errors )
   {
-    debug("enter: renameAndCheckInFile(" + path + ",\n" + "                            " + newName + ")");
-
-    try {
-      final File oldFile = new File(path);
-      final File newFile = new File(oldFile.getParent(), newName);
-
-      executeAndHandleOtherFileInTheWay(oldFile, new Runnable() {
-        public void run() {
-            renameFile(newFile, oldFile);
-            ClearCaseFile oldCCFile = getFile(oldFile);
-            if (!oldCCFile.isCheckedIn()) {
-               oldCCFile.checkIn((String) parameters, isCheckInToUseHijack());
-            }
-            oldCCFile.rename(newName, (String) parameters, false);
-        }
-      });
-    } catch (Throwable e) {  handleException(e);  }
-  }
-
-  public void moveRenameAndCheckInFile(String filePath, String newParentPath,
-                                       String newName, final Object parameters) throws VcsException
-  {
-    debug("enter: moveRenameAndCheckInFile(" + filePath + ",\n" + "                                " +
-          newParentPath + ",\n" + "                                " + newName + ")");
+    final File oldFile = new File(filePath);
+    final File newFile = new File(newParentPath, newName);
 
     try
     {
-      final File oldFile = new File(filePath);
-      final File newFile = new File(newParentPath, newName);
+      @NonNls final String modComment = StringUtil.isEmpty(comment) ? "Moved " + filePath + " to " + newName : comment;
 
-      executeAndHandleOtherFileInTheWay(oldFile, new Runnable() {
+      Runnable action = new Runnable(){
         public void run() {
-            renameFile(newFile, oldFile);
-            ClearCaseFile oldCCFile = getFile(oldFile);
-            ClearCaseFile newCCFile = getFile(newFile);
-            if (!oldCCFile.isCheckedIn()) {
-                oldCCFile.checkIn((String) parameters, isCheckInToUseHijack());
-            }
-            oldCCFile.move(newCCFile, (String) parameters, false);
+          renameFile(newFile, oldFile);
+          checkinFile( oldFile, modComment, errors );
+          getClearCase().move( oldFile, newFile, modComment );
         }
-      });
-    } catch (Throwable e) {
-        handleException(e);
+      };
+      executeAndHandleOtherFileInTheWay(oldFile, action );
+    }
+    catch( Throwable e )
+    {
+      handleException( e, newFile, errors );
     }
   }
 
@@ -415,43 +478,16 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     }
   }
 
-  public void addDirectory(String parentPath, String name, Object parameters) throws VcsException
-  {
-    debug("enter: addDirectory(" + parentPath + ",\n" + "                    " + name + ")");
 
-    addFile(parentPath, name, parameters);
-  }
+  public Status  getFileStatus( VirtualFile file ) {  return getFileStatus( new File(file.getPresentableUrl() ));  }
+  public Status  getFileStatus( File file )        {  return getClearCase().getStatus( file );  }
 
-  public void removeDirectory(String path, Object parameters) throws VcsException
-  {
-    removeFile( path, parameters );
-  }
-
-  public void renameDirectory(String path, String newName, Object parameters) throws VcsException
-  {
-    renameAndCheckInFile(path, newName, parameters);
-  }
-
-  public void moveAndRenameDirectory(String path, String newParentPath,
-                                     String name, Object parameters) throws VcsException
-  {
-    moveRenameAndCheckInFile(path, newParentPath, name, parameters);
-  }
-
-  public void moveDirectory(String path, String newParentPath, Object parameters) throws VcsException
-  {
-    debug("enter: moveDirectory(" + path + ",\n" + "                     " + newParentPath + ")");
-
-    moveRenameAndCheckInFile(path, newParentPath, getFile(path).getName(), parameters);
-  }
-
-
-  private ClearCaseFile getFile(String path)  {  return new ClearCaseFile(new File(path), getClearCase());  }
-  private ClearCaseFile getFile(File file)    {  return new ClearCaseFile(file, getClearCase());  }
-  public  Status        getFileStatus(VirtualFile file) {   return getClearCase().getStatus(new File(file.getPresentableUrl()));  }
-
-  public static void    updateFile( VirtualFile file ) {  updateFile( file.getPath() );  }
   public static String  updateFile( String fileName )  {  String err = cleartoolWithOutput( "update", fileName ); return err; }
+
+  public static void refreshIdeaFile( VirtualFile file )
+  {
+    file.refresh(true, false);
+  }
 
   public static void cleartool(@NonNls String... subcmd) throws ClearCaseException
   {
@@ -466,21 +502,22 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     return runner.getOutput();
   }
 
-  public static void debug(@NonNls String s)
+  private static void handleException( Throwable e, VirtualFile file, List<VcsException> errors )
   {
-    if( LOG.isDebugEnabled() ) LOG.debug( s );
+    VcsException vcsE = new VcsException( e );
+    vcsE.setVirtualFile( file );
+    errors.add( vcsE );
   }
 
-  private static void debug(Throwable e)
+  private static void handleException( Throwable e, File file, List<VcsException> errors )
   {
-    LOG.debug(e);
-    e.printStackTrace();
+    VirtualFile vFile = VcsUtil.getVirtualFile( file );
+    handleException( e, vFile, errors );
   }
 
-  private static void handleException(Throwable e) throws VcsException {
-//      Messages.showMessageDialog(_project, e.getMessage(), "Clearcase plugin error", Messages.getErrorIcon());
-    debug(e);
-    throw new VcsException(e);
+  private static String addToComment( String comment, @NonNls String addedText )
+  {
+    return StringUtil.isNotEmpty( comment ) ? comment + '\n' + addedText : addedText;
   }
 
   //

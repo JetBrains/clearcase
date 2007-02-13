@@ -10,7 +10,7 @@ import com.intellij.openapi.actionSystem.DataKeys;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
-import net.sourceforge.transparent.CheckOutHelper;
+import net.sourceforge.transparent.CCaseEditFileProvider;
 
 // Referenced classes of package net.sourceforge.transparent.actions:
 //            SynchronousAction, ActionContext
@@ -35,6 +35,7 @@ public class HijackAction extends SynchronousAction
 
   protected void perform( VirtualFile file, AnActionEvent e ) throws VcsException
   {
-    (new CheckOutHelper( getHost( e ) )).hijackFile( file );
+    CCaseEditFileProvider.hijackFile( file );
+//      (new CheckOutHelper( getHost( e ) )).hijackFile( file );
   }
 }
