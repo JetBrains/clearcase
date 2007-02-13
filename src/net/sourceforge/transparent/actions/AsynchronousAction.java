@@ -14,6 +14,15 @@ public abstract class AsynchronousAction extends FileAction
 {
   protected abstract void perform( VirtualFile virtualfile, AnActionEvent e ) throws VcsException;
 
+  public void update( AnActionEvent e )
+  {
+    super.update( e );
+    VirtualFile[] files = VcsUtil.getVirtualFiles( e );
+
+    if( e.getPresentation().isEnabled())
+      e.getPresentation().setEnabled( files.length == 1 );
+  }
+
   protected List<VcsException> runAction( AnActionEvent e )
   {
     VirtualFile file = VcsUtil.getOneVirtualFile( e );
