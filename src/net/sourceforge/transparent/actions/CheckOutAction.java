@@ -9,16 +9,18 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataKeys;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.FileStatus;
+import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
-import net.sourceforge.transparent.Status;
+import org.jetbrains.annotations.NonNls;
 
 // Referenced classes of package net.sourceforge.transparent.actions:
 //            SynchronousAction, ActionContext
 
 public class CheckOutAction extends SynchronousAction
 {
-  protected String getActionName() {  return "Check Out...";  }
+  @NonNls private final static String ACTION_NAME = "Check Out...";
+  protected String getActionName() {  return ACTION_NAME;  }
 
   public void update( AnActionEvent e )
   {
@@ -28,6 +30,11 @@ public class CheckOutAction extends SynchronousAction
       e.getPresentation().setEnabled( false );
   }
 
+  /**
+   * Take into account that Checkout command can be issued for a folder.
+   * So we need additionally check the state of the each file in particular
+   * in the <perrform> method.
+   */
   protected boolean isEnabled( VirtualFile file, AnActionEvent e )
   {
     FileStatus status = getFileStatus( e.getData( DataKeys.PROJECT ), file );
@@ -36,15 +43,19 @@ public class CheckOutAction extends SynchronousAction
 
   protected void perform( VirtualFile file, AnActionEvent e ) throws VcsException
   {
-    boolean keepHijack = false;
+    FileStatusManager mgr = FileStatusManager.getInstance( e.getData( DataKeys.PROJECT ) );
 
-    Status fileStatus = getHost( e ).getFileStatus( file );
-    if ( fileStatus == Status.HIJACKED )
+    FileStatus status = mgr.getStatus( file );
+    if( status == FileStatus.UNKNOWN )
+      return;
+
+    boolean keepHijack = false;
+    if( status == FileStatus.HIJACKED )
     {
       String message = "The file " + file.getPresentableUrl() + " has been hijacked. \n" +
                        "Would you like to use it as the checked-out file?\n" + "  If not it will be lost.";
       int answer = Messages.showYesNoDialog( message, "Checkout hijacked file", Messages.getQuestionIcon() );
-      keepHijack = answer == 0;
+      keepHijack = (answer == 0);
     }
 
     getHost( e ).checkoutFile( file, keepHijack );

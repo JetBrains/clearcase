@@ -7,19 +7,11 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
-import org.intellij.plugins.util.CommandUtil;
 
 import java.util.List;
 
 public abstract class SynchronousAction extends FileAction
 {
-  private CommandUtil commandUtil;
-
-  public SynchronousAction()
-  {
-    commandUtil = new CommandUtil();
-  }
-
   protected List<VcsException> runAction( AnActionEvent e )
   {
 //      e.isActionRecursive = isActionRecursive( e );
@@ -46,12 +38,10 @@ public abstract class SynchronousAction extends FileAction
   protected void execute( AnActionEvent e, List<VcsException> errors )
   {
     VirtualFile[] files = VcsUtil.getVirtualFiles( e );
-    for (VirtualFile file : files)
+    for( VirtualFile file : files )
     {
       if( isEnabled( file, e ) )
-      {
         executeOnFile( e, file, errors );
-      }
     }
   }
 
