@@ -9,7 +9,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataKeys;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.FileStatus;
-import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NonNls;
@@ -43,9 +42,7 @@ public class CheckOutAction extends SynchronousAction
 
   protected void perform( VirtualFile file, AnActionEvent e ) throws VcsException
   {
-    FileStatusManager mgr = FileStatusManager.getInstance( e.getData( DataKeys.PROJECT ) );
-
-    FileStatus status = mgr.getStatus( file );
+    FileStatus status = getFileStatus( e.getData( DataKeys.PROJECT ), file );
     if( status == FileStatus.UNKNOWN )
       return;
 
