@@ -66,7 +66,7 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
     progressIndicator.setText( PROGRESS_TEXT );
     FileDocumentManager.getInstance().saveAllDocuments();
 
-    TransparentConfiguration config = TransparentConfiguration.getInstance( project );
+    CCaseConfig config = CCaseConfig.getInstance( project );
     try
     {
       String out = TransparentVcs.cleartoolWithOutput( "update", config.clearcaseRoot );
@@ -92,7 +92,7 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
   private void parseOutput( String output, UpdatedFiles updatedFiles )
   {
     String sepSymbol = new String( new char[] { File.separatorChar } );
-    String rootPath = TransparentConfiguration.getInstance( project ).clearcaseRoot;
+    String rootPath = CCaseConfig.getInstance( project ).clearcaseRoot;
     if( !rootPath.endsWith( sepSymbol ) )
       rootPath += sepSymbol;
 

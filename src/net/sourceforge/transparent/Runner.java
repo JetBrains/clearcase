@@ -2,43 +2,42 @@ package net.sourceforge.transparent;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import org.jetbrains.annotations.NonNls;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-@NonNls
-public class Runner {
-   private static final Logger LOG = Logger.getInstance("#net.sourceforge.transparent.Runner");
-   private static final boolean DEBUG =    false;
-   private StringBuffer _buffer =       new StringBuffer();
-   private boolean successfull;
+public class Runner
+{
+  private static final Logger LOG = Logger.getInstance("#net.sourceforge.transparent.Runner");
+  private static final boolean DEBUG = false;
+  private StringBuffer _buffer = new StringBuffer();
+  private boolean successfull;
+  public String workingDir = null;
 
-   private class Consumer implements Runnable {
-      private BufferedReader _reader;
+  private class Consumer implements Runnable
+  {
+    private BufferedReader _reader;
 
-      public Consumer(InputStream inputStream) {
-         _reader = new BufferedReader(new InputStreamReader(inputStream));
+    public Consumer(InputStream inputStream) {
+       _reader = new BufferedReader(new InputStreamReader(inputStream));
+    }
+
+    public void run() {
+      try {
+        String line;
+        while ((line = _reader.readLine()) != null) {
+          if (DEBUG) System.out.println("      " + line);
+          if (_buffer.length() != 0) _buffer.append("\n"); // not theadsafe, but who cares
+          _buffer.append(line);
+        }
+      } catch (Exception e) {
+        throw new RuntimeException(e.getMessage());
       }
+    }
+  }
 
-      public void run() {
-         try {
-            String line;
-            while ((line = _reader.readLine()) != null) {
-               if (DEBUG) System.out.println("      " + line);
-               if (_buffer.length() != 0) _buffer.append("\n"); // not theadsafe, but who cares
-               _buffer.append(line);
-            }
-         } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-         }
-      }
-   }
-
+   /*
    private Process startProcess(String command) throws IOException, InterruptedException {
       if (DEBUG) System.out.println(command);
 
@@ -48,58 +47,71 @@ public class Runner {
       return process;
    }
 
-   private Process startProcess(String[] command) throws IOException, InterruptedException {
-      if (DEBUG) System.out.println(getCommandLine(command));
+   */
+  private Process startProcess(String[] command) throws IOException, InterruptedException
+  {
+    String cmdLine = getCommandLine( command );
+    if (DEBUG) System.out.println( cmdLine );
 
-      Process process = Runtime.getRuntime().exec(command);
-      consumeProcessOutputs(process);
+    Process process;
+    if( workingDir == null )
+      process = Runtime.getRuntime().exec( command );
+    else
+    {
+      File wrkDir = new File( workingDir );
+      if( !wrkDir.exists() || !wrkDir.isDirectory() )
+        throw new IOException( "Path " + workingDir + " is not a valid working directory for a command: " + cmdLine );
 
-      return process;
-   }
+      process = Runtime.getRuntime().exec( command, null, wrkDir );
+    }
 
-   public static String getCommandLine(String[] command) {
-      StringBuffer buf = new StringBuffer();
-      for (int i = 0; i < command.length; i++) {
-         buf.append(command[i]);
-         buf.append(" "       );
-      }
-      return buf.toString();
-   }
+    consumeProcessOutputs( process );
 
-   private void consumeProcessOutputs(Process process) throws InterruptedException {
-     Consumer outputConsumer = new Consumer(process.getInputStream());
-     Consumer errorConsumer =  new Consumer(process.getErrorStream());
-     final Future<?> errorDone = ApplicationManager.getApplication().executeOnPooledThread(errorConsumer);
-     outputConsumer.run();
-     try {
-       errorDone.get();
-     }
-     catch (ExecutionException e) {
-       LOG.error(e);
-     }
-   }
+    return process;
+  }
 
-   private boolean endProcess(Process process) throws InterruptedException {
+  public static String getCommandLine(String[] command)
+  {
+    StringBuffer buf = new StringBuffer();
+    for (String aCommand : command) {
+      buf.append(aCommand).append(" ");
+    }
+    return buf.toString();
+  }
+
+  private void consumeProcessOutputs(Process process) throws InterruptedException
+  {
+    Consumer outputConsumer = new Consumer(process.getInputStream());
+    Consumer errorConsumer =  new Consumer(process.getErrorStream());
+    final Future<?> errorDone = ApplicationManager.getApplication().executeOnPooledThread(errorConsumer);
+    outputConsumer.run();
+    try {
+      errorDone.get();
+    }
+    catch (ExecutionException e) {
+      LOG.error(e);
+    }
+  }
+
+   private static boolean endProcess(Process process) throws InterruptedException {
       return process.waitFor() == 0;
    }
 
-   public void runAsynchronously(String command) throws IOException {
+   public static void runAsynchronously(String command) throws IOException {
       Runtime.getRuntime().exec(command);
    }
 
-   public void runAsynchronously(String[] command) throws IOException {
+   public static void runAsynchronously(String[] command) throws IOException {
       Runtime.getRuntime().exec(command);
    }
 
-   public void run(String command) {
-      run(command, false);
-   }
+   public void run(String   command) {  run(command, false);   }
+   public void run(String[] command) {  run(command, false);   }
 
-   public void run(String[] command) {
-      run(command, false);
-   }
-
-   public boolean run(String command, boolean canFail) {
+   public boolean run(String command, boolean canFail)
+   {
+     return run( new String[] { command }, canFail );
+      /*
       try {
          Process process = startProcess(command);
 
@@ -115,9 +127,11 @@ public class Runner {
       } catch (Exception e) {
          throw new RuntimeException(e.getMessage());
       }
+      */
    }
 
-   public boolean run(String[] command, boolean canFail) {
+   public boolean run( String[] command, boolean canFail )
+   {
       try {
          Process process = startProcess(command);
 
@@ -135,10 +149,6 @@ public class Runner {
       }
    }
 
-   public boolean runCanFail(String command) {
-      return run(command, true);
-   }
-
    public boolean runCanFail(String[] command) {
       return run(command, true);
    }
@@ -152,7 +162,7 @@ public class Runner {
    }
 
    public static String[] getCommand(String exec, String[] args) {
-      String[] cmd = new String[args.length + 1];
+      String[] cmd = new String[ args.length + 1 ];
       cmd[0] = exec;
       System.arraycopy(args, 0, cmd, 1, args.length);
       return cmd;

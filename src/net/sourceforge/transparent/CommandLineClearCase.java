@@ -1,8 +1,3 @@
-// Decompiled by Jad v1.5.8e. Copyright 2001 Pavel Kouznetsov.
-// Jad home page: http://www.geocities.com/kpdus/jad.html
-// Decompiler options: packimports(3) braces fieldsfirst splitstr(nl) nonlb space 
-// Source File Name:   CommandLineClearCase.java
-
 package net.sourceforge.transparent;
 
 import com.intellij.openapi.diagnostic.Logger;
@@ -12,10 +7,6 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-
-// Referenced classes of package net.sourceforge.transparent:
-//            ClearCaseException, Runner, ClearCase, Status, 
-//            CheckedOutStatus
 
 public class CommandLineClearCase implements ClearCase
 {
@@ -113,10 +104,13 @@ public class CommandLineClearCase implements ClearCase
 
   public void cleartool( @NonNls String subcmd )
   {
+    cleartool( new String[] { "cleartool", subcmd } );
+    /*
     String cmd = "cleartool " + subcmd;
     LOG.debug( cmd );
     Runner runner = new Runner();
     runner.run( cmd );
+    */
   }
 
   public static void cleartool( @NonNls String[] subcmd ) {

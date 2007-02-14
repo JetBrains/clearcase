@@ -2,7 +2,6 @@ package net.sourceforge.transparent;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ProjectComponent;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
@@ -24,7 +23,6 @@ import com.intellij.openapi.wm.WindowManager;
 import com.intellij.util.containers.HashSet;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.actions.CheckoutDialog;
-import org.intellij.plugins.util.LogUtil;
 import org.jdom.Element;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -39,7 +37,6 @@ import java.util.List;
 
 public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDOMExternalizable
 {
-  public static final Logger LOG = LogUtil.getLogger();
   @NonNls public static final String TEMPORARY_FILE_SUFFIX = ".deleteAndAdd";
   @NonNls public static final String CLEARTOOL_CMD = "cleartool";
   @NonNls private static final String HIJACKED_EXT = ".hijacked";
@@ -53,13 +50,23 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   @NonNls private static final String CCASE_KEEP_FILE_MID_SIG = "*.keep.*";
   @NonNls private static final String CCASE_CONTRIB_FILE_SIG = "*.contrib";
 
+  @NonNls private static final String WRK_DIR_SIG = "Working directory view: ";
+  @NonNls private static final String PRINT_WORKING_VIEW_CMD = "pwv";
+  @NonNls private static final String LIST_VIEW_CMD = "lsview";
+  @NonNls private static final String LIST_VIEW_KEY1 = "-properties";
+  @NonNls private static final String LIST_VIEW_KEY2 = "-full";
+  @NonNls private static final String PROPERTIES_SIG = "Properties:";
+  @NonNls private static final String SNAPSHOT_SIG = "snapshot";
+  @NonNls private static final String DYNAMIC_SIG = "dynamic";
+
   public HashSet<String> removedFiles;
   public HashSet<String> removedFolders;
   private HashSet<String> newFiles;
   public HashMap<String, String> renamedFiles;
 
   private ClearCase clearcase;
-  private TransparentConfiguration transparentConfig;
+  private CCaseConfig myTransparentConfig;
+  private String   viewName;
 
   private CCaseCheckinEnvironment checkinEnvironment;
   private CCaseUpdateEnvironment updateEnvironment;
@@ -90,7 +97,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public Project getProject()       {  return myProject;   }
 
   public Configurable             getConfigurable() {  return new TransparentConfigurable( myProject );  }
-  public TransparentConfiguration getTransparentConfig()  {  return transparentConfig;   }
+  public CCaseConfig getTransparentConfig()  {  return myTransparentConfig;   }
   public UpdateEnvironment        getUpdateEnvironment()  {  return updateEnvironment;   }
   public ChangeProvider           getChangeProvider()     {  return changeProvider;      }
   public CheckinEnvironment       getCheckinEnvironment() {  return checkinEnvironment;  }
@@ -150,8 +157,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public void initTransparentConfiguration()
   {
-    transparentConfig = TransparentConfiguration.getInstance(myProject);
-    transparentConfig.addListener(new PropertyChangeListener() {
+    myTransparentConfig = CCaseConfig.getInstance(myProject);
+    myTransparentConfig.addListener(new PropertyChangeListener() {
         public void propertyChange(PropertyChangeEvent evt) {
             transparentConfigurationChanged();
         }
@@ -179,6 +186,60 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
         getTransparentConfig().implementation = CommandLineClearCase.class.getName();
         clearcase = new ClearCaseDecorator(new CommandLineClearCase());
+      }
+    }
+
+    if( StringUtil.isNotEmpty( getTransparentConfig().clearcaseRoot) )
+    {
+      try
+      {
+        viewName = extractViewName();
+        if( viewName != null )
+          extractViewType();
+      }
+      catch( ClearCaseException e )
+      {
+        //  It is possible that some configuration paths point to an invalid
+        //  or obsolete view. 
+      }
+    }
+  }
+
+  private String extractViewName()
+  {
+    Runner runner = new Runner();
+    runner.workingDir = getTransparentConfig().clearcaseRoot;
+    runner.run( new String[] { CLEARTOOL_CMD, PRINT_WORKING_VIEW_CMD }, true );
+    String output = runner.getOutput();
+
+    List<String> lines = StringUtil.split( output, "\n" );
+    for( String line : lines )
+    {
+      if( line.startsWith( WRK_DIR_SIG ) )
+      {
+        viewName = line.substring( WRK_DIR_SIG.length() ).trim();
+        break;
+      }
+    }
+    return viewName;
+  }
+
+  private void extractViewType()
+  {
+    String output = cleartoolWithOutput( LIST_VIEW_CMD, LIST_VIEW_KEY1, LIST_VIEW_KEY2, viewName );
+
+    List<String> lines = StringUtil.split( output, "\n" );
+    for( String line : lines )
+    {
+      if( line.indexOf( PROPERTIES_SIG ) != -1 )
+      {
+        if( line.indexOf( SNAPSHOT_SIG ) != -1 )
+          getTransparentConfig().setViewSnapshot();
+        else
+        if( line.indexOf( DYNAMIC_SIG ) != -1 )
+          getTransparentConfig().setViewDynamic();
+
+        break;
       }
     }
   }
@@ -239,7 +300,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public boolean containsNew( String path )   {  return newFiles.contains( path.toLowerCase() );   }
 
   private boolean isCheckInToUseHijack() {
-    return transparentConfig.offline || transparentConfig.checkInUseHijack;
+    return myTransparentConfig.offline || myTransparentConfig.checkInUseHijack;
   }
 
 
@@ -269,12 +330,12 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public boolean checkoutFile( File ioFile, boolean keepHijacked ) throws VcsException
   {
-    return checkoutFile( ioFile, keepHijacked, transparentConfig.checkoutReserved, "" );
+    return checkoutFile( ioFile, keepHijacked, myTransparentConfig.checkoutReserved, "" );
   }
   public boolean checkoutFile( VirtualFile file, boolean keepHijacked ) throws VcsException
   {
     File ioFile = new File( file.getPath() );
-    return checkoutFile( ioFile, keepHijacked, transparentConfig.checkoutReserved, "" );
+    return checkoutFile( ioFile, keepHijacked, myTransparentConfig.checkoutReserved, "" );
   }
   public boolean checkoutFile( File ioFile, boolean keepHijacked, boolean isReserved, String comment )
   {
@@ -491,7 +552,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public static void cleartool(@NonNls String... subcmd) throws ClearCaseException
   {
-    try { (new Runner()).runAsynchronously(Runner.getCommand( CLEARTOOL_CMD, subcmd )); }
+//    try { (new Runner()).runAsynchronously(Runner.getCommand( CLEARTOOL_CMD, subcmd )); }
+    try { Runner.runAsynchronously(Runner.getCommand( CLEARTOOL_CMD, subcmd )); }
     catch (IOException e) {  throw new ClearCaseException(e.getMessage());  }
   }
 
