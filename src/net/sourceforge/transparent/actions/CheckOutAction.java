@@ -22,21 +22,23 @@ public class CheckOutAction extends SynchronousAction
       e.getPresentation().setEnabled( false );
   }
 
-  /**
-   * Take into account that Checkout command can be issued for a folder.
-   * So we need additionally check the state of the each file in particular
-   * in the <perrform> method.
-   */
   protected boolean isEnabled( VirtualFile file, AnActionEvent e )
   {
     FileStatus status = getFileStatus( e.getData( DataKeys.PROJECT ), file );
+
+    //  NB: if invoked for a folder, the status is most often "NOT_CHANGED"
     return status == FileStatus.NOT_CHANGED || status == FileStatus.HIJACKED;
   }
 
   protected void perform( VirtualFile file, AnActionEvent e ) throws VcsException
   {
+    /**
+     * Take into account that Checkout command can be issued for a folder.
+     * So we need additionally check the state of the each file in particular
+     * in the <perform> method.
+     */
     FileStatus status = getFileStatus( e.getData( DataKeys.PROJECT ), file );
-    if( status == FileStatus.UNKNOWN )
+    if( status == FileStatus.UNKNOWN || status == FileStatus.MODIFIED )
       return;
 
     boolean keepHijack = false;
