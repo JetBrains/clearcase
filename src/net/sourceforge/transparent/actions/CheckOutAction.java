@@ -25,7 +25,7 @@ public class CheckOutAction extends SynchronousAction
   {
     super.update( e );
 
-    if ( getHost( e ).getTransparentConfig().offline )
+    if ( getHost( e ).getConfig().offline )
       e.getPresentation().setEnabled( false );
   }
 

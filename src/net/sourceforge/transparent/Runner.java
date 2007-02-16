@@ -2,6 +2,7 @@ package net.sourceforge.transparent;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import net.sourceforge.transparent.exceptions.ClearCaseException;
 
 import java.io.*;
 import java.util.concurrent.ExecutionException;

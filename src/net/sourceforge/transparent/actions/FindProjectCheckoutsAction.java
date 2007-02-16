@@ -14,6 +14,6 @@ public class FindProjectCheckoutsAction extends FindCheckoutsAction
 {
   protected String getTargetPath( TransparentVcs vcs, String filePath )
   {
-    return vcs.getTransparentConfig().clearcaseRoot;
+    return vcs.getConfig().clearcaseRoot;
   }
 }

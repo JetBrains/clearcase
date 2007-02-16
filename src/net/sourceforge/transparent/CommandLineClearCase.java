@@ -2,6 +2,7 @@ package net.sourceforge.transparent;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.text.StringUtil;
+import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.intellij.plugins.util.FileUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;

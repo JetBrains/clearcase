@@ -19,10 +19,11 @@ import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileListener;
-import com.intellij.openapi.wm.WindowManager;
 import com.intellij.util.containers.HashSet;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.actions.CheckoutDialog;
+import net.sourceforge.transparent.exceptions.ClearCaseException;
+import net.sourceforge.transparent.exceptions.ClearCaseNoServerException;
 import org.jdom.Element;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -65,7 +66,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public HashMap<String, String> renamedFiles;
 
   private ClearCase clearcase;
-  private CCaseConfig myTransparentConfig;
+  private CCaseConfig config;
   private String   viewName;
 
   private CCaseCheckinEnvironment checkinEnvironment;
@@ -96,13 +97,17 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public String getMenuItemText()   {  return super.getMenuItemText();  }
   public Project getProject()       {  return myProject;   }
 
-  public Configurable             getConfigurable() {  return new TransparentConfigurable( myProject );  }
-  public CCaseConfig getTransparentConfig()  {  return myTransparentConfig;   }
-  public UpdateEnvironment        getUpdateEnvironment()  {  return updateEnvironment;   }
-  public ChangeProvider           getChangeProvider()     {  return changeProvider;      }
-  public CheckinEnvironment       getCheckinEnvironment() {  return checkinEnvironment;  }
-  public EditFileProvider         getEditFileProvider()   {  return editProvider;        }
-  public VcsHistoryProvider       getVcsHistoryProvider() {  return historyProvider;     }
+  public Configurable         getConfigurable()       {  return new TransparentConfigurable( myProject );  }
+  public CCaseConfig          getConfig()             {  return config;   }
+  public ChangeProvider       getChangeProvider()     {  return changeProvider;      }
+  public CheckinEnvironment   getCheckinEnvironment() {  return checkinEnvironment;  }
+  public EditFileProvider     getEditFileProvider()   {  return editProvider;        }
+  public VcsHistoryProvider   getVcsHistoryProvider() {  return historyProvider;     }
+  public UpdateEnvironment    getUpdateEnvironment()
+  {
+    //  For dynamic views "Update project" action makes no sence.
+    return (config == null) || config.isViewDynamic() ? null : updateEnvironment;
+  }
 
   public VcsShowSettingOption      getCheckoutOptions()   {  return myCheckoutOptions;   }
   public VcsShowConfirmationOption getAddConfirmation()   {  return addConfirmation;     }
@@ -112,8 +117,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public void projectOpened()
   {
-    initTransparentConfiguration();
-
     changeProvider = new CCaseChangeProvider( myProject, this );
     updateEnvironment = new CCaseUpdateEnvironment( myProject );
     checkinEnvironment = new CCaseCheckinEnvironment( myProject, this );
@@ -137,6 +140,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
    */
   public void activate()
   {
+    initTransparentConfiguration();
+
     //  Control the appearance of project items so that we can easily
     //  track down potential changes in the repository.
     listener = new VFSListener( getProject(), this );
@@ -157,8 +162,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public void initTransparentConfiguration()
   {
-    myTransparentConfig = CCaseConfig.getInstance(myProject);
-    myTransparentConfig.addListener(new PropertyChangeListener() {
+    config = CCaseConfig.getInstance(myProject);
+    config.addListener(new PropertyChangeListener() {
         public void propertyChange(PropertyChangeEvent evt) {
             transparentConfigurationChanged();
         }
@@ -168,28 +173,33 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public void transparentConfigurationChanged()
   {
-    if (!getTransparentConfig().offline)
+    if (!getConfig().offline)
+    {
       resetClearCaseFromConfiguration();
+      extractViewProperties();
+    }
   }
 
   private void resetClearCaseFromConfiguration()
   {
-    if (clearcase == null || !getTransparentConfig().implementation.equals(clearcase.getName()))
+    if (clearcase == null || !getConfig().implementation.equals(clearcase.getName()))
     {
       try {
-        clearcase = new ClearCaseDecorator((ClearCase) Class.forName(getTransparentConfig().implementation).newInstance());
+        clearcase = new ClearCaseDecorator((ClearCase) Class.forName(getConfig().implementation).newInstance());
       } catch (Throwable e) {
-        Messages.showMessageDialog( WindowManager.getInstance().suggestParentWindow(getProject()),
-                                    e.getMessage() + "\nSelecting CommandLineImplementation instead",
-                                    "Error while selecting " + getTransparentConfig().implementation +
+        Messages.showMessageDialog( getProject(), e.getMessage() + "\nSelecting CommandLineImplementation instead",
+                                    "Error while selecting " + getConfig().implementation +
                                     "implementation", Messages.getErrorIcon());
 
-        getTransparentConfig().implementation = CommandLineClearCase.class.getName();
+        getConfig().implementation = CommandLineClearCase.class.getName();
         clearcase = new ClearCaseDecorator(new CommandLineClearCase());
       }
     }
+  }
 
-    if( StringUtil.isNotEmpty( getTransparentConfig().clearcaseRoot) )
+  private void extractViewProperties()
+  {
+    if( StringUtil.isNotEmpty( getConfig().clearcaseRoot) )
     {
       try
       {
@@ -197,20 +207,30 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
         if( viewName != null )
           extractViewType();
       }
+      catch( ClearCaseNoServerException e )
+      {
+        Messages.showMessageDialog( getProject(),
+                                    e.getMessage() + "\nServer is unavailable, ClearCase support is switched to offline mode",
+                                    "Server intialization failed", Messages.getErrorIcon());
+        config.offline = true;
+      }
       catch( ClearCaseException e )
       {
         //  It is possible that some configuration paths point to an invalid
-        //  or obsolete view. 
+        //  or obsolete view.
+        Messages.showMessageDialog( getProject(), "Plugin failed to initialize view:\n" + e.getMessage(),
+                                    "Server intialization failed", Messages.getErrorIcon());
       }
     }
   }
 
   private String extractViewName()
   {
-    Runner runner = new Runner();
-    runner.workingDir = getTransparentConfig().clearcaseRoot;
-    runner.run( new String[] { CLEARTOOL_CMD, PRINT_WORKING_VIEW_CMD }, true );
-    String output = runner.getOutput();
+    String output = cleartoolOnLocalPathWithOutput( CLEARTOOL_CMD, PRINT_WORKING_VIEW_CMD );
+    if( output.indexOf( "Server down" ) != -1 )
+    {
+      throw new ClearCaseNoServerException( output );
+    }
 
     List<String> lines = StringUtil.split( output, "\n" );
     for( String line : lines )
@@ -234,10 +254,10 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       if( line.indexOf( PROPERTIES_SIG ) != -1 )
       {
         if( line.indexOf( SNAPSHOT_SIG ) != -1 )
-          getTransparentConfig().setViewSnapshot();
+          getConfig().setViewSnapshot();
         else
         if( line.indexOf( DYNAMIC_SIG ) != -1 )
-          getTransparentConfig().setViewDynamic();
+          getConfig().setViewDynamic();
 
         break;
       }
@@ -300,7 +320,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public boolean containsNew( String path )   {  return newFiles.contains( path.toLowerCase() );   }
 
   private boolean isCheckInToUseHijack() {
-    return myTransparentConfig.offline || myTransparentConfig.checkInUseHijack;
+    return config.offline || config.checkInUseHijack;
   }
 
 
@@ -330,12 +350,12 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public boolean checkoutFile( File ioFile, boolean keepHijacked ) throws VcsException
   {
-    return checkoutFile( ioFile, keepHijacked, myTransparentConfig.checkoutReserved, "" );
+    return checkoutFile( ioFile, keepHijacked, config.checkoutReserved, "" );
   }
   public boolean checkoutFile( VirtualFile file, boolean keepHijacked ) throws VcsException
   {
     File ioFile = new File( file.getPath() );
-    return checkoutFile( ioFile, keepHijacked, myTransparentConfig.checkoutReserved, "" );
+    return checkoutFile( ioFile, keepHijacked, config.checkoutReserved, "" );
   }
   public boolean checkoutFile( File ioFile, boolean keepHijacked, boolean isReserved, String comment )
   {
@@ -552,8 +572,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public static void cleartool(@NonNls String... subcmd) throws ClearCaseException
   {
-//    try { (new Runner()).runAsynchronously(Runner.getCommand( CLEARTOOL_CMD, subcmd )); }
-    try { Runner.runAsynchronously(Runner.getCommand( CLEARTOOL_CMD, subcmd )); }
+    try { Runner.runAsynchronously( Runner.getCommand( CLEARTOOL_CMD, subcmd ) ); }
     catch (IOException e) {  throw new ClearCaseException(e.getMessage());  }
   }
 
@@ -561,6 +580,14 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   {
     Runner runner = new Runner();
     runner.run( Runner.getCommand( CLEARTOOL_CMD, subcmd ) );
+    return runner.getOutput();
+  }
+
+  public String cleartoolOnLocalPathWithOutput(@NonNls String... subcmd) throws ClearCaseException
+  {
+    Runner runner = new Runner();
+    runner.workingDir = getConfig().clearcaseRoot;
+    runner.run( Runner.getCommand( CLEARTOOL_CMD, subcmd ), true );
     return runner.getOutput();
   }
 

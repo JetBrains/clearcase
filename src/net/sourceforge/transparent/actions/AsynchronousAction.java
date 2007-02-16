@@ -4,8 +4,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
-import net.sourceforge.transparent.ClearCaseException;
 import net.sourceforge.transparent.ClearCaseFile;
+import net.sourceforge.transparent.exceptions.ClearCaseException;
 
 import java.util.ArrayList;
 import java.util.List;
