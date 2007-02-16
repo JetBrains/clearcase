@@ -90,8 +90,14 @@ public class CCaseChangeProvider implements ChangeProvider
     }
     catch( ClearCaseException e )
     {
-      final String message = FAIL_2_CONNECT_MSG + e.getMessage();
-      ApplicationManager.getApplication().invokeLater( new Runnable() { public void run() { VcsUtil.showErrorMessage( project, message, FAIL_2_CONNECT_TITLE ); } });
+      @NonNls String message = FAIL_2_CONNECT_MSG + e.getMessage();
+      if( TransparentVcs.isServerDownMessage( e.getMessage() ))
+      {
+        message += "\n\nSwitching to the offline mode";
+        host.getConfig().offline = true;
+      }
+      final String msg = message;
+      ApplicationManager.getApplication().invokeLater( new Runnable() { public void run() { VcsUtil.showErrorMessage( project, msg, FAIL_2_CONNECT_TITLE ); } });
     }
   }
 

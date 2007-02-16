@@ -227,7 +227,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   private String extractViewName()
   {
     String output = cleartoolOnLocalPathWithOutput( CLEARTOOL_CMD, PRINT_WORKING_VIEW_CMD );
-    if( output.indexOf( "Server down" ) != -1 )
+    if( isServerDownMessage( output ) )
     {
       throw new ClearCaseNoServerException( output );
     }
@@ -607,6 +607,15 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   private static String addToComment( String comment, @NonNls String addedText )
   {
     return StringUtil.isNotEmpty( comment ) ? comment + '\n' + addedText : addedText;
+  }
+
+  public static boolean isServerDownMessage( String msg )
+  {
+    @NonNls final String msgSig1 = "albd_contact call failed";
+    @NonNls final String msgSig2 = "Unable to connect albd_server";
+    @NonNls final String msgSig3 = "can not contact license server";
+
+    return ( msg.indexOf( msgSig1 ) != -1 ) || ( msg.indexOf( msgSig2 ) != -1 ) || ( msg.indexOf( msgSig3 ) != -1 ); 
   }
 
   //
