@@ -1,8 +1,3 @@
-// Decompiled by Jad v1.5.8e. Copyright 2001 Pavel Kouznetsov.
-// Jad home page: http://www.geocities.com/kpdus/jad.html
-// Decompiler options: packimports(3) braces fieldsfirst splitstr(nl) nonlb space 
-// Source File Name:   CheckOutAction.java
-
 package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -13,12 +8,10 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NonNls;
 
-// Referenced classes of package net.sourceforge.transparent.actions:
-//            SynchronousAction, ActionContext
-
 public class CheckOutAction extends SynchronousAction
 {
   @NonNls private final static String ACTION_NAME = "Check Out...";
+  
   protected String getActionName() {  return ACTION_NAME;  }
 
   public void update( AnActionEvent e )

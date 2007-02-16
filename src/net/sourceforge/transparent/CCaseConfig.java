@@ -50,8 +50,8 @@ public class CCaseConfig implements ListenerNotifier, JDOMExternalizable, Projec
   public boolean isViewSnapshot()  {  return lastViewType == SNAPSHOT;  }
   public boolean isViewDynamic()   {  return lastViewType == DYNAMIC;  }
 
-  private void logConfig() {
-    LOG.debug( "##### Loading " + TransparentVcs.class.getName() + " version " + new Version().getVersion() + "###########");
+  private void logConfig()
+  {
     LOG.debug( "#####    implementation        = " + implementation );
     LOG.debug( "#####    clearcaseRoot         = " + clearcaseRoot );
     LOG.debug( "#####    checkoutReserved      = " + checkoutReserved );

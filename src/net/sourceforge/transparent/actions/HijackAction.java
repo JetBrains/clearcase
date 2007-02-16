@@ -1,8 +1,3 @@
-// Decompiled by Jad v1.5.8e. Copyright 2001 Pavel Kouznetsov.
-// Jad home page: http://www.geocities.com/kpdus/jad.html
-// Decompiler options: packimports(3) braces fieldsfirst splitstr(nl) nonlb space 
-// Source File Name:   HijackAction.java
-
 package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -11,13 +6,13 @@ import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.sourceforge.transparent.CCaseEditFileProvider;
-
-// Referenced classes of package net.sourceforge.transparent.actions:
-//            SynchronousAction, ActionContext
+import org.jetbrains.annotations.NonNls;
 
 public class HijackAction extends SynchronousAction
 {
-  protected String getActionName() {  return "Hijack File";  }
+  @NonNls private final static String ACTION_NAME = "Hijack File";
+
+  protected String getActionName() {  return ACTION_NAME;  }
 
   public void update( AnActionEvent e )
   {
@@ -36,6 +31,5 @@ public class HijackAction extends SynchronousAction
   protected void perform( VirtualFile file, AnActionEvent e ) throws VcsException
   {
     CCaseEditFileProvider.hijackFile( file );
-//      (new CheckOutHelper( getHost( e ) )).hijackFile( file );
   }
 }
