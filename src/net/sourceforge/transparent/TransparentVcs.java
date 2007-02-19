@@ -40,7 +40,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 {
   @NonNls public static final String TEMPORARY_FILE_SUFFIX = ".deleteAndAdd";
   @NonNls public static final String CLEARTOOL_CMD = "cleartool";
-  @NonNls private static final String HIJACKED_EXT = ".hijacked";
 
   @NonNls private static final String PERSISTENCY_REMOVED_FILE_TAG = "ClearCasePersistencyRemovedFile";
   @NonNls private static final String PERSISTENCY_REMOVED_FOLDER_TAG = "ClearCasePersistencyRemovedFolder";
@@ -50,15 +49,19 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   @NonNls private static final String CCASE_KEEP_FILE_SIG = "*.keep";
   @NonNls private static final String CCASE_KEEP_FILE_MID_SIG = "*.keep.*";
   @NonNls private static final String CCASE_CONTRIB_FILE_SIG = "*.contrib";
+  @NonNls private static final String HIJACKED_EXT = ".hijacked";
 
-  @NonNls private static final String WRK_DIR_SIG = "Working directory view: ";
-  @NonNls private static final String PRINT_WORKING_VIEW_CMD = "pwv";
   @NonNls private static final String LIST_VIEW_CMD = "lsview";
-  @NonNls private static final String LIST_VIEW_KEY1 = "-properties";
-  @NonNls private static final String LIST_VIEW_KEY2 = "-full";
+  @NonNls private static final String CURRENT_VIEW_SWITCH = "-cview";
+  @NonNls private static final String PROP_SWITCH = "-properties";
+  @NonNls private static final String FULL_SWITCH = "-full";
   @NonNls private static final String PROPERTIES_SIG = "Properties:";
   @NonNls private static final String SNAPSHOT_SIG = "snapshot";
   @NonNls private static final String DYNAMIC_SIG = "dynamic";
+
+  @NonNls private static final String INIT_FAILED_TITLE = "Server intialization failed";
+  @NonNls private static final String SERVER_UNAVAILABLE_MESSAGE = "\nServer is unavailable, ClearCase support is switched to offline mode";
+  @NonNls private static final String FAILED_TO_INIT_VIEW_MESSAGE = "Plugin failed to initialize view:\n";
 
   public HashSet<String> removedFiles;
   public HashSet<String> removedFolders;
@@ -67,7 +70,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   private ClearCase clearcase;
   private CCaseConfig config;
-  private String   viewName;
 
   private CCaseCheckinEnvironment checkinEnvironment;
   private CCaseUpdateEnvironment updateEnvironment;
@@ -197,56 +199,41 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     }
   }
 
+  /**
+   * Take the local associated root for the view, issue the command
+   * "cleartool lsview - cview" from the working folder equals to that root.
+   */
   private void extractViewProperties()
   {
     if( StringUtil.isNotEmpty( getConfig().clearcaseRoot) )
     {
       try
       {
-        viewName = extractViewName();
-        if( viewName != null )
-          extractViewType();
+         extractViewType();
       }
       catch( ClearCaseNoServerException e )
       {
-        Messages.showMessageDialog( getProject(),
-                                    e.getMessage() + "\nServer is unavailable, ClearCase support is switched to offline mode",
-                                    "Server intialization failed", Messages.getErrorIcon());
+        Messages.showMessageDialog( getProject(), e.getMessage() + SERVER_UNAVAILABLE_MESSAGE,
+                                    INIT_FAILED_TITLE, Messages.getErrorIcon());
         config.offline = true;
       }
       catch( ClearCaseException e )
       {
         //  It is possible that some configuration paths point to an invalid
         //  or obsolete view.
-        Messages.showMessageDialog( getProject(), "Plugin failed to initialize view:\n" + e.getMessage(),
-                                    "Server intialization failed", Messages.getErrorIcon());
+        Messages.showMessageDialog( getProject(), FAILED_TO_INIT_VIEW_MESSAGE + e.getMessage(),
+                                    INIT_FAILED_TITLE, Messages.getErrorIcon());
       }
     }
   }
 
-  private String extractViewName()
+  private void extractViewType() throws ClearCaseNoServerException
   {
-    String output = cleartoolOnLocalPathWithOutput( CLEARTOOL_CMD, PRINT_WORKING_VIEW_CMD );
+    String output = cleartoolOnLocalPathWithOutput( CLEARTOOL_CMD, LIST_VIEW_CMD, CURRENT_VIEW_SWITCH, PROP_SWITCH, FULL_SWITCH );
     if( isServerDownMessage( output ) )
     {
       throw new ClearCaseNoServerException( output );
     }
-
-    List<String> lines = StringUtil.split( output, "\n" );
-    for( String line : lines )
-    {
-      if( line.startsWith( WRK_DIR_SIG ) )
-      {
-        viewName = line.substring( WRK_DIR_SIG.length() ).trim();
-        break;
-      }
-    }
-    return viewName;
-  }
-
-  private void extractViewType()
-  {
-    String output = cleartoolWithOutput( LIST_VIEW_CMD, LIST_VIEW_KEY1, LIST_VIEW_KEY2, viewName );
 
     List<String> lines = StringUtil.split( output, "\n" );
     for( String line : lines )
