@@ -3,25 +3,28 @@ package net.sourceforge.transparent.actions;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataKeys;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.localVcs.LvcsAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FileStatus;
+import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
+import com.intellij.openapi.vcs.update.FileGroup;
+import com.intellij.openapi.vcs.update.UpdatedFiles;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.sourceforge.transparent.TransparentVcs;
-import org.intellij.plugins.util.LogUtil;
+import org.jetbrains.annotations.NonNls;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public abstract class VcsAction extends AnAction
 {
-  public static final Logger LOG = LogUtil.getLogger();
+  @NonNls private final static String GROUP_NAME_ID = "OPERATION_FAIL";
+  @NonNls private final static String GROUP_TITLE = "Operation Failed";
 
   public void update( AnActionEvent e )
   {
@@ -37,11 +40,22 @@ public abstract class VcsAction extends AnAction
 
   public void actionPerformed( AnActionEvent e )
   {
+    Project project = e.getData( DataKeys.PROJECT );
     FileDocumentManager.getInstance().saveAllDocuments();
-    List<VcsException> list = runAction( e );
-    if( list.size() > 0 )
+    List<VcsException> errors = runAction( e );
+
+    if( errors.size() > 0 )
     {
-      Messages.showErrorDialog( list.get( 0 ).getLocalizedMessage(), "Error" );
+      UpdatedFiles updatedFiles = UpdatedFiles.create();
+      updatedFiles.registerGroup( new FileGroup( GROUP_TITLE, GROUP_TITLE, false, GROUP_NAME_ID, true ));
+
+      for( VcsException exc : errors )
+      {
+        updatedFiles.getGroupById( GROUP_NAME_ID ).add( exc.getVirtualFile().getPath() );
+      }
+      ProjectLevelVcsManager.getInstance( project ).showProjectOperationInfo( updatedFiles, "Operation Failed on Files:" );
+
+      Messages.showErrorDialog( project, "One or more errors occured during operation ", GROUP_TITLE );
     }
   }
 
