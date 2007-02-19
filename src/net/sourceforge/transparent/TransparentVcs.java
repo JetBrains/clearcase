@@ -63,6 +63,10 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   @NonNls private static final String SERVER_UNAVAILABLE_MESSAGE = "\nServer is unavailable, ClearCase support is switched to offline mode";
   @NonNls private static final String FAILED_TO_INIT_VIEW_MESSAGE = "Plugin failed to initialize view:\n";
 
+  //  Resolve the case when parent folder was already checked out by
+  //  the presence of this substring in the error message.
+  @NonNls private static final String ALREADY_CHECKEDOUT_SIG = "already checked out";
+
   public HashSet<String> removedFiles;
   public HashSet<String> removedFolders;
   private HashSet<String> newFiles;
@@ -344,7 +348,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     File ioFile = new File( file.getPath() );
     return checkoutFile( ioFile, keepHijacked, config.checkoutReserved, "" );
   }
-  public boolean checkoutFile( File ioFile, boolean keepHijacked, boolean isReserved, String comment )
+  public boolean checkoutFile( File ioFile, boolean keepHijacked, boolean isReserved, String comment ) throws VcsException
   {
     VirtualFile file = VcsUtil.getVirtualFile( ioFile );
     if( myCheckoutOptions.getValue() )
@@ -410,10 +414,28 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       if( StringUtil.isEmpty( comment ) )
         comment = "Initial Checkin";
 
-      checkoutFile( ioParent, false, false, parentComment );
-      getClearCase().add( ioFile, comment);
-      getClearCase().checkIn( ioFile, comment);
-      checkinFile( ioParent, parentComment, errors );
+      VcsException error = tryToCheckout( ioParent, false, parentComment );
+      if( error != null )
+      {
+        error.setVirtualFile( file );
+        errors.add( error );
+        return;
+      }
+
+      //  All other exceptions are currently non-workaroundable and
+      //  cause the complete operation failure.
+      try
+      {
+        getClearCase().add( ioFile, comment);
+        getClearCase().checkIn( ioFile, comment);
+        getClearCase().checkIn( ioParent, parentComment );
+      }
+      catch( ClearCaseException ccExc )
+      {
+        VcsException e = new VcsException( ccExc.getMessage() );
+        e.setVirtualFile( file );
+        errors.add( e );
+      }
     }
   }
 
@@ -436,9 +458,26 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
             String deleteComment = "Deleting " + file.getName();
             String parentComment = addToComment( comment, deleteComment );
 
-            checkoutFile( ioParent, false, false, parentComment );
-            getClearCase().delete( file, StringUtil.isNotEmpty( comment ) ? comment : deleteComment );
-            checkinFile( ioParent, parentComment, errors );
+
+            VcsException error = tryToCheckout( ioParent, false, parentComment );
+            if( error != null )
+            {
+              errors.add( error );
+              return;
+            }
+
+            //  All other exceptions are currently non-workaroundable and
+            //  cause the complete operation failure.
+            try
+            {
+              getClearCase().delete( file, StringUtil.isNotEmpty( comment ) ? comment : deleteComment );
+              getClearCase().checkIn( ioParent, parentComment );
+            }
+            catch( ClearCaseException ccExc )
+            {
+              VcsException e = new VcsException( ccExc.getMessage() );
+              errors.add( e );
+            }
           }
         }
       };
@@ -546,11 +585,33 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     }
   }
 
+  /**
+   * It may appear that parent folder was already checked out - either
+   * manually or as the result of the previously failed operation.
+   * Ignore the error "... is already checked out..." and store all others. 
+   */
+  private VcsException tryToCheckout( File file, boolean isReserved, String comment )
+  {
+    VcsException error = null;
+    try
+    {
+      getClearCase().checkOut( file, isReserved, comment );
+    }
+    catch( ClearCaseException ccExc )
+    {
+      String msg = ccExc.getMessage();
+      if( msg.indexOf( ALREADY_CHECKEDOUT_SIG ) == - 1 )
+      {
+        error = new VcsException( msg );
+      }
+    }
+    return error;
+  }
 
   public Status  getFileStatus( VirtualFile file ) {  return getFileStatus( new File(file.getPresentableUrl() ));  }
   public Status  getFileStatus( File file )        {  return getClearCase().getStatus( file );  }
 
-  public static String  updateFile( String fileName )  {  String err = cleartoolWithOutput( "update", fileName ); return err; }
+  public static String  updateFile( String fileName )  {  return cleartoolWithOutput( "update", fileName );  }
 
   public static void refreshIdeaFile( VirtualFile file )
   {
