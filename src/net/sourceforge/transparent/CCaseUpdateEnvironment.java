@@ -78,7 +78,7 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
       //  Correctly process the case when "Update Project" is done over the
       //  dynamic view (only snapshot views can handle this operation).
       if( e.getMessage().indexOf( ERROR_MSG_SIG ) != -1 )
-        errors.add( new VcsException( "You can not update a dynamic view" ) );
+        errors.add( new VcsException( "You can not update a dynamic view: " + e.getMessage() ) );
       else
         errors.add( new VcsException( "Update failed with message: " + e.getMessage() ) );
     }
