@@ -14,16 +14,12 @@ import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.changes.*;
-import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
-import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 
@@ -329,13 +325,13 @@ public class CCaseChangeProvider implements ChangeProvider
     for( String path : filesChanged )
     {
       final FilePath fp = VcsUtil.getFilePath( path );
-      builder.processChange( new Change( new CCaseRevision( fp, project ), new CurrentContentRevision( fp )));
+      builder.processChange( new Change( new CCaseContentRevision(host, fp, project ), new CurrentContentRevision( fp )));
     }
 
     for( String path : filesHijacked )
     {
       final FilePath fp = VcsUtil.getFilePath( path );
-      builder.processChange( new Change( new CCaseRevision( fp, project ), new CurrentContentRevision( fp ), FileStatus.HIJACKED ));
+      builder.processChange( new Change( new CCaseContentRevision(host, fp, project ), new CurrentContentRevision( fp ), FileStatus.HIJACKED ));
     }
   }
 
@@ -394,126 +390,5 @@ public class CCaseChangeProvider implements ChangeProvider
 //         !config.isFileExcluded( file.getName() );
 //         && regularFileFilter.accept(file)
 //           VssUtil.isUnderVss( file, project ) &&
-  }
-
-  private class CCaseRevision implements ContentRevision
-  {
-    @NonNls private static final String TMP_FILE_NAME = "idea_ccase";
-
-    private VirtualFile file;
-    private FilePath    revisionPath;
-    private Project     project;
-    private String      myServerContent;
-
-    public CCaseRevision( FilePath path, Project proj )
-    {
-      revisionPath = path;
-      project = proj;
-
-      file = path.getVirtualFile();
-    }
-
-    @NotNull public VcsRevisionNumber getRevisionNumber()  {  return VcsRevisionNumber.NULL;   }
-    @NotNull public FilePath getFile()                     {  return revisionPath; }
-
-    public String getContent()
-    {
-      if( myServerContent == null )
-        myServerContent = getServerContent();
-
-      return myServerContent;
-    }
-
-    private String getServerContent()
-    {
-      @NonNls final String TITLE = "Error";
-      @NonNls final String EXT = ".tmp";
-      String content = "";
-
-      //  For files which are in the project but reside outside the repository
-      //  root their base revision version content is not defined (NULL).
-
-      if( host.fileIsUnderVcs( file ))
-      {
-        try
-        {
-          //-------------------------------------------------------------------
-          //  Since CCase does not allow us to get the latest content of a file
-          //  from the repository, we need to get the VERSION string which characterizes
-          //  this latest (or any other) version.
-          //  Using this version string we can construct actual request to the
-          //  "Get" command:
-          //  "get -to <dest_file> <repository_file>@@<version>"
-          //-------------------------------------------------------------------
-          
-          File tmpFile = File.createTempFile( TMP_FILE_NAME, EXT );
-          tmpFile.deleteOnExit();
-          File tmpDir = tmpFile.getParentFile();
-          File myTmpFile = new File( tmpDir, Long.toString( new Date().getTime()) );
-
-          String out = TransparentVcs.cleartoolWithOutput( "describe", file.getPath() );
-          String version = parseLastRepositoryVersion( out );
-          if( version != null )
-          {
-            final String out2 = TransparentVcs.cleartoolWithOutput( "get", "-to", myTmpFile.getPath(), file.getPath() + "@@" + version );
-
-            //  We expect that properly finished command produce no (error or
-            //  warning) output.
-            if( out2.length() > 0 )
-            {
-              ApplicationManager.getApplication().invokeLater( new Runnable() { public void run() { VcsUtil.showErrorMessage( project, out2, TITLE ); } });
-            }
-            else
-            {
-              content = VcsUtil.getFileContent( myTmpFile );
-              myTmpFile.delete();
-            }
-          }
-        }
-        catch( Exception e )
-        {
-          VcsUtil.showErrorMessage( project, e.getMessage(), TITLE );
-        }
-      }
-
-      return content;
-    }
-
-    //-------------------------------------------------------------------------
-    //  The sample format of the "DESCRIBE" command output is as follows below:
-    //  --
-    //  version "Foo22.java@@\main\p1_Integration\lloix_p1\CHECKEDOUT" from \main\p1_Integration\lloix_p1\0 (unreserved)
-    //    checked out 19-Jan-07.12:53:23 by lloix.Domain Users@greYWolf
-    //    by view: lloix_IrinaVobProjects ("GREYWOLF:D:\Projects\Test Projects\cc-tut\lloix_snapview2\lloix_IrinaVobProjects.vws")
-    //    "sss"
-    //    Element Protection:
-    //      User : LABS\Irina.Petrovskaya : r--
-    //      Group: LABS\Domain Users : r--
-    //      Other:          : r--
-    //    element type: text_file
-    //    predecessor version: \main\p1_Integration\lloix_p1\0
-    //    Attached activities:
-    //      activity:Added@\irinaVOB  "Test all operations in Cleartool mode"
-    //  --
-    //  In order to retrieve the latest version in the repository, we seek for
-    //  string "predecessor version:" in this log and extract the version string
-    //  in the CCase format.
-    //-------------------------------------------------------------------------
-    private String parseLastRepositoryVersion( String text )
-    {
-      @NonNls final String SIG = "predecessor version:";
-      String version = null;
-      String[] lines = text.split( "\n" );
-      for( String line : lines )
-      {
-        int index = line.indexOf( SIG );
-        if( index != -1 )
-        {
-          version = line.substring( index + SIG.length() ).trim();
-          break;
-        }
-      }
-      return version;
-    }
   }
 }
