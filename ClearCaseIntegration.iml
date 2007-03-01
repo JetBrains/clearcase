@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module relativePaths="true" type="JAVA_MODULE" version="4">
   <component name="ModuleRootManager" />
-  <component inherit-compiler-output="true" name="NewModuleRootManager">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
     <content url="file://$MODULE_DIR$">
-      <sourceFolder isTestSource="false" url="file://$MODULE_DIR$/src" />
+      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
-    <orderEntry forTests="false" type="sourceFolder" />
-    <orderEntry level="project" name="Log4J" type="library" />
-    <orderEntry level="project" name="Velocity" type="library" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="Log4J" level="project" />
+    <orderEntry type="library" name="Velocity" level="project" />
     <orderEntry type="module-library">
       <library>
         <CLASSES>
@@ -37,7 +37,7 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry module-name="openapi" type="module" />
+    <orderEntry type="module" module-name="openapi" />
     <orderEntry type="module-library">
       <library>
         <CLASSES>
