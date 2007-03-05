@@ -662,7 +662,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public static boolean isServerDownMessage( String msg )
   {
     System.out.printf( "--- Analyzing view type ---" );
-    System.out.printf( "msg" );
+    System.out.printf( msg );
     System.out.printf( "--- Analyzing view type ---" );
 
     @NonNls final String msgSig1 = "albd_contact call failed";
