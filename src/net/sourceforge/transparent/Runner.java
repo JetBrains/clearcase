@@ -11,6 +11,7 @@ import java.util.concurrent.Future;
 public class Runner
 {
   private static final Logger LOG = Logger.getInstance("#net.sourceforge.transparent.Runner");
+
   private static final boolean DEBUG = false;
   private StringBuffer _buffer = new StringBuffer();
   private boolean successfull;
@@ -38,21 +39,9 @@ public class Runner
     }
   }
 
-   /*
-   private Process startProcess(String command) throws IOException, InterruptedException {
-      if (DEBUG) System.out.println(command);
-
-      Process process = Runtime.getRuntime().exec(command);
-      consumeProcessOutputs(process);
-
-      return process;
-   }
-
-   */
-  private Process startProcess(String[] command) throws IOException, InterruptedException
+  private Process startProcess( String[] command ) throws IOException, InterruptedException
   {
     String cmdLine = getCommandLine( command );
-    if (DEBUG) System.out.println( cmdLine );
 
     Process process;
     if( workingDir == null )
@@ -99,40 +88,25 @@ public class Runner
    }
 
    public static void runAsynchronously(String command) throws IOException {
-      Runtime.getRuntime().exec(command);
+      Runtime.getRuntime().exec( command );
    }
 
    public static void runAsynchronously(String[] command) throws IOException {
-      Runtime.getRuntime().exec(command);
+      Runtime.getRuntime().exec( command );
    }
 
-   public void run(String   command) {  run(command, false);   }
-   public void run(String[] command) {  run(command, false);   }
+   public void run( String   command ) {  run( command, false );   }
+   public void run( String[] command ) {  run( command, false );   }
 
-   public boolean run(String command, boolean canFail)
+   public boolean run( String command, boolean canFail )
    {
      return run( new String[] { command }, canFail );
-      /*
-      try {
-         Process process = startProcess(command);
-
-         successfull = endProcess(process);
-         if (successfull) {
-            return true;
-         } else {
-            if (!canFail) throw new ClearCaseException("Error executing " + command + " : " + _buffer);
-            return false;
-         }
-      } catch (RuntimeException e) {
-         throw e;
-      } catch (Exception e) {
-         throw new RuntimeException(e.getMessage());
-      }
-      */
    }
 
    public boolean run( String[] command, boolean canFail )
    {
+     LOG.info( getCommandLine( command ) );
+     
       try {
          Process process = startProcess(command);
 
@@ -150,21 +124,15 @@ public class Runner
       }
    }
 
-   public boolean runCanFail(String[] command) {
-      return run(command, true);
-   }
 
-   public String getOutput() {
-      return _buffer.toString();
-   }
+   public String getOutput() {  return _buffer.toString();   }
 
-   public boolean isSuccessfull() {
-      return successfull;
-   }
+   public boolean isSuccessfull() {  return successfull;   }
 
-   public static String[] getCommand(String exec, String[] args) {
+   public static String[] getCommand(String exec, String[] args)
+   {
       String[] cmd = new String[ args.length + 1 ];
-      cmd[0] = exec;
+      cmd[ 0 ] = exec;
       System.arraycopy(args, 0, cmd, 1, args.length);
       return cmd;
    }

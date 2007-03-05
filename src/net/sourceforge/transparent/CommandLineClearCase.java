@@ -1,6 +1,5 @@
 package net.sourceforge.transparent;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.text.StringUtil;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.intellij.plugins.util.FileUtil;
@@ -11,7 +10,7 @@ import java.io.File;
 
 public class CommandLineClearCase implements ClearCase
 {
-  private static final Logger LOG = Logger.getInstance("net.sourceforge.transparent.CommandLineClearCase");
+  @NonNls private final static String ADD_EXT = ".add";
 
   public String getName() {
     return (net.sourceforge.transparent.CommandLineClearCase.class).getName();
@@ -53,8 +52,9 @@ public class CommandLineClearCase implements ClearCase
     }
   }
 
-  private static void doAddDir( File dir, String comment ) {
-    File tmpDir = new File(dir.getParentFile(), dir.getName() + ".add");
+  private static void doAddDir( File dir, String comment )
+  {
+    File tmpDir = new File( dir.getParentFile(), dir.getName() + ADD_EXT );
     if (!dir.renameTo(tmpDir)) {
         throw new ClearCaseException("Could not rename " + dir.getPath() + " to " + tmpDir.getName());
     }
@@ -106,12 +106,6 @@ public class CommandLineClearCase implements ClearCase
   public void cleartool( @NonNls String subcmd )
   {
     cleartool( new String[] { "cleartool", subcmd } );
-    /*
-    String cmd = "cleartool " + subcmd;
-    LOG.debug( cmd );
-    Runner runner = new Runner();
-    runner.run( cmd );
-    */
   }
 
   public static void cleartool( @NonNls String[] subcmd ) {
@@ -121,7 +115,6 @@ public class CommandLineClearCase implements ClearCase
   private static Runner cleartool(@NonNls String[] subcmd, boolean canFail)
   {
     @NonNls String[] cmd = Runner.getCommand("cleartool", subcmd);
-    LOG.debug(Runner.getCommandLine(cmd));
     Runner runner = new Runner();
     runner.run(cmd, canFail);
     return runner;
