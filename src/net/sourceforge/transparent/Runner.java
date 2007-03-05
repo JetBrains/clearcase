@@ -105,7 +105,7 @@ public class Runner
 
    public boolean run( String[] command, boolean canFail )
    {
-     LOG.info( getCommandLine( command ) );
+     LOG.info( "|" + getCommandLine( command ) );
      
       try {
          Process process = startProcess(command);
