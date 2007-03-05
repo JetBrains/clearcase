@@ -8,11 +8,10 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.FileStatus;
+import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.changes.Change;
-import com.intellij.openapi.vcs.changes.ChangesUtil;
-import com.intellij.openapi.vcs.changes.ContentRevision;
-import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
+import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.ui.Refreshable;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
@@ -127,8 +126,8 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   private void commitNew( List<Change> changes, String comment,
                           HashSet<FilePath> processedFiles, List<VcsException> errors )
   {
-    ArrayList<FilePath> folders = new ArrayList<FilePath>();
-    ArrayList<FilePath> files = new ArrayList<FilePath>();
+    HashSet<FilePath> folders = new HashSet<FilePath>();
+    HashSet<FilePath> files = new HashSet<FilePath>();
     for( Change change : changes )
     {
       if( VcsUtil.isChangeForNew( change ) )
@@ -137,7 +136,10 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
         if( filePath.isDirectory() )
           folders.add( filePath );
         else
+        {
           files.add( filePath );
+          analyzeParent( filePath, folders, processedFiles );
+        }
         processedFiles.add( filePath );
       }
     }
@@ -149,6 +151,29 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
 
     for( FilePath file : files )
       host.addFile( file.getVirtualFile(), comment, errors );
+  }
+
+  /**
+   * If the parent of the file has status New or Unversioned - add it
+   * to the list of folders OBLIGATORY for addition into the repository -
+   * no file can be added into VSS without all higher folders are already
+   * presented there.
+   * Process with the parent's parent recursively.
+   */
+  private void analyzeParent( FilePath file, HashSet<FilePath> folders,
+                              HashSet<FilePath> processedFiles )
+  {
+    VirtualFile parent = file.getVirtualFileParent();
+    FileStatusManager mgr = FileStatusManager.getInstance( myProject );
+    if( mgr.getStatus( parent ) == FileStatus.ADDED ||
+        mgr.getStatus( parent ) == FileStatus.UNKNOWN )
+    {
+      FilePath parentPath = file.getParentPath();
+
+      folders.add( parentPath );
+      processedFiles.add( parentPath );
+      analyzeParent( parentPath, folders, processedFiles );
+    }
   }
 
   private void commitChanged( List<Change> changes, String comment,
@@ -207,34 +232,72 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     return errors;
   }
 
-  private static void rollbackNew( List<Change> changes, HashSet<FilePath> processedFiles )
+  private void rollbackNew( List<Change> changes, HashSet<FilePath> processedFiles )
   {
-    ArrayList<FilePath> folders = new ArrayList<FilePath>();
-    ArrayList<FilePath> files = new ArrayList<FilePath>();
+    HashSet<FilePath> folders = new HashSet<FilePath>();
+    HashSet<FilePath> files = new HashSet<FilePath>();
+    collectNewChangesBack( changes, folders, files, processedFiles );
+
+    VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance( myProject );
+    for( FilePath file : files )
+    {
+      host.deleteNewFile( file.getPath() );
+      mgr.fileDirty( file );
+    }
+
+    for( FilePath folder : folders )
+    {
+      host.deleteNewFile( folder.getPath() );
+      mgr.fileDirty( folder );
+    }
+  }
+
+  /**
+   * For each accumulated (to be rolledback) folder - collect ALL files
+   * in the change lists with the status NEW (ADDED) which are UNDER this folder.
+   * This ensures that no file will be left in any change list with status NEW.
+   */
+  private void collectNewChangesBack( List<Change> changes, HashSet<FilePath> folders,
+                                      HashSet<FilePath> files, HashSet<FilePath> processedFiles )
+  {
+    HashSet<FilePath> foldersNew = new HashSet<FilePath>();
     for( Change change : changes )
     {
       if( VcsUtil.isChangeForNew( change ) )
       {
         FilePath filePath = change.getAfterRevision().getFile();
         if( filePath.isDirectory() )
-          folders.add( filePath );
+          foldersNew.add( filePath );
         else
           files.add( filePath );
         processedFiles.add( filePath );
       }
     }
 
-    for( FilePath file : files )
-      new File( file.getPath() ).delete();
+    ChangeListManager clMgr = ChangeListManager.getInstance( myProject );
+    FileStatusManager fsMgr = FileStatusManager.getInstance( myProject );
+    List<VirtualFile> allAffectedFiles = clMgr.getAffectedFiles();
 
-    //  Sort folders in descending order - from the most inner folder
-    //  to the outmost one.
-    FilePath[] foldersSorted = folders.toArray( new FilePath[ folders.size() ] );
-    foldersSorted = VcsUtil.sortPathsFromInnermost( foldersSorted );
-    for( FilePath folder : foldersSorted )
-      FileUtil.delete( new File( folder.getPath() ) );
+    for( VirtualFile file : allAffectedFiles )
+    {
+      FileStatus status = fsMgr.getStatus( file );
+      if( status == FileStatus.ADDED )
+      {
+        for( FilePath folder : foldersNew )
+        {
+          if( file.getPath().toLowerCase().startsWith( folder.getPath().toLowerCase() ))
+          {
+            FilePath path = clMgr.getChange( file ).getAfterRevision().getFile();
+            if( path.isDirectory() )
+              foldersNew.add( path );
+            else
+              files.add( path );
+          }
+        }
+      }
+    }
+    folders.addAll( foldersNew );
   }
-
   private void rollbackChanged( List<Change> changes, HashSet<FilePath> processedFiles, List<VcsException> errors )
   {
     for( Change change : changes )

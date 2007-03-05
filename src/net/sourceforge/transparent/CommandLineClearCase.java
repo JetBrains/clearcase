@@ -86,21 +86,23 @@ public class CommandLineClearCase implements ClearCase
 
   public Status getStatus(File file)
   {
-      Runner runner = cleartool( new String[] { "ls", "-directory", file.getAbsolutePath() }, true);
-      if (!runner.isSuccessfull()) {
-        throw new ClearCaseException( runner.getOutput() );
-      }
-      if (runner.getOutput().indexOf("@@") == -1) {
-          return Status.NOT_AN_ELEMENT;
-      }
-      if (runner.getOutput().indexOf("[hijacked]") != -1) {
-          return Status.HIJACKED;
-      }
-      if (runner.getOutput().indexOf("Rule: CHECKEDOUT") != -1) {
-          return Status.CHECKED_OUT;
-      } else {
-          return Status.CHECKED_IN;
-      }
+    String fileName = quote( file.getAbsolutePath() );
+    Runner runner = cleartool( new String[] { "ls", "-directory", fileName }, true);
+    
+    if (!runner.isSuccessfull()) {
+      throw new ClearCaseException( runner.getOutput() );
+    }
+    if (runner.getOutput().indexOf("@@") == -1) {
+        return Status.NOT_AN_ELEMENT;
+    }
+    if (runner.getOutput().indexOf("[hijacked]") != -1) {
+        return Status.HIJACKED;
+    }
+    if (runner.getOutput().indexOf("Rule: CHECKEDOUT") != -1) {
+        return Status.CHECKED_OUT;
+    } else {
+        return Status.CHECKED_IN;
+    }
   }
 
   public void cleartool( @NonNls String subcmd )

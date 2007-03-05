@@ -233,7 +233,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   private void extractViewType() throws ClearCaseNoServerException
   {
-    String output = cleartoolOnLocalPathWithOutput( CLEARTOOL_CMD, LIST_VIEW_CMD, CURRENT_VIEW_SWITCH, PROP_SWITCH, FULL_SWITCH );
+    String output = cleartoolOnLocalPathWithOutput( LIST_VIEW_CMD, CURRENT_VIEW_SWITCH, PROP_SWITCH, FULL_SWITCH );
     if( isServerDownMessage( output ) )
     {
       throw new ClearCaseNoServerException( output );
@@ -312,6 +312,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public void add2NewFile( VirtualFile file ) {  add2NewFile( file.getPath() );       }
   public void add2NewFile( String path )      {  newFiles.add( path.toLowerCase() );  }
+  public void deleteNewFile( VirtualFile file ) {  deleteNewFile( file.getPath() );       }
+  public void deleteNewFile( String path )      {  newFiles.remove( path.toLowerCase() );  }
   public boolean containsNew( String path )   {  return newFiles.contains( path.toLowerCase() );   }
 
   private boolean isCheckInToUseHijack() {
