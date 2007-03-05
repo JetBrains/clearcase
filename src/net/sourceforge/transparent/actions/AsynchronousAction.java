@@ -4,9 +4,10 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
-import net.sourceforge.transparent.ClearCaseFile;
+import net.sourceforge.transparent.Status;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,8 +45,7 @@ public abstract class AsynchronousAction extends FileAction
 
   public static String getVersionExtendedPathName( VirtualFile file, AnActionEvent e )
   {
-    ClearCaseFile clearCaseFile = new ClearCaseFile( file, getHost( e ).getClearCase() );
-
-    return clearCaseFile.isHijacked() ? clearCaseFile.getPath() + "@@" : clearCaseFile.getPath();
+    Status status = getHost( e ).getStatus( new File( file.getPath() ) );
+    return (status == Status.HIJACKED) ? file.getPath() + "@@" : file.getPath();
   }
 }

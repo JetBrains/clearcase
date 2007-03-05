@@ -296,8 +296,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public boolean fileExistsInVcs(FilePath path)   {  return fileExistsInVcs( path.getVirtualFile() );  }
   public boolean fileExistsInVcs(VirtualFile file)
   {
-    ClearCaseFile ccFile = new ClearCaseFile( file, clearcase );
-    return ccFile.isElement();
+    Status status = getStatus( new File( file.getPath() ) );
+    return status != Status.NOT_AN_ELEMENT;
   }
 
   public boolean isFileIgnored( VirtualFile file )
@@ -314,6 +314,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     return config.offline || config.checkInUseHijack;
   }
 
+  public Status getStatus( VirtualFile file ) {  return getClearCase().getStatus( new File( file.getPath() ) );   }
+  public Status getStatus( File file )        {  return getClearCase().getStatus( file );   }
 
   public void checkinFile( FilePath path, String comment, List<VcsException> errors )
   {

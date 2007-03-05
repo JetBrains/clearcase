@@ -68,12 +68,7 @@ public class CCaseEditFileProvider implements EditFileProvider
 
   public boolean shouldHijackFile( VirtualFile file )
   {
-    return host.getConfig().offline || !isElement( file );
-  }
-
-  private boolean isElement( VirtualFile file )
-  {
-    ClearCaseFile ccFile = new ClearCaseFile( file, host.getClearCase() );
-    return ccFile.isElement();
+    Status status = host.getStatus( file );
+    return host.getConfig().offline || (status == Status.NOT_AN_ELEMENT);
   }
 }

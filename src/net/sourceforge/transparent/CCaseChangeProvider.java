@@ -19,6 +19,7 @@ import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -122,7 +123,7 @@ public class CCaseChangeProvider implements ChangeProvider
 
     if( progress != null )
       progress.setText( SEARCHNEW_MSG );
-    analyzeWritableFiles( path, writableFiles );
+    analyzeWritableFiles( writableFiles );
   }
 
   private void collectSuspiciousFiles( final FilePath filePath, final List<String> writableFiles )
@@ -147,51 +148,51 @@ public class CCaseChangeProvider implements ChangeProvider
     }
   }
 
-  private void analyzeWritableFiles( FilePath filePath, List<String> writableFiles )
+  private void analyzeWritableFiles( List<String> writableFiles )
   {
     final List<String> newFiles = new ArrayList<String>();
     final List<String> newFolders = new ArrayList<String>();
 
-//    if( writableFiles.size() < PER_FILE_DIFF_MARGIN )
+    if( host.getClearCase().getName().indexOf( "line" ) == -1 ||
+        writableFiles.size() == 1 )
     {
-      LOG.info( "rem ChangeProvider - Analyzing writable files on per-file basis" );
+      LOG.info( "ChangeProvider - Analyzing writable files on per-file basis" );
       for( String path : writableFiles )
       {
-        LOG.info( "rem ChangeProvider - Issue \"PROPERTIES\" command for getting information on writable file" );
-        VirtualFile file = VcsUtil.getVirtualFile( path );
-        ClearCaseFile ccFile = new ClearCaseFile( file, host.getClearCase() );
+        LOG.info( "ChangeProvider - Issue \"ls\" command for getting information on writable file" );
 
-        if( ccFile.isElement() )
-        {
-          if( ccFile.isHijacked() )
-            filesHijacked.add( path );
-          else
-            filesChanged.add( path );
-        }
-        else
+        Status _status = host.getStatus( new File( path ) );
+        if( _status == Status.NOT_AN_ELEMENT )
           newFiles.add( path );
+        else
+        if( _status == Status.CHECKED_OUT )
+          filesChanged.add( path );
+        else
+        if( _status == Status.HIJACKED )
+          filesHijacked.add( path );
       }
-      LOG.info( "rem ChangeProvider - \"PROPERTIES\" command finished" );
+      LOG.info( "ChangeProvider - \"PROPERTIES\" command finished" );
     }
-    /*
     else
     {
-      LOG.info( "rem ChangeProvider - Analyzing writable files on the base of \"Directory\" command" );
+      LOG.info( "ChangeProvider - Analyzing writables in batch mode using CLEARTOOL on " + writableFiles.size() + " files." );
 
-      ArrayList<VcsException> errors = new ArrayList<VcsException>();
-      DirectoryCommand cmd = new DirectoryCommand( project, filePath.getPath(), errors );
-      cmd.execute();
+      StatusMultipleProcessor processor = new StatusMultipleProcessor( writableFiles );
+      processor.execute();
+      LOG.info( "ChangeProvider - CLEARTOOL LS batch command finished." );
 
       for( String path : writableFiles )
       {
-        path = path.toLowerCase();
-        if( !cmd.projectFiles.contains( path ) )
+        if( processor.isNonexist( path ))
           newFiles.add( path );
         else
+        if( processor.isCheckedout( path ))
           filesChanged.add( path );
+        else
+        if( processor.isHijacked( path ))
+          filesHijacked.add( path );
       }
     }
-    */
 
     //  For each new file check whether some subfolders structure above it
     //  is also new.
@@ -277,10 +278,10 @@ public class CCaseChangeProvider implements ChangeProvider
           }
           else
           {
-            ClearCaseFile ccFile = new ClearCaseFile( file, host.getClearCase() );
-            if( ccFile.isElement() )
+            Status status = host.getStatus( file );
+            if( status != Status.NOT_AN_ELEMENT )
             {
-              if( ccFile.isHijacked() )
+              if( status == Status.HIJACKED )
                 filesHijacked.add( fileName );
               else
                 filesChanged.add( fileName );
@@ -386,9 +387,5 @@ public class CCaseChangeProvider implements ChangeProvider
     return (file != null) && file.isWritable() && !file.isDirectory() &&
            VcsUtil.isPathUnderProject( project, file.getPath() ) &&
            !host.isFileIgnored( file );
-//           host.getFileFilter().accept( file ) &&
-//         !config.isFileExcluded( file.getName() );
-//         && regularFileFilter.accept(file)
-//           VssUtil.isUnderVss( file, project ) &&
   }
 }
