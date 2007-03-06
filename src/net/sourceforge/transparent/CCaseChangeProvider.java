@@ -215,28 +215,20 @@ public class CCaseChangeProvider implements ChangeProvider
   private void  analyzeParentFolderStructureForPresence( String file, List<String> newFolders,
                                                          List<String> processedFolders )
   {
-    /*
-    String fileParent = new File( file ).getParentFile().getPath();
+    VirtualFile parent = VcsUtil.getVirtualFile( new File( file ).getParentFile() );
 
-    if( VssUtil.isPathUnderProject( project, fileParent ) && !processedFolders.contains( fileParent ) )
+    if( host.fileIsUnderVcs( parent ) && !processedFolders.contains( parent.getPath() ) )
     {
-      LOG.info( "rem ChangeProvider - Issue \"PROPERTIES\" command for getting information on potentially new folder" );
-
-      processedFolders.add( fileParent );
-      String fileParentCanonical = VssUtil.getCanonicalLocalPath( fileParent );
-      PropertiesCommand cmd = new PropertiesCommand( project, fileParentCanonical, true );
-      cmd.execute();
-      LOG.info( "rem ChangeProvider - \"PROPERTIES\" command finished" );
-
-      if( !cmd.isValidRepositoryObject() )
+      LOG.info( "ChangeProvider - Check potentially new folder" );
+      if( !host.fileExistsInVcs( parent ))
       {
-        newFolders.add( fileParentCanonical );
-        foldersAbcent.add( fileParent );
+        LOG.info( "ChangeProvider - Folder does not exist in the repository" );
 
-        analyzeParentFolderStructureForPresence( fileParent, newFolders, processedFolders );
+        newFolders.add( parent.getPath() );
+        foldersAbcent.add( parent.getPath() );
+        analyzeParentFolderStructureForPresence( parent.getPath(), newFolders, processedFolders );
       }
     }
-    */
   }
   /**
    *  Deleted and New folders are marked as dirty too and we provide here
@@ -298,25 +290,22 @@ public class CCaseChangeProvider implements ChangeProvider
   {
     for( String path : filesNew )
     {
-//      if( VssUtil.isPathUnderProject( project, path ) )
+      FilePath newFP = VcsUtil.getFilePath( path );
+      String   oldName = host.renamedFiles.get( path );
+      if( host.containsNew( path ) )
       {
-        FilePath newFP = VcsUtil.getFilePath( path );
-        String   oldName = host.renamedFiles.get( path );
-        if( host.containsNew( path ) )
-        {
-          builder.processChange( new Change( null, new CurrentContentRevision( newFP ) ));
-        }
-        else
-        if( oldName == null )
-        {
-          VirtualFile vFile = VcsUtil.getVirtualFile( path );
-          builder.processUnversionedFile( vFile );
-        }
-        else
-        {
-          ContentRevision before = new CurrentContentRevision( VcsUtil.getFilePath( oldName ) );
-          builder.processChange( new Change( before, new CurrentContentRevision( newFP )));
-        }
+        builder.processChange( new Change( null, new CurrentContentRevision( newFP ) ));
+      }
+      else
+      if( oldName == null )
+      {
+        VirtualFile vFile = VcsUtil.getVirtualFile( path );
+        builder.processUnversionedFile( vFile );
+      }
+      else
+      {
+        ContentRevision before = new CurrentContentRevision( VcsUtil.getFilePath( oldName ) );
+        builder.processChange( new Change( before, new CurrentContentRevision( newFP )));
       }
     }
   }
