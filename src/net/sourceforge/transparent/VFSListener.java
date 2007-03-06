@@ -16,11 +16,8 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: lloix
  * Date: Sep 21, 2006
- * Time: 6:47:10 PM
- * To change this template use File | Settings | File Templates.
  */
 public class VFSListener extends VirtualFileAdapter
 {
