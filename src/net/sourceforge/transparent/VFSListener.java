@@ -102,9 +102,9 @@ public class VFSListener extends VirtualFileAdapter
     }
   }
 
-  public void fileCreated(VirtualFileEvent event)
+  public void fileCreated( VirtualFileEvent event )
   {
-    @NonNls final String TITLE = "Add file(s) to the ClearCase?";
+    @NonNls final String TITLE = "Add file(s) to the ClearCase repository?";
     @NonNls final String MESSAGE = "Do you want to schedule the following file for addition to ClearCase?\n{0}";
     String path = event.getFile().getPath();
 
@@ -142,8 +142,14 @@ public class VFSListener extends VirtualFileAdapter
     }
   }
 
-  public void beforeFileDeletion(VirtualFileEvent event)
+  public void beforeFileDeletion( VirtualFileEvent event )
   {
+    //  Do not ask user if the files deletion is caused by the vcs operation
+    //  like UPDATE (obviously they are deleted without a necessity to recover
+    //  or to keep track).
+    if( event.isFromRefresh() )
+      return;
+
     VirtualFile file = event.getFile();
     FileStatus status = FileStatusManager.getInstance( project ).getStatus( file );
     if( host.fileIsUnderVcs( file ) &&
