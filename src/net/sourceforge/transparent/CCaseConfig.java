@@ -1,7 +1,6 @@
 package net.sourceforge.transparent;
 
 import com.intellij.openapi.components.ProjectComponent;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.DefaultJDOMExternalizer;
 import com.intellij.openapi.util.InvalidDataException;
@@ -16,12 +15,14 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 
 /**
- * this is the persistent state of the transparent plugin - just anything that needs to be persisted as a field
+ * This is the persistent state of the transparent plugin - just anything that needs
+ * to be persisted as a field
  */
 public class CCaseConfig implements ListenerNotifier, JDOMExternalizable, ProjectComponent
 {
   @NonNls private final static String DYNAMIC = "Dynamic";
   @NonNls private final static String SNAPSHOT = "Snapshot";
+  @NonNls private final static String PROP_EVENT_NAME = "configuration";
 
   public String implementation = CommandLineClearCase.class.getName();
   public String clearcaseRoot = "";
@@ -35,11 +36,9 @@ public class CCaseConfig implements ListenerNotifier, JDOMExternalizable, Projec
 
   private PropertyChangeSupport listenerSupport = new PropertyChangeSupport(this);
 
-  private static final Logger LOG = Logger.getInstance("net.sourceforge.transparent.CCaseConfig");
-
-  public void projectOpened() {  LOG.debug("projectOpened");  }
+  public void projectOpened() {}
   public void projectClosed() {}
-  public void initComponent() {  logConfig();   }
+  public void initComponent() {}
   public void disposeComponent() {}
 
   @NotNull
@@ -49,19 +48,6 @@ public class CCaseConfig implements ListenerNotifier, JDOMExternalizable, Projec
   public void  setViewDynamic()    {  lastViewType = DYNAMIC;   }
   public boolean isViewSnapshot()  {  return lastViewType == SNAPSHOT;  }
   public boolean isViewDynamic()   {  return lastViewType == DYNAMIC;  }
-
-  private void logConfig()
-  {
-    LOG.debug( "#####    implementation        = " + implementation );
-    LOG.debug( "#####    clearcaseRoot         = " + clearcaseRoot );
-    LOG.debug( "#####    checkoutReserved      = " + checkoutReserved );
-    LOG.debug( "#####    externalChangeUpToDate= " + markExternalChangeAsUpToDate );
-    LOG.debug( "#####    checkInUseHijack      = " + checkInUseHijack );
-    LOG.debug( "#####    offline               = " + offline );
-    LOG.debug( "#####    lastScr               = " + lastScr );
-    LOG.debug( "#####    scrTextFileName       = " + scrTextFileName );
-    LOG.debug( "#####    last view type        = " + lastViewType );
-  }
 
   public static CCaseConfig getInstance(Project project) {
     return project.getComponent(CCaseConfig.class);
@@ -76,8 +62,7 @@ public class CCaseConfig implements ListenerNotifier, JDOMExternalizable, Projec
   }
 
   public void notifyListenersOfChange() {
-    logConfig();
-    listenerSupport.firePropertyChange("configuration", null, this);
+    listenerSupport.firePropertyChange( PROP_EVENT_NAME, null, this );
   }
 
   public void removeListener(PropertyChangeListener listener) {

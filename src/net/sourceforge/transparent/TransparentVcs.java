@@ -2,6 +2,7 @@ package net.sourceforge.transparent;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ProjectComponent;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
@@ -38,6 +39,8 @@ import java.util.List;
 
 public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDOMExternalizable
 {
+  private static final Logger LOG = Logger.getInstance("#net.sourceforge.transparent.TransparentVcs");
+
   @NonNls public static final String TEMPORARY_FILE_SUFFIX = ".deleteAndAdd";
   @NonNls public static final String CLEARTOOL_CMD = "cleartool";
 
@@ -168,7 +171,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public void initTransparentConfiguration()
   {
-    config = CCaseConfig.getInstance(myProject);
+    config = CCaseConfig.getInstance( myProject );
     config.addListener(new PropertyChangeListener() {
         public void propertyChange(PropertyChangeEvent evt) {
             transparentConfigurationChanged();
@@ -184,6 +187,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       resetClearCaseFromConfiguration();
       extractViewProperties();
     }
+    else
+      LOG.info( ">>> GetCOnfig().Offline == true" );
   }
 
   private void resetClearCaseFromConfiguration()
@@ -209,7 +214,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
    */
   private void extractViewProperties()
   {
-    if( StringUtil.isNotEmpty( getConfig().clearcaseRoot) )
+    if( StringUtil.isNotEmpty( getConfig().clearcaseRoot ) )
     {
       try
       {
@@ -229,19 +234,20 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
                                     INIT_FAILED_TITLE, Messages.getErrorIcon());
       }
     }
+    else
+      LOG.info( ">>> getConfig().clearcaseRoot is empty" );
   }
 
   private void extractViewType() throws ClearCaseNoServerException
   {
+    LOG.info( "--- Analyzing view type ---" );
+    
     String output = cleartoolOnLocalPathWithOutput( LIST_VIEW_CMD, CURRENT_VIEW_SWITCH, PROP_SWITCH, FULL_SWITCH );
     if( isServerDownMessage( output ) )
-    {
       throw new ClearCaseNoServerException( output );
-    }
 
-    System.out.printf( "--- Analyzing view type ---" );
-    System.out.printf( output );
-    System.out.printf( "--- End view type ---" );
+    LOG.info( output );
+    LOG.info( "--- End view type ---" );
 
     List<String> lines = StringUtil.split( output, "\n" );
     for( String line : lines )

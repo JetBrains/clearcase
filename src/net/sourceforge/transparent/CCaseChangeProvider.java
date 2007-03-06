@@ -37,6 +37,7 @@ public class CCaseChangeProvider implements ChangeProvider
   @NonNls private final static String SEARCHNEW_MSG = "Searching New";
   @NonNls private final static String FAIL_2_CONNECT_MSG = "Failed to connect to ClearCase Server: ";
   @NonNls private final static String FAIL_2_CONNECT_TITLE = "Server Connection Problem";
+
   private static final Logger LOG = Logger.getInstance("#net.sourceforge.transparent.CCaseChangeProvider");
 
   private Project project;
