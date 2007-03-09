@@ -54,7 +54,10 @@ public class CommandLineClearCase implements ClearCase
 
   private static void doAdd( @NonNls String subcmd, String path, String comment )
   {
-    cleartool( new String[] { subcmd, "-c", quote(comment), path } );
+    if( StringUtil.isNotEmpty( comment ) )
+      cleartool( new String[] { subcmd, "-c", quote(comment), path } );
+    else
+      cleartool( new String[] { subcmd, "-nc", path } );
   }
 
   public void move(File file, File target, String comment)
