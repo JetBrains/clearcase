@@ -3,6 +3,7 @@ package net.sourceforge.transparent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
+import org.jetbrains.annotations.NonNls;
 
 import java.io.*;
 import java.util.concurrent.ExecutionException;
@@ -129,7 +130,7 @@ public class Runner
 
    public boolean isSuccessfull() {  return successfull;   }
 
-   public static String[] getCommand(String exec, String[] args)
+   public static String[] getCommand( @NonNls String exec, String[] args)
    {
       String[] cmd = new String[ args.length + 1 ];
       cmd[ 0 ] = exec;

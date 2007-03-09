@@ -11,6 +11,10 @@ import java.io.File;
 public class CommandLineClearCase implements ClearCase
 {
   @NonNls private final static String ADD_EXT = ".add";
+  @NonNls private final static String RESERVED_SIG = "reserved";
+  @NonNls private final static String UNRESERVED_SIG = "unreserved";
+  @NonNls private final static String HIJACKED_SIG = "[hijacked]";
+  @NonNls private final static String CHECKEDOUT_SIG = "Rule: CHECKEDOUT";
 
   public String getName() {
     return (net.sourceforge.transparent.CommandLineClearCase.class).getName();
@@ -25,7 +29,7 @@ public class CommandLineClearCase implements ClearCase
     if( StringUtil.isNotEmpty( comment ) )
       cleartool( new String[] { "ci", "-c", quote( comment ), "-identical", file.getAbsolutePath() } );
     else
-      cleartool( new String[] { "ci", "-identical", file.getAbsolutePath() } );
+      cleartool( new String[] { "ci", "-nc", "-identical", file.getAbsolutePath() } );
   }
 
   public void checkOut( File file, boolean isReserved, String comment )
@@ -89,20 +93,19 @@ public class CommandLineClearCase implements ClearCase
     String fileName = quote( file.getAbsolutePath() );
     Runner runner = cleartool( new String[] { "ls", "-directory", fileName }, true);
     
-    if (!runner.isSuccessfull()) {
+    if( !runner.isSuccessfull() )
       throw new ClearCaseException( runner.getOutput() );
-    }
-    if (runner.getOutput().indexOf("@@") == -1) {
-        return Status.NOT_AN_ELEMENT;
-    }
-    if (runner.getOutput().indexOf("[hijacked]") != -1) {
-        return Status.HIJACKED;
-    }
-    if (runner.getOutput().indexOf("Rule: CHECKEDOUT") != -1) {
-        return Status.CHECKED_OUT;
-    } else {
-        return Status.CHECKED_IN;
-    }
+
+    if( runner.getOutput().indexOf("@@") == -1 )
+      return Status.NOT_AN_ELEMENT;
+
+    if( runner.getOutput().indexOf( HIJACKED_SIG ) != -1 )
+      return Status.HIJACKED;
+
+    if( runner.getOutput().indexOf( CHECKEDOUT_SIG ) != -1 )
+      return Status.CHECKED_OUT;
+    else
+      return Status.CHECKED_IN;
   }
 
   public void cleartool( @NonNls String subcmd )
@@ -116,7 +119,7 @@ public class CommandLineClearCase implements ClearCase
 
   private static Runner cleartool(@NonNls String[] subcmd, boolean canFail)
   {
-    @NonNls String[] cmd = Runner.getCommand("cleartool", subcmd);
+    @NonNls String[] cmd = Runner.getCommand( "cleartool", subcmd );
     Runner runner = new Runner();
     runner.run(cmd, canFail);
     return runner;
@@ -126,15 +129,15 @@ public class CommandLineClearCase implements ClearCase
   {
     Runner runner = cleartool(new String[] { "lscheckout", "-fmt", "%Rf", "-directory", file.getAbsolutePath() }, true);
     
-    if (!runner.isSuccessfull()) {
-        return CheckedOutStatus.NOT_CHECKED_OUT;
-    }
-    if (runner.getOutput().equalsIgnoreCase("reserved")) {
-        return CheckedOutStatus.RESERVED;
-    }
-    if (runner.getOutput().equalsIgnoreCase("unreserved")) {
-        return CheckedOutStatus.UNRESERVED;
-    }
+    if (!runner.isSuccessfull())
+      return CheckedOutStatus.NOT_CHECKED_OUT;
+
+    if (runner.getOutput().equalsIgnoreCase( RESERVED_SIG ) )
+      return CheckedOutStatus.RESERVED;
+
+    if (runner.getOutput().equalsIgnoreCase( UNRESERVED_SIG ))
+      return CheckedOutStatus.UNRESERVED;
+
     return CheckedOutStatus.NOT_CHECKED_OUT;
     /*
     if (runner.getOutput().equals("")) {

@@ -342,7 +342,9 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       FileStatusManager fsmgr = FileStatusManager.getInstance( myProject );
       if( (fsmgr.getStatus( vFile ) == FileStatus.HIJACKED) && isCheckInToUseHijack() )
       {
-        checkoutFile( ioFile, true, false, comment );
+        //  Run checkout in the "non-verbose" mode, that is do not display any
+        //  dialogs since we are aready in the Dialoging mode.
+        checkoutFile( ioFile, true, false, comment, false );
       }
       getClearCase().checkIn( ioFile, comment );
 
@@ -364,8 +366,12 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   }
   public boolean checkoutFile( File ioFile, boolean keepHijacked, boolean isReserved, String comment ) throws VcsException
   {
+    return checkoutFile( ioFile, keepHijacked, isReserved, comment, myCheckoutOptions.getValue() );
+  }
+  private boolean checkoutFile( File ioFile, boolean keepHijacked, boolean isReserved, String comment, boolean isVerbose ) throws VcsException
+  {
     VirtualFile file = VcsUtil.getVirtualFile( ioFile );
-    if( myCheckoutOptions.getValue() )
+    if( isVerbose )
     {
       CheckoutDialog dialog = new CheckoutDialog( getProject(), getConfiguration(), file );
       dialog.show();

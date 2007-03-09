@@ -62,9 +62,8 @@ public class CCaseChangeProvider implements ChangeProvider
     LOG.info( "-- ChangeProvider -- ");
     LOG.info( "   Dirty files: " + dirtyScope.getDirtyFiles().size() +
               ", dirty recursive directories: " + dirtyScope.getRecursivelyDirtyDirectories().size() );
-    LOG.info( "   Is project default? " + project.isDefault() );
 
-    boolean isBatchUpdate = dirtyScope.getRecursivelyDirtyDirectories().size() > 0;
+    boolean isBatchUpdate = (dirtyScope.getRecursivelyDirtyDirectories().size() > 0);
     this.progress = progress;
     initInternals();
 
