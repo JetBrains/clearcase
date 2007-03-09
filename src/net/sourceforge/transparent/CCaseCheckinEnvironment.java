@@ -7,10 +7,7 @@ package net.sourceforge.transparent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.FileStatus;
-import com.intellij.openapi.vcs.FileStatusManager;
-import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.ui.Refreshable;
@@ -104,6 +101,10 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   public String  getHelpId() {  return null;   }
   public String  getCheckinOperationName() {  return CHECKIN_TITLE;  }
 
+  public String getRollbackOperationName() {
+    return VcsBundle.message("changes.action.rollback.text");
+  }
+  
   public List<VcsException> commit( List<Change> changes, String comment )
   {
     List<VcsException> errors = new ArrayList<VcsException>();
