@@ -2,7 +2,6 @@ package net.sourceforge.transparent;
 
 import com.intellij.openapi.util.text.StringUtil;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
-import org.intellij.plugins.util.FileUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 
@@ -10,7 +9,7 @@ import java.io.File;
 
 public class CommandLineClearCase implements ClearCase
 {
-  @NonNls private final static String ADD_EXT = ".add";
+  @NonNls private final static String VERSIONED_SIG = "@@";
   @NonNls private final static String RESERVED_SIG = "reserved";
   @NonNls private final static String UNRESERVED_SIG = "unreserved";
   @NonNls private final static String HIJACKED_SIG = "[hijacked]";
@@ -48,39 +47,18 @@ public class CommandLineClearCase implements ClearCase
       cleartool( new String[] { "rmname", "-force", file.getAbsolutePath() } );
   }
 
-  public void add(File file, String comment) {
-    if (file.isDirectory()) {
-        doAddDir( file, comment );
-    } else {
-        doAdd( "mkelem", file.getAbsolutePath(), comment );
-    }
-  }
-
-  private static void doAddDir( File dir, String comment )
+  public void add( File file, String comment )
   {
-    File tmpDir = new File( dir.getParentFile(), dir.getName() + ADD_EXT );
-    if (!dir.renameTo(tmpDir)) {
-        throw new ClearCaseException("Could not rename " + dir.getPath() + " to " + tmpDir.getName());
-    }
-    try {
-        doAdd("mkdir", dir.getAbsolutePath(), comment);
-    }
-    finally {
-        if (!FileUtil.moveDirWithContent(tmpDir, dir)) {
-            throw new ClearCaseException(
-                    "Could not move back the content of " + dir.getPath()
-                            + " as part of adding it to Clearcase:\n"
-                            + "Its old content is in " + tmpDir.getName()
-                            + ". Please move it back manually");
-        }
-    }
+    doAdd( file.isDirectory() ? "mkdir" : "mkelem", file.getAbsolutePath(), comment );
   }
 
-  private static void doAdd( @NonNls String subcmd, String path, String comment ) {
-    cleartool(new String[] {  subcmd, "-c", quote(comment), path  });
+  private static void doAdd( @NonNls String subcmd, String path, String comment )
+  {
+    cleartool( new String[] { subcmd, "-c", quote(comment), path } );
   }
 
-  public void move(File file, File target, String comment) {
+  public void move(File file, File target, String comment)
+  {
     cleartool( new String[] { "mv", "-c", quote(comment), file.getAbsolutePath(), target.getAbsolutePath() } );
   }
 
@@ -96,7 +74,7 @@ public class CommandLineClearCase implements ClearCase
     if( !runner.isSuccessfull() )
       throw new ClearCaseException( runner.getOutput() );
 
-    if( runner.getOutput().indexOf("@@") == -1 )
+    if( runner.getOutput().indexOf( VERSIONED_SIG ) == -1 )
       return Status.NOT_AN_ELEMENT;
 
     if( runner.getOutput().indexOf( HIJACKED_SIG ) != -1 )
