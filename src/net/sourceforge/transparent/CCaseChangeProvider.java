@@ -47,6 +47,7 @@ public class CCaseChangeProvider implements ChangeProvider
   private HashSet<String> filesNew = new HashSet<String>();
   private HashSet<String> filesChanged = new HashSet<String>();
   private HashSet<String> filesHijacked = new HashSet<String>();
+  private HashSet<String> filesIgnored = new HashSet<String>();
   private ArrayList<String> foldersAbcent = new ArrayList<String>();
 
   public CCaseChangeProvider( Project project, TransparentVcs host )
@@ -84,6 +85,7 @@ public class CCaseChangeProvider implements ChangeProvider
       addNewOrRenamedFiles( builder );
       addChangedFiles( builder );
       addRemovedFiles( builder );
+      addIgnoredFiles( builder );
     }
     catch( ClearCaseException e )
     {
@@ -137,10 +139,13 @@ public class CCaseChangeProvider implements ChangeProvider
         {
           public boolean processFile( VirtualFile file )
           {
-            if( isFileCCaseProcessable( file ) )
+            String path = file.getPath();
+            if( VcsUtil.isPathUnderProject( project, path ) && isValidFile( file ) )
             {
-              String path = file.getPath();
-              writableFiles.add( path );
+              if( host.isFileIgnored( file ) )
+                filesIgnored.add( path );
+              else
+                writableFiles.add( path );
             }
             return true;
           }
@@ -315,13 +320,13 @@ public class CCaseChangeProvider implements ChangeProvider
     for( String path : filesChanged )
     {
       final FilePath fp = VcsUtil.getFilePath( path );
-      builder.processChange( new Change( new CCaseContentRevision(host, fp, project ), new CurrentContentRevision( fp )));
+      builder.processChange( new Change( new CCaseContentRevision( host, fp, project ), new CurrentContentRevision( fp )));
     }
 
     for( String path : filesHijacked )
     {
       final FilePath fp = VcsUtil.getFilePath( path );
-      builder.processChange( new Change( new CCaseContentRevision(host, fp, project ), new CurrentContentRevision( fp ), FileStatus.HIJACKED ));
+      builder.processChange( new Change( new CCaseContentRevision( host, fp, project ), new CurrentContentRevision( fp ), FileStatus.HIJACKED ));
     }
   }
 
@@ -332,6 +337,12 @@ public class CCaseChangeProvider implements ChangeProvider
 
     for( String path : host.removedFiles )
       builder.processLocallyDeletedFile( VcsUtil.getFilePath( path ) );
+  }
+
+  private void addIgnoredFiles( final ChangelistBuilder builder )
+  {
+    for( String path : filesIgnored )
+      builder.processIgnoredFile( VcsUtil.getVirtualFile( path ) );
   }
 
   private boolean isPathUnderAbsentFolders( String pathToCheck )
@@ -368,6 +379,7 @@ public class CCaseChangeProvider implements ChangeProvider
     filesNew.clear();
     filesChanged.clear();
     filesHijacked.clear();
+    filesIgnored.clear();
     foldersAbcent.clear();
   }
 
@@ -376,5 +388,10 @@ public class CCaseChangeProvider implements ChangeProvider
     return (file != null) && file.isWritable() && !file.isDirectory() &&
            VcsUtil.isPathUnderProject( project, file.getPath() ) &&
            !host.isFileIgnored( file );
+  }
+
+  private boolean isValidFile( VirtualFile file )
+  {
+    return (file != null) && file.isWritable() && !file.isDirectory();
   }
 }
