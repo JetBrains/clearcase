@@ -98,6 +98,10 @@ public class CCaseChangeProvider implements ChangeProvider
       final String msg = message;
       ApplicationManager.getApplication().invokeLater( new Runnable() { public void run() { VcsUtil.showErrorMessage( project, msg, FAIL_2_CONNECT_TITLE ); } });
     }
+    finally
+    {
+      LOG.info( "-- EndChangeProvider -- ");
+    }
   }
 
   /**
@@ -158,7 +162,7 @@ public class CCaseChangeProvider implements ChangeProvider
     final List<String> newFiles = new ArrayList<String>();
     final List<String> newFolders = new ArrayList<String>();
 
-    if( host.getClearCase().getName().indexOf( "line" ) == -1 ||
+    if( host.getClearCase().getName().indexOf( "Line" ) == -1 ||
         writableFiles.size() == 1 )
     {
       LOG.info( "ChangeProvider - Analyzing writable files on per-file basis" );
