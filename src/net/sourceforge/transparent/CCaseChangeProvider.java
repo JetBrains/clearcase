@@ -332,11 +332,19 @@ public class CCaseChangeProvider implements ChangeProvider
 
   private void addRemovedFiles( final ChangelistBuilder builder )
   {
-    for( String path : host.removedFolders )
-      builder.processLocallyDeletedFile( VcsUtil.getFilePath( path ) );
+    final HashSet<String> folders = host.removedFolders;
+    synchronized( folders )
+    {
+      for( String path : folders )
+        builder.processLocallyDeletedFile( VcsUtil.getFilePath( path ) );
+    }
 
-    for( String path : host.removedFiles )
-      builder.processLocallyDeletedFile( VcsUtil.getFilePath( path ) );
+    final HashSet<String> files = host.removedFiles;
+    synchronized( files )
+    {
+      for( String path : files )
+        builder.processLocallyDeletedFile( VcsUtil.getFilePath( path ) );
+    }
   }
 
   private void addIgnoredFiles( final ChangelistBuilder builder )
@@ -390,7 +398,7 @@ public class CCaseChangeProvider implements ChangeProvider
            !host.isFileIgnored( file );
   }
 
-  private boolean isValidFile( VirtualFile file )
+  private static boolean isValidFile( VirtualFile file )
   {
     return (file != null) && file.isWritable() && !file.isDirectory();
   }
