@@ -1,5 +1,6 @@
 package net.sourceforge.transparent;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.EditFileProvider;
 import com.intellij.openapi.vcs.VcsException;
@@ -7,6 +8,8 @@ import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.io.ReadOnlyAttributeUtil;
 import org.jetbrains.annotations.NonNls;
+
+import java.io.IOException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -60,10 +63,14 @@ public class CCaseEditFileProvider implements EditFileProvider
       host.checkoutFile( file, false );
   }
 
-  public static void hijackFile( VirtualFile file ) throws VcsException
+  public static void hijackFile( final VirtualFile file ) throws VcsException
   {
-    try {  ReadOnlyAttributeUtil.setReadOnlyAttribute( file, false );  }
-    catch( Exception e ) {  throw new VcsException( e );  }
+    ApplicationManager.getApplication().runWriteAction( new Runnable() { public void run(){
+      try {   ReadOnlyAttributeUtil.setReadOnlyAttribute( file, false );  }
+      catch( IOException e ) {
+        Messages.showErrorDialog( "Can not set R/O attribute for file: " + file.getName(), "Operation Failed" );
+      }
+    } });
   }
 
   public boolean shouldHijackFile( VirtualFile file )
