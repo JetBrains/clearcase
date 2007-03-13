@@ -229,6 +229,8 @@ public class CCaseChangeProvider implements ChangeProvider
     if( host.fileIsUnderVcs( parent ) && !processedFolders.contains( parent.getPath() ) )
     {
       LOG.info( "ChangeProvider - Check potentially new folder" );
+      
+      processedFolders.add( parent.getPath() );
       if( !host.fileExistsInVcs( parent ))
       {
         LOG.info( "ChangeProvider - Folder does not exist in the repository" );

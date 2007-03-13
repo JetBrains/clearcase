@@ -3,6 +3,8 @@ package net.sourceforge.transparent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.FileStatus;
+import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -11,6 +13,7 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Date;
 
 /**
@@ -23,6 +26,7 @@ import java.util.Date;
 class CCaseContentRevision implements ContentRevision
 {
   @NonNls private static final String TMP_FILE_NAME = "idea_ccase";
+  @NonNls private static final String VERSION_SEPARATOR = "@@";
 
   private VirtualFile   file;
   private FilePath      revisionPath;
@@ -78,11 +82,41 @@ class CCaseContentRevision implements ContentRevision
         File tmpDir = tmpFile.getParentFile();
         File myTmpFile = new File( tmpDir, Long.toString( new Date().getTime()) );
 
-        String out = TransparentVcs.cleartoolWithOutput( "describe", file.getPath() );
-        String version = parseLastRepositoryVersion( out );
+        String version = null;
+        FileStatusManager mgr = FileStatusManager.getInstance( project );
+
+        //---------------------------------------------------------------------
+        //  We need to explicitely distinguish between normal (checked out)
+        //  files and hijacked files - CCase treats the latter as "private files"
+        //  (with respect to the view) and the "Describe" command does not
+        //  return VOB-object-specific information. "History" command also
+        //  does not work for this file if only we did not specify "@@" at
+        //  the end, explicitely telling that we are interesting in the
+        //  repository object. In this case we need only to extract the version
+        //  identifier latest in the hitory (first record).
+        //---------------------------------------------------------------------
+        if( mgr.getStatus( file ) == FileStatus.HIJACKED )
+        {
+          String log = TransparentVcs.cleartoolWithOutput( "lshistory", file.getPath() + VERSION_SEPARATOR );
+          ArrayList<CCaseHistoryParser.SubmissionData> changes = CCaseHistoryParser.parse( log );
+          if( changes.size() > 0 )
+          {
+            version = changes.get( 0 ).version;
+
+            //  do not forget to strip "@@"
+            if( version.startsWith( VERSION_SEPARATOR ))
+              version = version.substring( 2 );
+          }
+        }
+        else
+        {
+          String out = TransparentVcs.cleartoolWithOutput( "describe", file.getPath() );
+          version = parseLastRepositoryVersion( out );
+        }
+
         if( version != null )
         {
-          final String out2 = TransparentVcs.cleartoolWithOutput( "get", "-to", myTmpFile.getPath(), file.getPath() + "@@" + version );
+          final String out2 = TransparentVcs.cleartoolWithOutput( "get", "-to", myTmpFile.getPath(), file.getPath() + VERSION_SEPARATOR + version );
 
           //  We expect that properly finished command produce no (error or
           //  warning) output.

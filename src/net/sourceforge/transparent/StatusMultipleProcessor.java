@@ -93,13 +93,13 @@ public class StatusMultipleProcessor
     for( int i = 0; i < lines.length; i++ )
     {
       if( lines[ i ].indexOf( VERSIONED_SIG ) == -1 )
-        nonexistingFiles.add( files[ i ].getPath() );
+        nonexistingFiles.add( files[ i ].getPath().toLowerCase() );
       else
       if( lines[ i ].indexOf( CHECKEDOUT_SIG ) != -1 )
-        checkoutFiles.add( files[ i ].getPath() );
+        checkoutFiles.add( files[ i ].getPath().toLowerCase() );
       else
       if( lines[ i ].indexOf( HIJACKED_SIG ) != -1 )
-        hijackedFiles.add( files[ i ].getPath() );
+        hijackedFiles.add( files[ i ].getPath().toLowerCase() );
     }
   }
 }
