@@ -35,6 +35,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
 {
   @NonNls private static final String CHECKIN_TITLE = "Checkin";
   @NonNls private static final String SCR_TITLE = "SCR Number";
+  @NonNls private static final String FILE_NOT_IN_VOB_SIG = "element name not found";
 
   private Project myProject;
   private TransparentVcs host;
@@ -321,8 +322,8 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
 
           List<VcsException> localErrors = new ArrayList<VcsException>();
           FilePath oldFile = change.getBeforeRevision().getFile();
-          updateFile( oldFile.getPath(), localErrors );
-          if( !isUnknownFileError( localErrors ) )
+          host.undoCheckoutFile( oldFile.getIOFile(), localErrors );
+          if( localErrors.size() > 0 && !isUnknownFileError( localErrors ) )
             errors.addAll( localErrors );
 
           host.renamedFiles.remove( filePath.getPath() );
@@ -401,6 +402,11 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
 
   private static boolean isUnknownFileError( List<VcsException> errors )
   {
+    for( VcsException exc : errors )
+    {
+      if( exc.getMessage().toLowerCase().indexOf( FILE_NOT_IN_VOB_SIG ) != -1 )
+        return true;
+    }
     return false;
   }
 }
