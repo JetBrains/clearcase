@@ -8,7 +8,6 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.*;
 import com.intellij.util.ui.ColumnInfo;
 import com.intellij.vcsUtil.VcsUtil;
-import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,14 +24,12 @@ import java.util.Locale;
  * Created by IntelliJ IDEA.
  * User: lloix
  * Date: Jan 26, 2007
- * Time: 2:14:24 PM
- * To change this template use File | Settings | File Templates.
  */
 public class CCaseHistoryProvider implements VcsHistoryProvider
 {
+  @NonNls private final static String HISTORY_CMD = "lshistory";
   @NonNls private final static String ACTION_COLUMN = "Action";
   @NonNls private final static String LABEL_COLUMN = "Label";
-  @NonNls private final static String ERROR_TITLE = "Get History Fail";
 
   private Project project;
 
@@ -68,25 +65,24 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
 
   public VcsHistorySession createSessionFor( FilePath filePath ) throws VcsException
   {
-    CCaseHistorySession session = null;
-    try
+    String log = TransparentVcs.cleartoolWithOutput( HISTORY_CMD, filePath.getPath() );
+    ArrayList<CCaseHistoryParser.SubmissionData> changes = CCaseHistoryParser.parse( log );
+    ArrayList<VcsFileRevision> revisions = new ArrayList<VcsFileRevision>();
+    for( CCaseHistoryParser.SubmissionData change : changes )
     {
-      String log = TransparentVcs.cleartoolWithOutput( "lshistory", filePath.getPath() );
-      ArrayList<CCaseHistoryParser.SubmissionData> changes = CCaseHistoryParser.parse( log );
-      ArrayList<VcsFileRevision> revisions = new ArrayList<VcsFileRevision>();
-      for( CCaseHistoryParser.SubmissionData change : changes )
+      try
       {
         VcsFileRevision rev = new CCaseFileRevision( change, filePath );
         revisions.add( rev );
       }
+      catch( NullPointerException e)
+      {
+        TransparentVcs.LOG.info( "Can not parse history record:");
+        TransparentVcs.LOG.info( log );
+      }
+    }
 
-      session = new CCaseHistorySession( revisions );
-    }
-    catch( ClearCaseException e )
-    {
-      throw new VcsException( e );
-    }
-    return session;
+    return new CCaseHistorySession( revisions );
   }
 
   private class CCaseFileRevision implements VcsFileRevision

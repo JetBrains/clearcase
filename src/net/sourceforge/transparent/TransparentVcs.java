@@ -39,7 +39,7 @@ import java.util.List;
 
 public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDOMExternalizable
 {
-  private static final Logger LOG = Logger.getInstance("#net.sourceforge.transparent.TransparentVcs");
+  public static final Logger LOG = Logger.getInstance("#net.sourceforge.transparent.TransparentVcs");
 
   @NonNls public static final String TEMPORARY_FILE_SUFFIX = ".deleteAndAdd";
   @NonNls public static final String CLEARTOOL_CMD = "cleartool";
