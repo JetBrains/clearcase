@@ -364,13 +364,31 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance( myProject );
     List<VcsException> errors = new ArrayList<VcsException>();
 
-    for( FilePath filePath : paths )
+    for( FilePath path : paths )
     {
-      //  For ClearCase to get back the locally removed file, it is
-      //  necessary to issue "Undo Checkout" command. This will revert it
-      //  it to the state before the checking out on deletion.
-      host.undoCheckoutFile( filePath.getIOFile(), errors );
-      mgr.fileDirty( filePath );
+      String normPath = VcsUtil.getCanonicalPath( path.getIOFile() );
+      if( host.isFolderRemoved( normPath ) )
+      {
+        //  For ClearCase to get back the locally removed folder, it is
+        //  necessary to issue "Update" command. This will revert it to the
+        //  state before the checking out on deletion.
+        updateFile( path.getPath(), errors );
+      }
+      else
+      {
+        //  For ClearCase to get back the locally removed file:
+        //  1. Issue "Undo Checkout" command. This will revert it to the state
+        //     before its checkout on deletion (if it was checked out previously).
+        //  2. Otherwise (we rollback the file which was not previusly checked
+        //     out) perform "Update".
+        List<VcsException> localErrors = new ArrayList<VcsException>();
+        host.undoCheckoutFile( path.getIOFile(), localErrors );
+        if( localErrors.size() > 0 )
+        {
+          updateFile( path.getPath(), errors );
+        }
+      }
+      mgr.fileDirty( path );
     }
     return errors;
   }

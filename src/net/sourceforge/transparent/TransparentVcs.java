@@ -316,12 +316,13 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     return mgr.isIgnoredFile( file );
   }
 
-  public void add2NewFile( VirtualFile file ) {  add2NewFile( file.getPath() );       }
-  public void add2NewFile( String path )      {  newFiles.add( path.toLowerCase() );  }
-  public void deleteNewFile( VirtualFile file ) {  deleteNewFile( file.getPath() );       }
+  public void add2NewFile( VirtualFile file )   {  add2NewFile( file.getPath() );       }
+  public void add2NewFile( String path )        {  newFiles.add( path.toLowerCase() );  }
+  public void deleteNewFile( VirtualFile file ) {  deleteNewFile( file.getPath() );     }
   public void deleteNewFile( String path )      {  newFiles.remove( path.toLowerCase() );  }
-  public boolean containsNew( String path )   {  return newFiles.contains( path.toLowerCase() );   }
-
+  public boolean containsNew( String path )     {  return newFiles.contains( path.toLowerCase() );   }
+  public boolean isFolderRemoved( String path ) {  return removedFolders.contains( path );  }
+  
   private boolean isCheckInToUseHijack() {
     return config.offline || config.checkInUseHijack;
   }
