@@ -261,6 +261,14 @@ public class CCaseChangeProvider implements ChangeProvider
   {
     for( FilePath path : scope.getDirtyFiles() )
     {
+      VirtualFile file = path.getVirtualFile();
+      String fileName = path.getPath();
+
+      if( host.isFileIgnored( file ))
+      {
+        filesIgnored.add( fileName );
+      }
+      else
       //-----------------------------------------------------------------------
       //  Do not process files which have RO status at all.
       //  Generally it means that all files which were got through some sort of
@@ -268,9 +276,6 @@ public class CCaseChangeProvider implements ChangeProvider
       //  since there is no necessity in that. All other cases - modified and
       //  new files are processed as usual.
       //-----------------------------------------------------------------------
-      VirtualFile file = VcsUtil.getVirtualFile( path.getPath() );
-      String fileName = path.getPath();
-
       if( isFileCCaseProcessable( file ) )
       {
         if( isProperNotification( path ) )
