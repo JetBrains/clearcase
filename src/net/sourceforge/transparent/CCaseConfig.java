@@ -29,7 +29,7 @@ public class CCaseConfig implements ListenerNotifier, JDOMExternalizable, Projec
   public boolean checkoutReserved = false;
   public boolean markExternalChangeAsUpToDate = true;
   public boolean checkInUseHijack = true;
-  public boolean offline = false;
+  public boolean isOffline = false;
   public String lastScr = "";
   public String scrTextFileName = "";
   public String lastViewType = null;

@@ -63,7 +63,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   @NonNls private static final String DYNAMIC_SIG = "dynamic";
 
   @NonNls private static final String INIT_FAILED_TITLE = "Server intialization failed";
-  @NonNls private static final String SERVER_UNAVAILABLE_MESSAGE = "\nServer is unavailable, ClearCase support is switched to offline mode";
+  @NonNls private static final String SERVER_UNAVAILABLE_MESSAGE = "\nServer is unavailable, ClearCase support is switched to isOffline mode";
   @NonNls private static final String FAILED_TO_INIT_VIEW_MESSAGE = "Plugin failed to initialize view:\n";
 
   //  Resolve the case when parent folder was already checked out by
@@ -107,11 +107,14 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public Project getProject()       {  return myProject;   }
 
   public Configurable         getConfigurable()       {  return new TransparentConfigurable( myProject );  }
-  public CCaseConfig          getConfig()             {  return config;   }
-  public ChangeProvider       getChangeProvider()     {  return changeProvider;      }
-  public CheckinEnvironment   getCheckinEnvironment() {  return checkinEnvironment;  }
-  public EditFileProvider     getEditFileProvider()   {  return editProvider;        }
-  public VcsHistoryProvider   getVcsHistoryProvider() {  return historyProvider;     }
+  public CCaseConfig          getConfig()             {  return config;           }
+  public ChangeProvider       getChangeProvider()     {  return changeProvider;   }
+  public EditFileProvider     getEditFileProvider()   {  return editProvider;     }
+  public VcsHistoryProvider   getVcsHistoryProvider() {  return historyProvider;  }
+  public CheckinEnvironment   getCheckinEnvironment()
+  {
+    return ((config == null) || !config.isOffline) ? checkinEnvironment : null;
+  }
   public UpdateEnvironment    getUpdateEnvironment()
   {
     //  For dynamic views "Update project" action makes no sence.
@@ -182,7 +185,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public void transparentConfigurationChanged()
   {
-    if (!getConfig().offline)
+    if (!getConfig().isOffline)
     {
       resetClearCaseFromConfiguration();
       extractViewProperties();
@@ -224,7 +227,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       {
         Messages.showMessageDialog( getProject(), e.getMessage() + SERVER_UNAVAILABLE_MESSAGE,
                                     INIT_FAILED_TITLE, Messages.getErrorIcon());
-        config.offline = true;
+        config.isOffline = true;
       }
       catch( ClearCaseException e )
       {
@@ -324,7 +327,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public boolean isFolderRemoved( String path ) {  return removedFolders.contains( path );  }
   
   private boolean isCheckInToUseHijack() {
-    return config.offline || config.checkInUseHijack;
+    return config.isOffline || config.checkInUseHijack;
   }
 
   public Status getStatus( VirtualFile file ) {  return getClearCase().getStatus( new File( file.getPath() ) );   }

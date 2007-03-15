@@ -20,7 +20,7 @@ public class HijackAction extends SynchronousAction
   {
     super.update( e );
 
-    if ( !getHost( e ).getConfig().offline )
+    if ( !getHost( e ).getConfig().isOffline)
       e.getPresentation().setEnabled( false );
   }
 

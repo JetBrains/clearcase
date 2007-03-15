@@ -90,8 +90,8 @@ public class CCaseChangeProvider implements ChangeProvider
       @NonNls String message = FAIL_2_CONNECT_MSG + e.getMessage();
       if( TransparentVcs.isServerDownMessage( e.getMessage() ))
       {
-        message += "\n\nSwitching to the offline mode";
-        host.getConfig().offline = true;
+        message += "\n\nSwitching to the isOffline mode";
+        host.getConfig().isOffline = true;
       }
       final String msg = message;
       ApplicationManager.getApplication().invokeLater( new Runnable() { public void run() { VcsUtil.showErrorMessage( project, msg, FAIL_2_CONNECT_TITLE ); } });

@@ -71,6 +71,6 @@ public class CCaseEditFileProvider implements EditFileProvider
   private boolean shouldHijackFile( VirtualFile file )
   {
     Status status = host.getStatus( file );
-    return host.getConfig().offline || (status == Status.NOT_AN_ELEMENT);
+    return host.getConfig().isOffline || (status == Status.NOT_AN_ELEMENT);
   }
 }
