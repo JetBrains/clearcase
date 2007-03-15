@@ -15,12 +15,12 @@ import java.io.IOException;
  * Created by IntelliJ IDEA.
  * User: lloix
  * Date: Dec 19, 2006
- * Time: 2:26:37 PM
- * To change this template use File | Settings | File Templates.
  */
 public class CCaseEditFileProvider implements EditFileProvider
 {
   @NonNls private final static String REQUEST_TEXT = "Would you like to invoke 'CheckOut' command?";
+  @NonNls private final static String FAIL_RO_TEXT = "Can not set R/O attribute for file: ";
+  @NonNls private final static String FAIL_DIALOG_TITLE = "Operation Failed";
 
   private TransparentVcs host;
 
@@ -37,30 +37,25 @@ public class CCaseEditFileProvider implements EditFileProvider
     for( VirtualFile file : files )
     {
       if( !mgr.isIgnoredFile( file ) )
-          checkOutOrHijackFile(file);
+        checkOutOrHijackFile(file);
     }
   }
 
-  public void checkOutOrHijackFile( VirtualFile file )
+  private void checkOutOrHijackFile( VirtualFile file )
   {
     try
     {
-      makeFileWritable( file );
+      if( shouldHijackFile( file ) )
+        hijackFile( file );
+      else
+        host.checkoutFile( file, false );
     }
     catch( Throwable e )
     {
       String message = "Exception while " + (shouldHijackFile(file) ? "hijacking " : "checking out ") +
                        file.getPresentableUrl() + "\n" + e.getMessage();
-      Messages.showErrorDialog( message, "message.title.could.not.start.process" );
+      Messages.showErrorDialog( message, FAIL_DIALOG_TITLE );
     }
-  }
-
-  private void makeFileWritable( VirtualFile file ) throws VcsException
-  {
-    if( shouldHijackFile( file ) )
-      hijackFile( file );
-    else
-      host.checkoutFile( file, false );
   }
 
   public static void hijackFile( final VirtualFile file ) throws VcsException
@@ -68,12 +63,12 @@ public class CCaseEditFileProvider implements EditFileProvider
     ApplicationManager.getApplication().runWriteAction( new Runnable() { public void run(){
       try {   ReadOnlyAttributeUtil.setReadOnlyAttribute( file, false );  }
       catch( IOException e ) {
-        Messages.showErrorDialog( "Can not set R/O attribute for file: " + file.getName(), "Operation Failed" );
+        Messages.showErrorDialog( FAIL_RO_TEXT + file.getName(), FAIL_DIALOG_TITLE );
       }
     } });
   }
 
-  public boolean shouldHijackFile( VirtualFile file )
+  private boolean shouldHijackFile( VirtualFile file )
   {
     Status status = host.getStatus( file );
     return host.getConfig().offline || (status == Status.NOT_AN_ELEMENT);

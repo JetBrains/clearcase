@@ -28,8 +28,6 @@ import java.util.List;
  * Created by IntelliJ IDEA.
  * User: lloix
  * Date: Dec 6, 2006
- * Time: 5:35:28 PM
- * To change this template use File | Settings | File Templates.
  */
 public class CCaseChangeProvider implements ChangeProvider
 {
