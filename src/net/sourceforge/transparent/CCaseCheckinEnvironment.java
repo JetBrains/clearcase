@@ -25,6 +25,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Collections;
 
 /**
  * Created by IntelliJ IDEA.
@@ -405,6 +406,11 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     }
     // Keep intentionally empty.
     return new ArrayList<VcsException>();
+  }
+
+  public List<VcsException> rollbackModifiedWithoutCheckout(final List<VirtualFile> files) {
+    // TODO[lloix]: implement
+    return Collections.emptyList();
   }
 
   private static void updateFile( String path, List<VcsException> errors )
