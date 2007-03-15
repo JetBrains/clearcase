@@ -70,6 +70,10 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
     ArrayList<VcsFileRevision> revisions = new ArrayList<VcsFileRevision>();
     for( CCaseHistoryParser.SubmissionData change : changes )
     {
+      //  When file is being committed into the repository, "lshistory"
+      //  returns a intermediate record with commit date in the invalid format
+      //  which can not be parsed (actually, it contains only full date wihtout
+      //  time information delimited by '.'). Just skip this record.
       try
       {
         VcsFileRevision rev = new CCaseFileRevision( change, filePath );
@@ -77,8 +81,7 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
       }
       catch( NullPointerException e)
       {
-        TransparentVcs.LOG.info( "Can not parse history record:");
-        TransparentVcs.LOG.info( log );
+        TransparentVcs.LOG.info( "Can not parse history record, found intermediate record.");
       }
     }
 
