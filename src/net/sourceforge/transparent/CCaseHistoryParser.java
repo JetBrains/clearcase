@@ -52,7 +52,7 @@ public class CCaseHistoryParser
         if( changes.size() > 0 )
         {
           SubmissionData lastChange = changes.get( changes.size() - 1 );
-          String newComment = line.substring( COMMENT_SIG.length(), line.length() - 2 );
+          String newComment = line.substring( COMMENT_SIG.length(), line.length() - 1 );
           String comment = lastChange.comment;
           lastChange.comment = (comment == null) ? newComment : comment.concat( newComment );
         }
