@@ -53,5 +53,8 @@
          <add-to-group group-id="VcsGroup" anchor="last" />
       </group>
    </actions>
+  <extensions xmlns="com.intellij">
+    <errorHandler implementation="com.intellij.diagnostic.ITNReporter"/>
+  </extensions>
 </idea-plugin>
 
