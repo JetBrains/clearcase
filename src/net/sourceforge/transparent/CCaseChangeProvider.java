@@ -238,7 +238,7 @@ public class CCaseChangeProvider implements ChangeProvider
       VirtualFile file = VcsUtil.getVirtualFile( path );
 
       Boolean isCheckoutResult = file.getUserData( SUCCESSFUL_CHECKOUT );
-      if( isCheckoutResult.booleanValue() )
+      if( isCheckoutResult != null && isCheckoutResult.booleanValue() )
       {
         //  Do not forget to delete this property right after the change
         //  is classified, otherwise this file will always be determined
