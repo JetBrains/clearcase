@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.InvalidDataException;
 import com.intellij.openapi.util.JDOMExternalizable;
+import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.WriteExternalException;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.*;
@@ -69,6 +70,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   //  Resolve the case when parent folder was already checked out by
   //  the presence of this substring in the error message.
   @NonNls private static final String ALREADY_CHECKEDOUT_SIG = "already checked out";
+
+  public static final Key<Boolean> SUCCESSFUL_CHECKOUT = new Key<Boolean>( "SUCCESSFUL_CHECKOUT" );
 
   public HashSet<String> removedFiles;
   public HashSet<String> removedFolders;
@@ -316,7 +319,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public boolean isFileIgnored( VirtualFile file )
   {
     ChangeListManager mgr = ChangeListManager.getInstance( myProject );
-    return mgr.isIgnoredFile( file );
+    return (file != null) && mgr.isIgnoredFile( file );
   }
 
   public void add2NewFile( VirtualFile file )   {  add2NewFile( file.getPath() );       }

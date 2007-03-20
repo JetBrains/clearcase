@@ -16,6 +16,7 @@ import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
+import static net.sourceforge.transparent.TransparentVcs.SUCCESSFUL_CHECKOUT;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
 
@@ -35,6 +36,12 @@ public class CCaseChangeProvider implements ChangeProvider
   @NonNls private final static String SEARCHNEW_MSG = "Searching New";
   @NonNls private final static String FAIL_2_CONNECT_MSG = "Failed to connect to ClearCase Server: ";
   @NonNls private final static String FAIL_2_CONNECT_TITLE = "Server Connection Problem";
+
+  //  Sometimes we need to explicitely distinguish between different
+  //  ClearCase implementations since for one of them we use optimized
+  //  scheme for file statuses determination. Part of class name is the
+  //  best way for that.
+  @NonNls private final static String COMMAND_LINE_CLASS_SIG = "Line";
 
   private static final Logger LOG = Logger.getInstance("#net.sourceforge.transparent.CCaseChangeProvider");
 
@@ -98,7 +105,8 @@ public class CCaseChangeProvider implements ChangeProvider
     }
     finally
     {
-      LOG.info( "-- EndChangeProvider -- ");
+      TransparentVcs.LOG.info( "-- EndChangeProvider| New(+renamed): " + filesNew.size() + ", modified: " + filesChanged.size() +
+                               ", hijacked:" + filesHijacked.size() + ", ignored: " + filesIgnored.size() );
     }
   }
 
@@ -122,7 +130,7 @@ public class CCaseChangeProvider implements ChangeProvider
       progress.setText( COLLECT_MSG );
 
     List<String> writableFiles = new ArrayList<String>();
-    collectSuspiciousFiles( path, writableFiles );
+    collectWritableFiles( path, writableFiles );
     LOG.info( "-- ChangeProvider - Found: " + writableFiles.size() + " writable files." );
 
     if( progress != null )
@@ -130,7 +138,7 @@ public class CCaseChangeProvider implements ChangeProvider
     analyzeWritableFiles( writableFiles );
   }
 
-  private void collectSuspiciousFiles( final FilePath filePath, final List<String> writableFiles )
+  private void collectWritableFiles( final FilePath filePath, final List<String> writableFiles )
   {
     final ProjectFileIndex fileIndex = ProjectRootManager.getInstance( project ).getFileIndex();
 
@@ -157,14 +165,18 @@ public class CCaseChangeProvider implements ChangeProvider
 
   private void analyzeWritableFiles( List<String> writableFiles )
   {
+    List<String> writableExplicitFiles = new ArrayList<String>();
+
     final List<String> newFiles = new ArrayList<String>();
     final List<String> newFolders = new ArrayList<String>();
 
-    if( host.getClearCase().getName().indexOf( "Line" ) == -1 ||
+    selectExplicitWritableFiles( writableFiles, writableExplicitFiles );
+
+    if( host.getClearCase().getName().indexOf( COMMAND_LINE_CLASS_SIG ) == -1 ||
         writableFiles.size() == 1 )
     {
       LOG.info( "ChangeProvider - Analyzing writable files on per-file basis" );
-      for( String path : writableFiles )
+      for( String path : writableExplicitFiles )
       {
         LOG.info( "ChangeProvider - Issue \"ls\" command for getting information on writable file" );
 
@@ -184,7 +196,7 @@ public class CCaseChangeProvider implements ChangeProvider
     {
       LOG.info( "ChangeProvider - Analyzing writables in batch mode using CLEARTOOL on " + writableFiles.size() + " files." );
 
-      StatusMultipleProcessor processor = new StatusMultipleProcessor( writableFiles );
+      StatusMultipleProcessor processor = new StatusMultipleProcessor( writableExplicitFiles );
       processor.execute();
       LOG.info( "ChangeProvider - CLEARTOOL LS batch command finished." );
 
@@ -212,6 +224,33 @@ public class CCaseChangeProvider implements ChangeProvider
 
     filesNew.addAll( newFolders );
     filesNew.addAll( newFiles );
+  }
+
+  /**
+   * Do not analyze the file if we know that this file just has been
+   * successfully checked out from the repository, its RO status is
+   * writable and it is ready for editing.
+   */
+  private void selectExplicitWritableFiles( List<String> list, List<String> newWritables )
+  {
+    for( String path : list )
+    {
+      VirtualFile file = VcsUtil.getVirtualFile( path );
+
+      Boolean isCheckoutResult = file.getUserData( SUCCESSFUL_CHECKOUT );
+      if( isCheckoutResult.booleanValue() )
+      {
+        //  Do not forget to delete this property right after the change
+        //  is classified, otherwise this file will always be determined
+        //  as modified.
+        file.putUserData( SUCCESSFUL_CHECKOUT, null );
+        filesChanged.add( file.getPath() );
+      }
+      else
+      {
+        newWritables.add( path );
+      }
+    }
   }
 
   //---------------------------------------------------------------------------
@@ -259,7 +298,7 @@ public class CCaseChangeProvider implements ChangeProvider
   {
     for( FilePath path : scope.getDirtyFiles() )
     {
-      VirtualFile file = path.getVirtualFile();
+      VirtualFile file = VcsUtil.getVirtualFile( path.getPath() );
       String fileName = path.getPath();
 
       if( host.isFileIgnored( file ))
