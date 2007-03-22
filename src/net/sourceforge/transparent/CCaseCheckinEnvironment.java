@@ -10,7 +10,6 @@ import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
-import com.intellij.openapi.vcs.ui.Refreshable;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
@@ -47,7 +46,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     this.host = host;
   }
 
-  public RefreshableOnComponent createAdditionalOptionsPanelForCheckinProject( Refreshable panel )
+  public RefreshableOnComponent createAdditionalOptionsPanel( CheckinProjectPanel panel )
   {
     @NonNls final JPanel additionalPanel = new JPanel();
     final JTextField scrNumber = new JTextField();
