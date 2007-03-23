@@ -22,9 +22,9 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Collections;
 
 /**
  * Created by IntelliJ IDEA.
@@ -115,7 +115,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     commitChanged( changes, comment, processedFiles, errors );
 
     for( FilePath path : processedFiles )
-      VcsUtil.markFileAsDirty( myProject, path );
+      VcsUtil.refreshVirtualFileSynchronously( path.getVirtualFile() );
 
     return errors;
   }
@@ -229,28 +229,21 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     rollbackChanged( changes, processedFiles, errors );
 
     for( FilePath path : processedFiles )
-      VcsUtil.markFileAsDirty( myProject, path );
+      VcsUtil.refreshVirtualFileSynchronously( path.getVirtualFile() );
 
     return errors;
   }
 
   private void rollbackNew( List<Change> changes, HashSet<FilePath> processedFiles )
   {
-    HashSet<FilePath> folders = new HashSet<FilePath>();
-    HashSet<FilePath> files = new HashSet<FilePath>();
-    collectNewChangesBack( changes, folders, files, processedFiles );
+    HashSet<FilePath> filesAndFolder = new HashSet<FilePath>();
+    collectNewChangesBack( changes, filesAndFolder, processedFiles );
 
     VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance( myProject );
-    for( FilePath file : files )
+    for( FilePath file : filesAndFolder )
     {
       host.deleteNewFile( file.getPath() );
       mgr.fileDirty( file );
-    }
-
-    for( FilePath folder : folders )
-    {
-      host.deleteNewFile( folder.getPath() );
-      mgr.fileDirty( folder );
     }
   }
 
@@ -259,8 +252,8 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
    * in the change lists with the status NEW (ADDED) which are UNDER this folder.
    * This ensures that no file will be left in any change list with status NEW.
    */
-  private void collectNewChangesBack( List<Change> changes, HashSet<FilePath> folders,
-                                      HashSet<FilePath> files, HashSet<FilePath> processedFiles )
+  private void collectNewChangesBack( List<Change> changes, HashSet<FilePath> newFilesAndfolders,
+                                      HashSet<FilePath> processedFiles )
   {
     HashSet<FilePath> foldersNew = new HashSet<FilePath>();
     for( Change change : changes )
@@ -268,10 +261,10 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
       if( VcsUtil.isChangeForNew( change ) )
       {
         FilePath filePath = change.getAfterRevision().getFile();
-        if( filePath.isDirectory() )
-          foldersNew.add( filePath );
+        if( !filePath.isDirectory() )
+          newFilesAndfolders.add( filePath );
         else
-          files.add( filePath );
+          foldersNew.add( filePath );
         processedFiles.add( filePath );
       }
     }
@@ -290,15 +283,12 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
           if( file.getPath().toLowerCase().startsWith( folder.getPath().toLowerCase() ))
           {
             FilePath path = clMgr.getChange( file ).getAfterRevision().getFile();
-            if( path.isDirectory() )
-              foldersNew.add( path );
-            else
-              files.add( path );
+            newFilesAndfolders.add( path );
           }
         }
       }
     }
-    folders.addAll( foldersNew );
+    newFilesAndfolders.addAll( foldersNew );
   }
   private void rollbackChanged( List<Change> changes, HashSet<FilePath> processedFiles, List<VcsException> errors )
   {
@@ -407,7 +397,8 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     return new ArrayList<VcsException>();
   }
 
-  public List<VcsException> rollbackModifiedWithoutCheckout(final List<VirtualFile> files) {
+  public List<VcsException> rollbackModifiedWithoutCheckout(final List<VirtualFile> files)
+  {
     // TODO[lloix]: implement
     return Collections.emptyList();
   }

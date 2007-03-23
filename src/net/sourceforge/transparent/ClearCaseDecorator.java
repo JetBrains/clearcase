@@ -1,18 +1,12 @@
 package net.sourceforge.transparent;
 
-import com.intellij.openapi.diagnostic.Logger;
-
 import java.io.File;
 
 public class ClearCaseDecorator implements ClearCase
 {
-  public static final Logger LOG = Logger.getInstance("net.sourceforge.transparent.ClearCase");
-
   private ClearCase clearCase;
 
-  public ClearCaseDecorator(ClearCase clearcase) {
-      clearCase = clearcase;
-  }
+  public ClearCaseDecorator(ClearCase clearcase) { clearCase = clearcase;  }
 
   public String     getName()       {  return clearCase.getName();  }
   public ClearCase  getClearCase()  {  return clearCase;  }
@@ -26,51 +20,24 @@ public class ClearCaseDecorator implements ClearCase
     return clearCase.equals(clearCaseDecorator.clearCase);
   }
 
-  public void move(File file, File target, String comment) {
-    clearCase.move(file, target, comment);
-  }
+  public void undoCheckOut(File file) {  clearCase.undoCheckOut(file);  }
 
-  public void undoCheckOut(File file) {
-    clearCase.undoCheckOut(file);
-  }
-
-  public void checkIn(File file, String comment) {
-    clearCase.checkIn(file, comment);
-  }
+  public void checkIn(File file, String comment) {  clearCase.checkIn(file, comment);  }
 
   public void checkOut(File file, boolean isReserved, String comment) {
     clearCase.checkOut(file, isReserved, comment);
   }
 
-  public void delete(File file, String comment) {
-    clearCase.delete(file, comment);
-  }
+  public void add(File file, String comment)    {  clearCase.add(file, comment);     }
+  public void delete(File file, String comment) {  clearCase.delete(file, comment);  }
+  public void move(File file, File target, String comment) {  clearCase.move(file, target, comment);  }
 
-  public void add(File file, String comment) {
-    clearCase.add(file, comment);
-  }
+  public Status   getStatus(File file)    {  return clearCase.getStatus(file);    }
+  public boolean  isElement(File file)    {  return clearCase.isElement(file);    }
+  public boolean  isCheckedOut(File file) {  return clearCase.isCheckedOut(file); }
 
-  public Status getStatus(File file) {
-    return clearCase.getStatus(file);
-  }
+  public CheckedOutStatus getCheckedOutStatus(File file) {  return clearCase.getCheckedOutStatus(file);  }
+  public String getCheckoutComment(File file) {  return clearCase.getCheckoutComment(file);  }
 
-  public boolean isElement(File file) {
-    return clearCase.isElement(file);
-  }
-
-  public boolean isCheckedOut(File file) {
-      return clearCase.isCheckedOut(file);
-  }
-
-  public void cleartool(String cmd) {
-      clearCase.cleartool(cmd);
-  }
-
-  public CheckedOutStatus getCheckedOutStatus(File file) {
-      return clearCase.getCheckedOutStatus(file);
-  }
-
-  public String getCheckoutComment(File file) {
-    return clearCase.getCheckoutComment(file);
-  }
+  public void cleartool(String cmd) {  clearCase.cleartool(cmd);  }
 }
