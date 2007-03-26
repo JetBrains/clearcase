@@ -29,7 +29,7 @@ public class CCaseHistoryParser
     public String version;
     public String submitter;
     public String changeDate;
-    public String changeTime;
+//    public String changeTime;
     public String comment;
     public String labels;
     public int    order;
@@ -92,7 +92,8 @@ public class CCaseHistoryParser
   private static void parseLeftSide( SubmissionData data, String str )
   {
     int index = str.indexOf( DATE_DELIM );
-    parseDateTime( str.substring( 0, index ), data );
+//    parseDateTime( str.substring( 0, index ), data );
+    data.changeDate = str.substring( 0, index );
     data.submitter = str.substring( index + DATE_DELIM.length() ).trim();
   }
 
@@ -113,13 +114,15 @@ public class CCaseHistoryParser
 
   //  CCase's date/time format is given without year fiels, catenated via '.' -
   //  22-Dec.15:14
+  /*
   private static void parseDateTime( String str, SubmissionData data )
   {
     int index = str.indexOf( '.' );
     if( index != -1 )
     {
-      data.changeDate = str.substring( 0, index - 1 );
+      data.changeDate = str.substring( 0, index );
       data.changeTime = str.substring( index + 1 );
     }
   }
+  */
 }

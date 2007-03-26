@@ -1,7 +1,6 @@
 package net.sourceforge.transparent;
 
 import com.intellij.openapi.actionSystem.AnAction;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -13,12 +12,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Locale;
 
 /**
  * Created by IntelliJ IDEA.
@@ -28,6 +23,7 @@ import java.util.Locale;
 public class CCaseHistoryProvider implements VcsHistoryProvider
 {
   @NonNls private final static String HISTORY_CMD = "lshistory";
+  @NonNls private final static String CCASE_DATE_COLUMN = "ClearCase Date";
   @NonNls private final static String ACTION_COLUMN = "Action";
   @NonNls private final static String LABEL_COLUMN = "Label";
 
@@ -37,6 +33,14 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
   {
     this.project = project;
   }
+
+  private static final ColumnInfo<VcsFileRevision, String> CCASE_DATE = new ColumnInfo<VcsFileRevision, String>( CCASE_DATE_COLUMN )
+  {
+    public String valueOf(VcsFileRevision vcsFileRevision) {
+      if (!(vcsFileRevision instanceof CCaseFileRevision)) return "";
+      return ((CCaseFileRevision) vcsFileRevision).getChangeCcaseDate();
+    }
+  };
 
   private static final ColumnInfo<VcsFileRevision, String> ACTION = new ColumnInfo<VcsFileRevision, String>( ACTION_COLUMN )
   {
@@ -61,7 +65,7 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
   @Nullable
   public HistoryAsTreeProvider getTreeHistoryProvider() {  return null;   }
   public AnAction[]   getAdditionalActions(final FileHistoryPanel panel) {  return new AnAction[0];   }
-  public ColumnInfo[] getRevisionColumns()  {  return new ColumnInfo[] { ACTION, LABEL };  }
+  public ColumnInfo[] getRevisionColumns()  {  return new ColumnInfo[] { CCASE_DATE, ACTION, LABEL };  }
 
   public VcsHistorySession createSessionFor( FilePath filePath ) throws VcsException
   {
@@ -92,7 +96,8 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
   {
     private String version;
     private String submitter;
-    private Date changeDate;
+//    private Date changeDate;
+    private String changeCcaseDate;
     private String comment;
     private String action;
     private String labels;
@@ -108,20 +113,23 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
       comment = data.comment;
       action = data.action;
       labels = data.labels;
-      changeDate = new Date();
+//      changeDate = new Date();
       order = data.order;
 
       //  Parse separately date and time using several simple heuristics.
-      long dateValue = parseDate( data.changeDate );
-      long timeValue = parseTime( data.changeDate );
-      changeDate.setTime( dateValue + timeValue );
+//      long dateValue = parseDate( data.changeDate );
+//      long timeValue = parseTime( data.changeDate );
+//      changeDate.setTime( dateValue + timeValue );
+      changeCcaseDate = data.changeDate;
 
       this.path = path;
     }
 
     public byte[] getContent()      { return content;    }
     public String getBranchName()   { return null;       }
-    public Date   getRevisionDate() { return changeDate; }
+//    public Date   getRevisionDate() { return changeDate; }
+    public Date   getRevisionDate() { return null; }
+    public String getChangeCcaseDate() { return changeCcaseDate; }
     public String getAuthor()       { return submitter;  }
     public String getCommitMessage(){ return comment;    }
     public int    getOrder()        { return order;      }
@@ -150,7 +158,8 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
         //  warning) output.
         if( out.length() > 0 )
         {
-          ApplicationManager.getApplication().invokeLater( new Runnable() { public void run() { VcsUtil.showErrorMessage( project, out, TITLE ); } });
+//          ApplicationManager.getApplication().invokeLater( new Runnable() { public void run() { VcsUtil.showErrorMessage( project, out, TITLE ); } });
+          VcsUtil.showErrorMessage( project, out, TITLE );
         }
         else
         {
@@ -168,6 +177,7 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
       return getRevisionNumber().compareTo( ((CCaseFileRevision)revision).getRevisionNumber() );
     }
 
+  /*
     private long parseDate( String dateStr )
     {
       Locale locale = Locale.getDefault();
@@ -230,6 +240,7 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
       }
       return timeValue;
     }
+  */
   }
 
   private static class CCaseHistorySession extends VcsHistorySession
@@ -256,7 +267,7 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
         {
           maxRevision = Math.max( maxRevision, ((CCaseFileRevision)rev).getOrder() );
         }
-        revision = new VcsRevisionNumber.Int( maxRevision + 1 );
+        revision = new VcsRevisionNumber.Int( maxRevision );
       }
       catch( Exception e )
       {
