@@ -58,6 +58,7 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
     }
   };
 
+  public boolean isDateOmittable() {  return true;  }
 
   @NonNls @Nullable
   public String getHelpId() {  return null;  }
