@@ -16,7 +16,6 @@ import com.intellij.openapi.vcs.update.FileGroup;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vcs.update.UpdateSession;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
-import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 
@@ -68,20 +67,15 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
     FileDocumentManager.getInstance().saveAllDocuments();
 
     CCaseConfig config = CCaseConfig.getInstance( project );
-    try
-    {
-      String out = TransparentVcs.cleartoolWithOutput( "update", config.clearcaseRoot );
-      parseOutput( out, updatedFiles );
-    }
-    catch( ClearCaseException e )
-    {
-      //  Correctly process the case when "Update Project" is done over the
-      //  dynamic view (only snapshot views can handle this operation).
-      if( e.getMessage().indexOf( ERROR_MSG_SIG ) != -1 )
-        errors.add( new VcsException( "You can not update a dynamic view: " + e.getMessage() ) );
-      else
-        errors.add( new VcsException( "Update failed with message: " + e.getMessage() ) );
-    }
+
+    String out = TransparentVcs.cleartoolWithOutput( "update", config.clearcaseRoot );
+
+    //  Correctly process the case when "Update Project" is done over the
+    //  dynamic view (only snapshot views can handle this operation).
+    if( out.indexOf( ERROR_MSG_SIG ) != -1 )
+      errors.add( new VcsException( "You can not update a dynamic view: " + out ) );
+
+    parseOutput( out, updatedFiles );
 
     return new UpdateSession(){
       public List<VcsException> getExceptions() { return errors; }

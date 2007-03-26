@@ -114,8 +114,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     commitNew( changes, comment, processedFiles, errors );
     commitChanged( changes, comment, processedFiles, errors );
 
-    for( FilePath path : processedFiles )
-      VcsUtil.refreshVirtualFileSynchronously( path.getVirtualFile() );
+    VcsUtil.refreshFiles( processedFiles );
 
     return errors;
   }
@@ -201,7 +200,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
 
           if( oldFile.getVirtualFileParent().getPath().equals( file.getVirtualFileParent().getPath() ))
           {
-            host.renameAndCheckInFile( file.getIOFile(), file.getName(), comment, errors );
+            host.renameAndCheckInFile( oldFile.getIOFile(), file.getName(), comment, errors );
           }
           else
           {
@@ -228,8 +227,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     rollbackNew( changes, processedFiles );
     rollbackChanged( changes, processedFiles, errors );
 
-    for( FilePath path : processedFiles )
-      VcsUtil.refreshVirtualFileSynchronously( path.getVirtualFile() );
+    VcsUtil.refreshFiles( processedFiles );
 
     return errors;
   }

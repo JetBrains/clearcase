@@ -312,7 +312,11 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public boolean fileExistsInVcs(FilePath path)   {  return fileExistsInVcs( path.getVirtualFile() );  }
   public boolean fileExistsInVcs(VirtualFile file)
   {
-    Status status = getStatus( new File( file.getPath() ) );
+    String path = file.getPath();
+    if( renamedFiles.containsKey( path ))
+      path = renamedFiles.get( path );
+    
+    Status status = getStatus( new File( path ) );
     return status != Status.NOT_AN_ELEMENT;
   }
 
@@ -343,11 +347,11 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public void checkinFile( File ioFile, String comment, List<VcsException> errors )
   {
     VirtualFile vFile = VcsUtil.getVirtualFile( ioFile );
+    FileStatusManager fsmgr = FileStatusManager.getInstance( myProject );
 
     try
     {
-      FileStatusManager fsmgr = FileStatusManager.getInstance( myProject );
-      if( (fsmgr.getStatus( vFile ) == FileStatus.HIJACKED) && isCheckInToUseHijack() )
+      if(( vFile != null ) && (fsmgr.getStatus( vFile ) == FileStatus.HIJACKED) && isCheckInToUseHijack() )
       {
         //  Run checkout in the "non-verbose" mode, that is do not display any
         //  dialogs since we are aready in the Dialoging mode.
@@ -401,7 +405,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       newFile.renameTo( ioFile );
     }
 
-    refreshIdeaFile( file );
     return true;
   }
 
@@ -421,8 +424,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     try
     {
       getClearCase().undoCheckOut( ioFile );
-      if( vFile != null )
-        refreshIdeaFile( vFile );
     }
     catch( Throwable e )
     {
@@ -529,7 +530,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
           File ioParent = oldFile.getParentFile();
           if( ioParent.exists() )
           {
-            renameFile(newFile, oldFile);
+            renameFile( newFile, oldFile );
             checkinFile( oldFile, modComment, errors );
 
             getClearCase().checkOut( ioParent, false, modComment );
@@ -640,21 +641,16 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public static String  updateFile( String fileName )  {  return cleartoolWithOutput( "update", fileName );  }
 
-  public static void refreshIdeaFile( VirtualFile file )
-  {
-    file.refresh(true, false);
-  }
-
   public static void cleartool(@NonNls String... subcmd) throws ClearCaseException
   {
     try { Runner.runAsynchronously( Runner.getCommand( CLEARTOOL_CMD, subcmd ) ); }
     catch (IOException e) {  throw new ClearCaseException(e.getMessage());  }
   }
 
-  public static String cleartoolWithOutput(@NonNls String... subcmd) throws ClearCaseException
+  public static String cleartoolWithOutput(@NonNls String... subcmd)
   {
     Runner runner = new Runner();
-    runner.run( Runner.getCommand( CLEARTOOL_CMD, subcmd ) );
+    runner.run( Runner.getCommand( CLEARTOOL_CMD, subcmd ), true );
     return runner.getOutput();
   }
 

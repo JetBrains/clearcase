@@ -28,10 +28,12 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
   @NonNls private final static String LABEL_COLUMN = "Label";
 
   private Project project;
+  private TransparentVcs host;
 
   public CCaseHistoryProvider( Project project )
   {
     this.project = project;
+    host = TransparentVcs.getInstance( project );
   }
 
   private static final ColumnInfo<VcsFileRevision, String> CCASE_DATE = new ColumnInfo<VcsFileRevision, String>( CCASE_DATE_COLUMN )
@@ -70,7 +72,11 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
 
   public VcsHistorySession createSessionFor( FilePath filePath ) throws VcsException
   {
-    String log = TransparentVcs.cleartoolWithOutput( HISTORY_CMD, filePath.getPath() );
+    String path = filePath.getPath();
+    if( host.renamedFiles.containsKey( path ) )
+      path = host.renamedFiles.get( path );
+
+    String log = TransparentVcs.cleartoolWithOutput( HISTORY_CMD, path );
     ArrayList<CCaseHistoryParser.SubmissionData> changes = CCaseHistoryParser.parse( log );
     ArrayList<VcsFileRevision> revisions = new ArrayList<VcsFileRevision>();
     for( CCaseHistoryParser.SubmissionData change : changes )
@@ -81,7 +87,7 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
       //  time information delimited by '.'). Just skip this record.
       try
       {
-        VcsFileRevision rev = new CCaseFileRevision( change, filePath );
+        VcsFileRevision rev = new CCaseFileRevision( change, path );
         revisions.add( rev );
       }
       catch( NullPointerException e)
@@ -97,30 +103,23 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
   {
     private String version;
     private String submitter;
-//    private Date changeDate;
     private String changeCcaseDate;
     private String comment;
     private String action;
     private String labels;
     private int    order;
 
-    private FilePath path;
+    private String path;
     private byte[] content;
 
-    public CCaseFileRevision( CCaseHistoryParser.SubmissionData data, FilePath path )
+    public CCaseFileRevision( CCaseHistoryParser.SubmissionData data, String path )
     {
       version = data.version;
       submitter = data.submitter;
       comment = data.comment;
       action = data.action;
       labels = data.labels;
-//      changeDate = new Date();
       order = data.order;
-
-      //  Parse separately date and time using several simple heuristics.
-//      long dateValue = parseDate( data.changeDate );
-//      long timeValue = parseTime( data.changeDate );
-//      changeDate.setTime( dateValue + timeValue );
       changeCcaseDate = data.changeDate;
 
       this.path = path;
@@ -128,7 +127,6 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
 
     public byte[] getContent()      { return content;    }
     public String getBranchName()   { return null;       }
-//    public Date   getRevisionDate() { return changeDate; }
     public Date   getRevisionDate() { return null; }
     public String getChangeCcaseDate() { return changeCcaseDate; }
     public String getAuthor()       { return submitter;  }
@@ -153,13 +151,12 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
         final File myTmpFile = new File( tmpDir, Long.toString( new Date().getTime()) );
         myTmpFile.deleteOnExit();
 
-        final String out = TransparentVcs.cleartoolWithOutput( "get", "-to", myTmpFile.getPath(), path.getPath() + version );
+        final String out = TransparentVcs.cleartoolWithOutput( "get", "-to", myTmpFile.getPath(), path + version );
 
         //  We expect that properly finished command produce no (error or
         //  warning) output.
         if( out.length() > 0 )
         {
-//          ApplicationManager.getApplication().invokeLater( new Runnable() { public void run() { VcsUtil.showErrorMessage( project, out, TITLE ); } });
           VcsUtil.showErrorMessage( project, out, TITLE );
         }
         else
@@ -177,71 +174,6 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
     {
       return getRevisionNumber().compareTo( ((CCaseFileRevision)revision).getRevisionNumber() );
     }
-
-  /*
-    private long parseDate( String dateStr )
-    {
-      Locale locale = Locale.getDefault();
-      long dateValue = 0;
-
-      try
-      {
-        DateFormat df = DateFormat.getDateInstance( DateFormat.SHORT, locale );
-        dateValue = df.parse( dateStr ).getTime();
-      }
-      catch( ParseException e )
-      {
-        //  Hack: when user modifies an existing locale, these changes are
-        //  not propagated into ResourceBundle which is used by SimpleDateFormat
-        //  stuff. Prepare seveal more commonly used and try to precess them
-        //  separately.
-        //  Todo: move a format into IDEA property?
-
-        @NonNls String[] dateFormats = new String[] { "d-M-y", "d-M-yy", "d-MM-yy", "d-M-yyyy", "d-MM-yyyy", "M/d/y", "M.d.y", "d.M.y", "d.MM.yy", "M/d/yy", "M.d.yy", "d.M.yy" };
-
-        for( String format : dateFormats )
-        {
-          try
-          {
-            DateFormat df = new SimpleDateFormat( format );
-            dateValue = df.parse( dateStr ).getTime();
-            break;
-          }
-          catch( ParseException e2 ){  dateValue = 0;  }
-        }
-      }
-      return dateValue;
-    }
-
-    private long parseTime( String time )
-    {
-      Locale locale = Locale.getDefault();
-      long timeValue = 0;
-
-      try
-      {
-        DateFormat tf = DateFormat.getTimeInstance( DateFormat.SHORT, locale );
-        timeValue = tf.parse( time ).getTime();
-      }
-      catch( ParseException e )
-      {
-        //  Hack: Same as in the case of Date value parsing.
-        @NonNls String[] formats = new String[] { "h:mm a", "H:mm", "hh:mm a", "HH:mm" };
-
-        for( String format : formats )
-        {
-          try
-          {
-            DateFormat tf = new SimpleDateFormat( format );
-            timeValue = tf.parse( time ).getTime();
-            break;
-          }
-          catch( ParseException e2 ) {  timeValue = 0;  }
-        }
-      }
-      return timeValue;
-    }
-  */
   }
 
   private static class CCaseHistorySession extends VcsHistorySession
