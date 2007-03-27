@@ -51,5 +51,6 @@ public class CheckOutAction extends SynchronousAction
     }
 
     getHost( e ).checkoutFile( file, keepHijack );
+    file.refresh( true, file.isDirectory() );
   }
 }
