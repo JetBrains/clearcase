@@ -48,12 +48,12 @@ public class CCaseChangeProvider implements ChangeProvider
   private Project project;
   private TransparentVcs host;
   private ProgressIndicator progress;
+  private boolean isBatchUpdate;
 
   private HashSet<String> filesNew = new HashSet<String>();
   private HashSet<String> filesChanged = new HashSet<String>();
   private HashSet<String> filesHijacked = new HashSet<String>();
   private HashSet<String> filesIgnored = new HashSet<String>();
-  private ArrayList<String> foldersAbcent = new ArrayList<String>();
 
   public CCaseChangeProvider( Project project, TransparentVcs host )
   {
@@ -63,14 +63,15 @@ public class CCaseChangeProvider implements ChangeProvider
 
   public boolean isModifiedDocumentTrackingRequired() { return false;  }
 
-  public void getChanges( final VcsDirtyScope dirtyScope, final ChangelistBuilder builder, final ProgressIndicator progress )
+  public void getChanges( final VcsDirtyScope dirtyScope, final ChangelistBuilder builder,
+                          final ProgressIndicator progressIndicator )
   {
     LOG.info( "-- ChangeProvider -- ");
     LOG.info( "   Dirty files: " + dirtyScope.getDirtyFiles().size() +
               ", dirty recursive directories: " + dirtyScope.getRecursivelyDirtyDirectories().size() );
 
-    boolean isBatchUpdate = (dirtyScope.getRecursivelyDirtyDirectories().size() > 0);
-    this.progress = progress;
+    progress = progressIndicator;
+    isBatchUpdate = (dirtyScope.getRecursivelyDirtyDirectories().size() > 0);
     initInternals();
 
     try
@@ -118,9 +119,47 @@ public class CCaseChangeProvider implements ChangeProvider
   private void iterateOverProjectStructure( final VcsDirtyScope dirtyScope )
   {
     for( FilePath path : dirtyScope.getRecursivelyDirtyDirectories() )
-    {
       iterateOverProjectPath( path );
+  }
+
+  /**
+   *  Deleted and New folders are marked as dirty too and we provide here
+   *  special processing for them.
+   */
+  private void iterateOverDirtyDirectories( final VcsDirtyScope dirtyScope )
+  {
+    for( FilePath path : dirtyScope.getDirtyFiles() )
+    {
+      String fileName = path.getPath();
+      VirtualFile file = VcsUtil.getVirtualFile( fileName );
+
+      if( path.isDirectory() && host.fileIsUnderVcs( file ) )
+      {
+        if( host.isFileIgnored( file ))
+          filesIgnored.add( path.getPath() );
+        else
+        //  Check that folder physically exists.
+        if( file != null && !host.fileExistsInVcs( path ))
+          filesNew.add( path.getPath() );
+      }
     }
+  }
+
+  private void iterateOverDirtyFiles( final VcsDirtyScope scope )
+  {
+    List<String> writableFiles = new ArrayList<String>();
+    for( FilePath path : scope.getDirtyFiles() )
+    {
+      String fileName = path.getPath();
+      VirtualFile file = VcsUtil.getVirtualFile( fileName );
+
+      if( host.isFileIgnored( file ))
+        filesIgnored.add( fileName );
+      else
+      if( isFileCCaseProcessable( file ) && isProperNotification( path ) )
+        writableFiles.add( fileName );
+    }
+    analyzeWritableFiles( writableFiles );
   }
 
   private void iterateOverProjectPath( FilePath path )
@@ -168,8 +207,8 @@ public class CCaseChangeProvider implements ChangeProvider
     List<String> writableExplicitFiles = new ArrayList<String>();
 
     final List<String> newFiles = new ArrayList<String>();
-    final List<String> newFolders = new ArrayList<String>();
 
+    //  Exclude those files for which status is known apriori.
     selectExplicitWritableFiles( writableFiles, writableExplicitFiles );
 
     if( host.getClearCase().getName().indexOf( COMMAND_LINE_CLASS_SIG ) == -1 ||
@@ -213,16 +252,22 @@ public class CCaseChangeProvider implements ChangeProvider
       }
     }
 
-    //  For each new file check whether some subfolders structure above it
-    //  is also new.
-    final List<String> processedFolders = new ArrayList<String>();
-    for( String file : newFiles )
+    if( isBatchUpdate )
     {
-      if( !isPathUnderAbsentFolders( file ))
-        analyzeParentFolderStructureForPresence( file, newFolders, processedFolders );
-    }
+      //  For each new file check whether parent folders structure is also new.
+      //  If so - mark these folders as dirty and assign them new statuses on the
+      //  next iteration to "getChanges()".
+      final List<String> newFolders = new ArrayList<String>();
+      final List<String> processedFolders = new ArrayList<String>();
+      for( String file : newFiles )
+      {
+        if( !isPathUnderProcessedFolders( processedFolders, file ))
+          analyzeParentFoldersForPresence( file, newFolders, processedFolders );
+//          analyzeParentFoldersForPresence( file, processedFolders );
+      }
 
-    filesNew.addAll( newFolders );
+      filesNew.addAll( newFolders );
+    }
     filesNew.addAll( newFiles );
   }
 
@@ -258,83 +303,23 @@ public class CCaseChangeProvider implements ChangeProvider
   //  parent folder for presence in the VSS repository, and then all its indirect
   //  parent folders until we reach project boundaries.
   //---------------------------------------------------------------------------
-  private void  analyzeParentFolderStructureForPresence( String file, List<String> newFolders,
-                                                         List<String> processedFolders )
+  private void analyzeParentFoldersForPresence( String file, List<String> newFolders,
+                                                List<String> processed )
   {
-    VirtualFile parent = VcsUtil.getVirtualFile( new File( file ).getParentFile() );
+    File parentIO = new File( file ).getParentFile();
+    VirtualFile parentVF = VcsUtil.getVirtualFile( parentIO );
+    String parentPath = parentVF.getPath();
 
-    if( host.fileIsUnderVcs( parent ) && !processedFolders.contains( parent.getPath() ) )
+    if( host.fileIsUnderVcs( parentVF ) && !processed.contains( parentPath ) )
     {
       LOG.info( "ChangeProvider - Check potentially new folder" );
       
-      processedFolders.add( parent.getPath() );
-      if( !host.fileExistsInVcs( parent ))
+      processed.add( parentPath.toLowerCase() );
+      if( !host.fileExistsInVcs( parentVF ))
       {
-        LOG.info( "ChangeProvider - Folder does not exist in the repository" );
-
-        newFolders.add( parent.getPath() );
-        foldersAbcent.add( parent.getPath() );
-        analyzeParentFolderStructureForPresence( parent.getPath(), newFolders, processedFolders );
-      }
-    }
-  }
-  /**
-   *  Deleted and New folders are marked as dirty too and we provide here
-   *  special processing for them.
-   */
-  private void iterateOverDirtyDirectories( final VcsDirtyScope dirtyScope )
-  {
-    for( FilePath path : dirtyScope.getDirtyFiles() )
-    {
-      if( path.isDirectory() )
-      {
-        LOG.info( "  Found dirty directory in the list of dirty files: " + path.getPath() );
-        iterateOverProjectPath( path );
-      }
-    }
-  }
-
-  private void iterateOverDirtyFiles( final VcsDirtyScope scope )
-  {
-    for( FilePath path : scope.getDirtyFiles() )
-    {
-      VirtualFile file = VcsUtil.getVirtualFile( path.getPath() );
-      String fileName = path.getPath();
-
-      if( host.isFileIgnored( file ))
-      {
-        filesIgnored.add( fileName );
-      }
-      else
-      //-----------------------------------------------------------------------
-      //  Do not process files which have RO status at all.
-      //  Generally it means that all files which were got through some sort of
-      //  "Get Latest Version" or "Update" are not processed at all, especially
-      //  since there is no necessity in that. All other cases - modified and
-      //  new files are processed as usual.
-      //-----------------------------------------------------------------------
-      if( isFileCCaseProcessable( file ) )
-      {
-        if( isProperNotification( path ) )
-        {
-          if( isPathUnderAbsentFolders( fileName ) )
-          {
-            filesNew.add( fileName );
-          }
-          else
-          {
-            Status status = host.getStatus( file );
-            if( status != Status.NOT_AN_ELEMENT )
-            {
-              if( status == Status.HIJACKED )
-                filesHijacked.add( fileName );
-              else
-                filesChanged.add( fileName );
-            }
-            else
-              filesNew.add( fileName );
-          }
-        }
+        LOG.info( "                 Folder [" + parentVF.getName() + "] is not in the repository" );
+        newFolders.add( parentPath );
+        analyzeParentFoldersForPresence( parentPath, newFolders, processed );
       }
     }
   }
@@ -401,11 +386,12 @@ public class CCaseChangeProvider implements ChangeProvider
       builder.processIgnoredFile( VcsUtil.getVirtualFile( path ) );
   }
 
-  private boolean isPathUnderAbsentFolders( String pathToCheck )
+  private static boolean isPathUnderProcessedFolders( List<String> newFolders, String pathToCheck )
   {
-    for( String path : foldersAbcent )
+    String parentPathToCheck = new File( pathToCheck ).getParent().toLowerCase();
+    for( String path : newFolders )
     {
-      if( pathToCheck.startsWith( path ) )
+      if( parentPathToCheck == path )
         return true;
     }
     return false;
@@ -436,14 +422,11 @@ public class CCaseChangeProvider implements ChangeProvider
     filesChanged.clear();
     filesHijacked.clear();
     filesIgnored.clear();
-    foldersAbcent.clear();
   }
 
   private boolean isFileCCaseProcessable( VirtualFile file )
   {
-    return (file != null) && file.isWritable() && !file.isDirectory() &&
-           VcsUtil.isPathUnderProject( project, file.getPath() ) &&
-           !host.isFileIgnored( file );
+    return isValidFile( file ) && VcsUtil.isPathUnderProject( project, file.getPath() );
   }
 
   private static boolean isValidFile( VirtualFile file )

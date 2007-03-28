@@ -22,7 +22,6 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
@@ -37,12 +36,12 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   @NonNls private static final String SCR_TITLE = "SCR Number";
   @NonNls private static final String FILE_NOT_IN_VOB_SIG = "element name not found";
 
-  private Project myProject;
+  private Project project;
   private TransparentVcs host;
 
   public CCaseCheckinEnvironment( Project project, TransparentVcs host )
   {
-    myProject = project;
+    this.project = project;
     this.host = host;
   }
 
@@ -114,21 +113,24 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     commitNew( changes, comment, processedFiles, errors );
     commitChanged( changes, comment, processedFiles, errors );
 
-    VcsUtil.refreshFiles( processedFiles );
+    VcsUtil.refreshFiles( project, processedFiles );
 
     return errors;
   }
 
-  /**
-   *  Add all folders first, then add all files into these folders.
-   *  Difference between added and modified files is that added file
-   *  has no "before" revision.
-   */
   private void commitNew( List<Change> changes, String comment,
                           HashSet<FilePath> processedFiles, List<VcsException> errors )
   {
     HashSet<FilePath> folders = new HashSet<FilePath>();
     HashSet<FilePath> files = new HashSet<FilePath>();
+
+    collectNewFilesAndFolders( changes, processedFiles, folders, files );
+    commitFoldersAndFiles( folders, files, comment, errors );
+  }
+
+  private void collectNewFilesAndFolders( List<Change> changes, HashSet<FilePath> processedFiles,
+                                          HashSet<FilePath> folders, HashSet<FilePath> files )
+  {
     for( Change change : changes )
     {
       if( VcsUtil.isChangeForNew( change ) )
@@ -139,14 +141,25 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
         else
         {
           files.add( filePath );
-          analyzeParent( filePath, folders, processedFiles );
+          analyzeParent( filePath, folders );
         }
-        processedFiles.add( filePath );
       }
     }
+    processedFiles.addAll( folders );
+    processedFiles.addAll( files );
+  }
 
+  /**
+   *  Add all folders first, then add all files into these folders.
+   *  Difference between added and modified files is that added file
+   *  has no "before" revision.
+   */
+  private void commitFoldersAndFiles( HashSet<FilePath> folders, HashSet<FilePath> files,
+                                      String comment, List<VcsException> errors )
+  {
     FilePath[] foldersSorted = folders.toArray( new FilePath[ folders.size() ] );
     foldersSorted = VcsUtil.sortPathsFromOutermost( foldersSorted );
+
     for( FilePath folder : foldersSorted )
       host.addFile( folder.getVirtualFile(), comment, errors );
 
@@ -161,19 +174,16 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
    * presented there.
    * Process with the parent's parent recursively.
    */
-  private void analyzeParent( FilePath file, HashSet<FilePath> folders,
-                              HashSet<FilePath> processedFiles )
+  private void analyzeParent( FilePath file, HashSet<FilePath> folders )
   {
     VirtualFile parent = file.getVirtualFileParent();
-    FileStatusManager mgr = FileStatusManager.getInstance( myProject );
+    FileStatusManager mgr = FileStatusManager.getInstance(project);
     if( mgr.getStatus( parent ) == FileStatus.ADDED ||
         mgr.getStatus( parent ) == FileStatus.UNKNOWN )
     {
       FilePath parentPath = file.getParentPath();
-
       folders.add( parentPath );
-      processedFiles.add( parentPath );
-      analyzeParent( parentPath, folders, processedFiles );
+      analyzeParent( parentPath, folders );
     }
   }
 
@@ -227,7 +237,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     rollbackNew( changes, processedFiles );
     rollbackChanged( changes, processedFiles, errors );
 
-    VcsUtil.refreshFiles( processedFiles );
+    VcsUtil.refreshFiles( project, processedFiles );
 
     return errors;
   }
@@ -237,7 +247,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     HashSet<FilePath> filesAndFolder = new HashSet<FilePath>();
     collectNewChangesBack( changes, filesAndFolder, processedFiles );
 
-    VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance( myProject );
+    VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance(project);
     for( FilePath file : filesAndFolder )
     {
       host.deleteNewFile( file.getPath() );
@@ -267,8 +277,8 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
       }
     }
 
-    ChangeListManager clMgr = ChangeListManager.getInstance( myProject );
-    FileStatusManager fsMgr = FileStatusManager.getInstance( myProject );
+    ChangeListManager clMgr = ChangeListManager.getInstance(project);
+    FileStatusManager fsMgr = FileStatusManager.getInstance(project);
     List<VirtualFile> allAffectedFiles = clMgr.getAffectedFiles();
 
     for( VirtualFile file : allAffectedFiles )
@@ -349,7 +359,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
 
   public List<VcsException> rollbackMissingFileDeletion( List<FilePath> paths )
   {
-    VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance( myProject );
+    VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance(project);
     List<VcsException> errors = new ArrayList<VcsException>();
 
     for( FilePath path : paths )
@@ -383,7 +393,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
 
   public List<VcsException> scheduleUnversionedFilesForAddition( List<VirtualFile> files )
   {
-    VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance( myProject );
+    VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance(project);
 
     for( VirtualFile file : files )
     {
@@ -397,8 +407,13 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
 
   public List<VcsException> rollbackModifiedWithoutCheckout(final List<VirtualFile> files)
   {
-    // TODO[lloix]: implement
-    return Collections.emptyList();
+    List<VcsException> errors = new ArrayList<VcsException>();
+    for( VirtualFile file : files )
+    {
+      updateFile( file.getPath(), errors );
+      file.refresh( true, true );
+    }
+    return errors;
   }
 
   private static void updateFile( String path, List<VcsException> errors )

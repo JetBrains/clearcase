@@ -312,12 +312,17 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public boolean fileExistsInVcs(FilePath path)   {  return fileExistsInVcs( path.getVirtualFile() );  }
   public boolean fileExistsInVcs(VirtualFile file)
   {
-    String path = file.getPath();
-    if( renamedFiles.containsKey( path ))
-      path = renamedFiles.get( path );
-    
-    Status status = getStatus( new File( path ) );
-    return status != Status.NOT_AN_ELEMENT;
+    boolean exists = false;
+    if( file != null )
+    {
+      String path = file.getPath();
+      if( renamedFiles.containsKey( path ))
+        path = renamedFiles.get( path );
+
+      Status status = getStatus( new File( path ) );
+      exists = (status != Status.NOT_AN_ELEMENT);
+    }
+    return exists;
   }
 
   public boolean isFileIgnored( VirtualFile file )
