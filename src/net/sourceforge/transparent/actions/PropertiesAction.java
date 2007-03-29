@@ -30,5 +30,5 @@ public class PropertiesAction extends AsynchronousAction
     cleartool( "describe", "-g", file.getPath() );
   }
 
-  protected String getActionName() {  return ACTION_NAME;  }
+  protected String getActionName( AnActionEvent e ) { return ACTION_NAME; }
 }

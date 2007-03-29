@@ -14,7 +14,7 @@ public class HijackAction extends SynchronousAction
 {
   @NonNls private final static String ACTION_NAME = "Hijack File";
 
-  protected String getActionName() {  return ACTION_NAME;  }
+  protected String getActionName( AnActionEvent e ) { return ACTION_NAME; }
 
   public void update( AnActionEvent e )
   {

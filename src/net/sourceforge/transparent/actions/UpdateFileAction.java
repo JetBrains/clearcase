@@ -27,5 +27,5 @@ public class UpdateFileAction extends AsynchronousAction
     cleartool( "update", "-graphical", vfile.getPath() );
   }
 
-  protected String getActionName() {  return ACTION_NAME;   }
+  protected String getActionName( AnActionEvent e ) {  return ACTION_NAME;   }
 }

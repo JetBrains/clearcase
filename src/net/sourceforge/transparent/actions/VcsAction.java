@@ -30,13 +30,13 @@ public abstract class VcsAction extends AnAction
 
   public void update( AnActionEvent e )
   {
-    String actionName = getActionName();
+    String actionName = getActionName( e );
     if( actionName == null )  throw new IllegalStateException( "Internal error - Action Name is NULL.");
     
     e.getPresentation().setText( actionName );
   }
 
-  protected abstract String getActionName();
+  protected abstract String getActionName( AnActionEvent e );
 
   protected void execute( AnActionEvent e, List<VcsException> errors ) {}
 

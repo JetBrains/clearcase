@@ -13,7 +13,7 @@ public class AddAction extends SynchronousAction
 {
   @NonNls private final static String ACTION_NAME = "Add File";
 
-  protected String getActionName() {  return ACTION_NAME;  }
+  protected String getActionName( AnActionEvent e ) { return ACTION_NAME; }
 
   protected boolean isEnabled( VirtualFile file, AnActionEvent e )
   {

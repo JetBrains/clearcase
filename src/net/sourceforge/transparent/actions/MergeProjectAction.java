@@ -17,5 +17,5 @@ public class MergeProjectAction extends VcsAction
     (new Runner()).run( CLEARTOOL_CMD );
   }
 
-  protected String getActionName() { return ACTION_NAME;  }
+  protected String getActionName( AnActionEvent e ) { return ACTION_NAME; }
 }

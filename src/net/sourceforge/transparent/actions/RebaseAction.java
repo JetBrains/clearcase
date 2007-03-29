@@ -13,5 +13,5 @@ public class RebaseAction extends AsynchronousAction
     cleartool( "rebase", "-g" );
   }
 
-  protected String getActionName() {  return ACTION_NAME;  }
+  protected String getActionName( AnActionEvent e ) { return ACTION_NAME; }
 }

@@ -16,16 +16,22 @@ import java.util.List;
 
 public class CheckOutAction extends SynchronousAction
 {
-  @NonNls private static final String ACTION_NAME = "Check Out...";
+  @NonNls private static final String ACTION_NAME = "Check Out";
   @NonNls private static final String CHECKOUT_HIJACKED_TITLE = "Checkout hijacked file";
+  @NonNls private static final String NOT_A_VOB_OBJECT_SIG = "Not a vob object";
+  @NonNls private static final String IS_ALREADY_CHECKED_OUT_SIG = "is already checked out";
 
-  protected String getActionName() {  return ACTION_NAME;  }
+  protected String getActionName( AnActionEvent e )
+  {
+    boolean verbose = getHost( e ).getCheckoutOptions().getValue();
+    return verbose ? ACTION_NAME + "..." : ACTION_NAME;
+  }
 
   public void update( AnActionEvent e )
   {
     super.update( e );
 
-    if ( getHost( e ).getConfig().isOffline)
+    if ( getHost( e ).getConfig().isOffline )
       e.getPresentation().setEnabled( false );
   }
 
@@ -74,13 +80,19 @@ public class CheckOutAction extends SynchronousAction
         mgr.fileDirty( file );
       }
       catch( VcsException ex ) {
-        ex.setVirtualFile( file );
-        errors.add( ex );
+        if( !isIgnorableMessage( ex.getMessage() ) )
+        {
+          ex.setVirtualFile( file );
+          errors.add( ex );
+        }
       }
       catch ( RuntimeException ex ) {
-        VcsException vcsEx = new VcsException( ex );
-        vcsEx.setVirtualFile( file );
-        errors.add( vcsEx );
+        if( !isIgnorableMessage( ex.getMessage() ) )
+        {
+          VcsException vcsEx = new VcsException( ex );
+          vcsEx.setVirtualFile( file );
+          errors.add( vcsEx );
+        }
       }
       executeRecursively( e, file, comment, errors );
     }
@@ -118,6 +130,12 @@ public class CheckOutAction extends SynchronousAction
 
     getHost( e ).checkoutFile( file, keepHijack, comment );
     file.refresh( true, file.isDirectory() );
+  }
+
+  private static boolean isIgnorableMessage( String message )
+  {
+    return message.indexOf( NOT_A_VOB_OBJECT_SIG ) != -1 ||
+           message.indexOf( IS_ALREADY_CHECKED_OUT_SIG ) != -1;
   }
 
   protected void perform( VirtualFile file, AnActionEvent e ) throws VcsException

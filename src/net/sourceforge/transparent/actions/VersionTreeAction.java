@@ -12,5 +12,5 @@ public class VersionTreeAction extends AsynchronousAction
     cleartool( "lsvtree", "-g", getVersionExtendedPathName( file, e ) );
   }
 
-  protected String getActionName() {  return ACTION_NAME;  }
+  protected String getActionName( AnActionEvent e ) { return ACTION_NAME; }
 }
