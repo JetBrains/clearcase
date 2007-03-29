@@ -65,6 +65,7 @@ public class StatusMultipleProcessor
     hijackedFiles = new HashSet<String>();
 
     int currFileIndex = 0;
+    int batchStartIndex = 0;
     int cmdLineLen;
     LinkedList<String> options = new LinkedList<String>();
     while( currFileIndex < files.length )
@@ -83,23 +84,24 @@ public class StatusMultipleProcessor
 
       String[] aOptions = options.toArray( new String[ options.size() ]);
       String out = TransparentVcs.cleartoolWithOutput( aOptions );
-      parseCleartoolOutput( out );
+      parseCleartoolOutput( out, batchStartIndex );
+      batchStartIndex = currFileIndex;
     }
   }
 
-  private void parseCleartoolOutput( final String out )
+  private void parseCleartoolOutput( final String out, int startIndex )
   {
     String[] lines = LineTokenizer.tokenize( out, false );
     for( int i = 0; i < lines.length; i++ )
     {
       if( lines[ i ].indexOf( VERSIONED_SIG ) == -1 )
-        nonexistingFiles.add( files[ i ].getPath().toLowerCase() );
+        nonexistingFiles.add( files[ startIndex + i ].getPath().toLowerCase() );
       else
       if( lines[ i ].indexOf( CHECKEDOUT_SIG ) != -1 )
-        checkoutFiles.add( files[ i ].getPath().toLowerCase() );
+        checkoutFiles.add( files[ startIndex + i ].getPath().toLowerCase() );
       else
       if( lines[ i ].indexOf( HIJACKED_SIG ) != -1 )
-        hijackedFiles.add( files[ i ].getPath().toLowerCase() );
+        hijackedFiles.add( files[ startIndex + i ].getPath().toLowerCase() );
     }
   }
 }
