@@ -40,11 +40,10 @@ public class CommandLineClearCase implements ClearCase
 
   public void checkOut( File file, boolean isReserved, String comment )
   {
-    if( StringUtil.isNotEmpty( comment ) ) {
-      cleartool( new String[] {  "co", "-c", quote(comment), isReserved ? "-reserved" : "-unreserved", file.getAbsolutePath() });
-    } else {
-      cleartool( new String[] {  "co", "-nc", isReserved ? "-reserved" : "-unreserved", file.getAbsolutePath()  });
-    }
+    if( StringUtil.isNotEmpty( comment ) )
+      cleartool( new String[] {  "co", "-c", quote(comment), isReserved ? "-reserved" : "-unreserved", "-nq", file.getAbsolutePath() });
+    else
+      cleartool( new String[] {  "co", "-nc", isReserved ? "-reserved" : "-unreserved", "-nq", file.getAbsolutePath()  });
   }
 
   public void delete( File file, String comment)
