@@ -393,18 +393,33 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
 
   public List<VcsException> scheduleUnversionedFilesForAddition( List<VirtualFile> files )
   {
-    VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance(project);
-
     for( VirtualFile file : files )
     {
       host.add2NewFile( file.getPath() );
-      mgr.fileDirty( file );
-      file.refresh( true, true );
+      VcsUtil.markFileAsDirty( project, file );
+
+      //  Extend status change to all parent folders if they are not
+      //  included into the context of the menu action.
+      extendStatus( file );
     }
     // Keep intentionally empty.
     return new ArrayList<VcsException>();
   }
 
+  private void extendStatus( VirtualFile file )
+  {
+    FileStatusManager mgr = FileStatusManager.getInstance( project );
+    VirtualFile parent = file.getParent();
+
+    if( mgr.getStatus( parent ) == FileStatus.UNKNOWN )
+    {
+      host.add2NewFile( parent );
+      VcsUtil.markFileAsDirty( project, parent );
+
+      extendStatus( parent );
+    }
+  }
+  
   public List<VcsException> rollbackModifiedWithoutCheckout(final List<VirtualFile> files)
   {
     List<VcsException> errors = new ArrayList<VcsException>();
