@@ -258,12 +258,11 @@ public class CCaseChangeProvider implements ChangeProvider
       //  If so - mark these folders as dirty and assign them new statuses on the
       //  next iteration to "getChanges()".
       final List<String> newFolders = new ArrayList<String>();
-      final List<String> processedFolders = new ArrayList<String>();
+      final HashSet<String> processedFolders = new HashSet<String>();
       for( String file : newFiles )
       {
         if( !isPathUnderProcessedFolders( processedFolders, file ))
           analyzeParentFoldersForPresence( file, newFolders, processedFolders );
-//          analyzeParentFoldersForPresence( file, processedFolders );
       }
 
       filesNew.addAll( newFolders );
@@ -304,7 +303,7 @@ public class CCaseChangeProvider implements ChangeProvider
   //  parent folders until we reach project boundaries.
   //---------------------------------------------------------------------------
   private void analyzeParentFoldersForPresence( String file, List<String> newFolders,
-                                                List<String> processed )
+                                                HashSet<String> processed )
   {
     File parentIO = new File( file ).getParentFile();
     VirtualFile parentVF = VcsUtil.getVirtualFile( parentIO );
@@ -386,12 +385,12 @@ public class CCaseChangeProvider implements ChangeProvider
       builder.processIgnoredFile( VcsUtil.getVirtualFile( path ) );
   }
 
-  private static boolean isPathUnderProcessedFolders( List<String> newFolders, String pathToCheck )
+  private static boolean isPathUnderProcessedFolders( HashSet<String> folders, String path )
   {
-    String parentPathToCheck = new File( pathToCheck ).getParent().toLowerCase();
-    for( String path : newFolders )
+    String parentPathToCheck = new File( path ).getParent().toLowerCase();
+    for( String folderPath : folders )
     {
-      if( parentPathToCheck == path )
+      if( parentPathToCheck == folderPath )
         return true;
     }
     return false;

@@ -23,7 +23,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileListener;
 import com.intellij.util.containers.HashSet;
 import com.intellij.vcsUtil.VcsUtil;
-import net.sourceforge.transparent.actions.CheckoutDialog;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import net.sourceforge.transparent.exceptions.ClearCaseNoServerException;
 import org.jdom.Element;
@@ -360,7 +359,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       {
         //  Run checkout in the "non-verbose" mode, that is do not display any
         //  dialogs since we are aready in the Dialoging mode.
-        checkoutFile( ioFile, true, false, comment, false );
+        checkoutFile( ioFile, true, false, comment );
       }
       getClearCase().checkIn( ioFile, comment );
 
@@ -371,32 +370,17 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     }
   }
 
-  public boolean checkoutFile( File ioFile, boolean keepHijacked ) throws VcsException
-  {
-    return checkoutFile( ioFile, keepHijacked, config.checkoutReserved, "" );
-  }
   public boolean checkoutFile( VirtualFile file, boolean keepHijacked ) throws VcsException
   {
+    return checkoutFile( file, keepHijacked, "" );
+  }
+  public boolean checkoutFile( VirtualFile file, boolean keepHijacked, String comment ) throws VcsException
+  {
     File ioFile = new File( file.getPath() );
-    return checkoutFile( ioFile, keepHijacked, config.checkoutReserved, "" );
+    return checkoutFile( ioFile, keepHijacked, config.checkoutReserved, comment );
   }
-  public boolean checkoutFile( File ioFile, boolean keepHijacked, boolean isReserved, String comment ) throws VcsException
+  private boolean checkoutFile( File ioFile, boolean keepHijacked, boolean isReserved, String comment ) throws VcsException
   {
-    return checkoutFile( ioFile, keepHijacked, isReserved, comment, myCheckoutOptions.getValue() );
-  }
-  private boolean checkoutFile( File ioFile, boolean keepHijacked, boolean isReserved, String comment, boolean isVerbose ) throws VcsException
-  {
-    VirtualFile file = VcsUtil.getVirtualFile( ioFile );
-    if( isVerbose )
-    {
-      CheckoutDialog dialog = new CheckoutDialog( getProject(), getConfiguration(), file );
-      dialog.show();
-      if( dialog.getExitCode() == CheckoutDialog.CANCEL_EXIT_CODE )
-        return false;
-
-      comment = dialog.getComment();
-    }
-
     File newFile = null;
     if( keepHijacked )
     {

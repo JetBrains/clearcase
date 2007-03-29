@@ -23,8 +23,10 @@ import java.util.List;
 
 public abstract class VcsAction extends AnAction
 {
-  @NonNls private final static String GROUP_NAME_ID = "OPERATION_FAIL";
-  @NonNls private final static String GROUP_TITLE = "Operation Failed";
+  @NonNls private static final String GROUP_NAME_ID = "OPERATION_FAIL";
+  @NonNls private static final String GROUP_TITLE = "Operation Failed";
+  @NonNls private static final String OPERATION_FAILED_TEXT = "One or more errors occured during operation";
+  @NonNls private static final String TITLE = "Operation Failed on Files:";
 
   public void update( AnActionEvent e )
   {
@@ -53,9 +55,9 @@ public abstract class VcsAction extends AnAction
       {
         updatedFiles.getGroupById( GROUP_NAME_ID ).add( exc.getVirtualFile().getPath() );
       }
-      ProjectLevelVcsManager.getInstance( project ).showProjectOperationInfo( updatedFiles, "Operation Failed on Files:" );
 
-      Messages.showErrorDialog( project, "One or more errors occured during operation ", GROUP_TITLE );
+      ProjectLevelVcsManager.getInstance( project ).showProjectOperationInfo( updatedFiles, TITLE );
+      Messages.showErrorDialog( project, OPERATION_FAILED_TEXT, GROUP_TITLE );
     }
   }
 
@@ -78,7 +80,12 @@ public abstract class VcsAction extends AnAction
     return mgr.getStatus( file );
   }
 
-  public static TransparentVcs getHost( AnActionEvent e )
+  protected static Project getProject( AnActionEvent e )
+  {
+    return e.getData( DataKeys.PROJECT );
+  }
+
+  protected static TransparentVcs getHost( AnActionEvent e )
   {
     return TransparentVcs.getInstance( e.getData( DataKeys.PROJECT ) );
   }

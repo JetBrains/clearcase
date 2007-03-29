@@ -43,16 +43,17 @@ public class CCaseEditFileProvider implements EditFileProvider
 
   private void checkOutOrHijackFile( VirtualFile file )
   {
+    boolean toHijack = shouldHijackFile( file );
     try
     {
-      if( shouldHijackFile( file ) )
+      if( toHijack )
         hijackFile( file );
       else
         host.checkoutFile( file, false );
     }
     catch( Throwable e )
     {
-      String message = "Exception while " + (shouldHijackFile(file) ? "hijacking " : "checking out ") +
+      String message = "Exception while " + ( toHijack ? "hijacking " : "checking out ") +
                        file.getPresentableUrl() + "\n" + e.getMessage();
       Messages.showErrorDialog( message, FAIL_DIALOG_TITLE );
     }

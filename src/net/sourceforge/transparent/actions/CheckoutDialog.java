@@ -19,25 +19,29 @@ import java.util.Collection;
 public class CheckoutDialog extends OptionsDialog implements Refreshable
 {
   @NonNls private final static String TITLE = "Checkout Comment";
+  @NonNls private final static String FILES_SUFFIX = " files";
 
   private final String              myLabel;
   private final JTextArea           myCommentArea = new JTextArea();
   private final VcsConfiguration    myConfiguration;
   protected Collection<Refreshable> myAdditionalComponents = new ArrayList<Refreshable>();
 
-  public CheckoutDialog( Project project, VcsConfiguration configuration, VirtualFile fileToCheckout )
+  public CheckoutDialog( Project project, VirtualFile fileToCheckout )
   {
     super( project );
-    myConfiguration = configuration;
-    myCommentArea.setText( getInitialMessage( fileToCheckout ) );
+    myConfiguration = VcsConfiguration.getInstance( myProject );
     myLabel = fileToCheckout.getPresentableUrl();
     setTitle( TITLE );
     init();
   }
 
-  private static String getInitialMessage( VirtualFile fileToCheckout )
+  public CheckoutDialog( Project project, VirtualFile[] filesToCheckout )
   {
-    return "";
+    super( project );
+    myConfiguration = VcsConfiguration.getInstance( myProject );
+    myLabel = filesToCheckout.length + FILES_SUFFIX;
+    setTitle( TITLE );
+    init();
   }
 
   protected boolean isToBeShown()
