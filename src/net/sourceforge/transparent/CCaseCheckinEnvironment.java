@@ -6,6 +6,7 @@ package net.sourceforge.transparent;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.*;
@@ -35,6 +36,12 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   @NonNls private static final String CHECKIN_TITLE = "Checkin";
   @NonNls private static final String SCR_TITLE = "SCR Number";
   @NonNls private static final String FILE_NOT_IN_VOB_SIG = "element name not found";
+
+  @NonNls private static final String UPDATE_SUCC_PREFIX_1 = "Processing dir";
+  @NonNls private static final String UPDATE_SUCC_PREFIX_2 = "Loading ";
+  @NonNls private static final String UPDATE_SUCC_PREFIX_3 = "End dir";
+  @NonNls private static final String UPDATE_SUCC_PREFIX_4 = "Done loading";
+  @NonNls private static final String UPDATE_SUCC_PREFIX_5 = "Log has been written"; 
 
   private Project project;
   private TransparentVcs host;
@@ -437,7 +444,18 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     {
       String err = TransparentVcs.updateFile( path );
       if( err != null )
-        errors.add( new VcsException( err ) );
+      {
+        String[] lines = LineTokenizer.tokenize( err, false );
+        for( String line : lines )
+        {
+          if( !lineStartsWithKnownPrefix( line ) )
+          {
+            VcsException e = new VcsException( line );
+            e.setIsWarning( true );
+            errors.add( e );
+          }
+        }
+      }
     }
     catch( ClearCaseException e ) {  errors.add( new VcsException( e ) );  }
   }
@@ -450,5 +468,12 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
         return true;
     }
     return false;
+  }
+
+  private static boolean lineStartsWithKnownPrefix( String line )
+  {
+    return  line.startsWith( UPDATE_SUCC_PREFIX_1 ) || line.startsWith( UPDATE_SUCC_PREFIX_2 ) ||
+            line.startsWith( UPDATE_SUCC_PREFIX_3 ) || line.startsWith( UPDATE_SUCC_PREFIX_4 ) ||
+            line.startsWith( UPDATE_SUCC_PREFIX_5 );
   }
 }
