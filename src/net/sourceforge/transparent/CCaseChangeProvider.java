@@ -133,13 +133,13 @@ public class CCaseChangeProvider implements ChangeProvider
       String fileName = path.getPath();
       VirtualFile file = VcsUtil.getVirtualFile( fileName );
 
-      if( path.isDirectory() && host.fileIsUnderVcs( file ) )
+      if( file != null && path.isDirectory() && host.fileIsUnderVcs( file ) )
       {
         if( host.isFileIgnored( file ))
           filesIgnored.add( path.getPath() );
         else
         //  Check that folder physically exists.
-        if( file != null && !host.fileExistsInVcs( path ))
+        if( !host.fileExistsInVcs( path ))
           filesNew.add( path.getPath() );
       }
     }
@@ -168,18 +168,19 @@ public class CCaseChangeProvider implements ChangeProvider
     if( progress != null )
       progress.setText( COLLECT_MSG );
 
-    List<String> writableFiles = new ArrayList<String>();
-    collectWritableFiles( path, writableFiles );
-    LOG.info( "-- ChangeProvider - Found: " + writableFiles.size() + " writable files." );
+    List<String> writableFiles = collectWritableFiles( path );
 
+    LOG.info( "-- ChangeProvider - Found: " + writableFiles.size() + " writable files." );
     if( progress != null )
       progress.setText( SEARCHNEW_MSG );
+    
     analyzeWritableFiles( writableFiles );
   }
 
-  private void collectWritableFiles( final FilePath filePath, final List<String> writableFiles )
+  private List<String> collectWritableFiles( final FilePath filePath )
   {
     final ProjectFileIndex fileIndex = ProjectRootManager.getInstance( project ).getFileIndex();
+    final List<String> writableFiles = new ArrayList<String>();
 
     VirtualFile vf = VcsUtil.getVirtualFile( filePath.getPath() );
     if( vf != null )
@@ -200,6 +201,7 @@ public class CCaseChangeProvider implements ChangeProvider
           }
         } );
     }
+    return writableFiles;
   }
 
   private void analyzeWritableFiles( List<String> writableFiles )
