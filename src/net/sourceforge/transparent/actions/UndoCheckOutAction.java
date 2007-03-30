@@ -1,8 +1,6 @@
 package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.DataKeys;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -17,18 +15,19 @@ public class UndoCheckOutAction extends SynchronousAction
 
   protected boolean isEnabled( VirtualFile file, AnActionEvent e )
   {
-    Project p = e.getData( DataKeys.PROJECT );
-    return file.isDirectory() || getFileStatus( p, file ) == FileStatus.MODIFIED;
+    return file.isDirectory() ||
+           getFileStatus( getProject( e ), file ) == FileStatus.MODIFIED;
   }
 
   protected void perform( VirtualFile file, AnActionEvent e ) throws VcsException
   {
     List<VcsException> errors = new ArrayList<VcsException>();
-    FileStatus status = getFileStatus( e.getData( DataKeys.PROJECT ), file );
+    FileStatus status = getFileStatus( getProject( e ), file );
     
     if( !file.isDirectory() && (status == FileStatus.MODIFIED))
     {
       getHost( e ).undoCheckoutFile( file, errors );
+      file.refresh( true, false );
     }
 
     if( errors.size() > 0 )
