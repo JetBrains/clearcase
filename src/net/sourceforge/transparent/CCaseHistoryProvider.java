@@ -13,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 
 /**
@@ -38,9 +39,29 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
 
   private static final ColumnInfo<VcsFileRevision, String> CCASE_DATE = new ColumnInfo<VcsFileRevision, String>( CCASE_DATE_COLUMN )
   {
-    public String valueOf(VcsFileRevision vcsFileRevision) {
-      if (!(vcsFileRevision instanceof CCaseFileRevision)) return "";
-      return ((CCaseFileRevision) vcsFileRevision).getChangeCcaseDate();
+    public String valueOf( VcsFileRevision revision ) {
+      if (!(revision instanceof CCaseFileRevision)) return "";
+      return ((CCaseFileRevision) revision).getChangeCcaseDate();
+    }
+
+    public Comparator<VcsFileRevision> getComparator()
+    {
+      return new Comparator<VcsFileRevision>() {
+        public int compare(VcsFileRevision o1, VcsFileRevision o2)
+        {
+          if (!(o1 instanceof CCaseFileRevision)) return 0;
+          if (!(o2 instanceof CCaseFileRevision)) return 0;
+
+          CCaseFileRevision cO1 = (CCaseFileRevision) o1;
+          CCaseFileRevision cO2 = (CCaseFileRevision) o2;
+          if( cO1.getOrder() < cO2.getOrder() )
+            return -1;
+          else
+          if( cO1.getOrder() > cO2.getOrder() )
+            return 1;
+          return 0;
+        }
+      };
     }
   };
 
