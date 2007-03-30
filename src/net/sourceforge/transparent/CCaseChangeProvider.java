@@ -366,19 +366,12 @@ public class CCaseChangeProvider implements ChangeProvider
 
   private void addRemovedFiles( final ChangelistBuilder builder )
   {
-    final HashSet<String> folders = host.removedFolders;
-    synchronized( folders )
-    {
-      for( String path : folders )
-        builder.processLocallyDeletedFile( VcsUtil.getFilePath( path ) );
-    }
+    final HashSet<String> files = new HashSet<String>();
+    files.addAll( host.removedFolders );
+    files.addAll( host.removedFiles );
 
-    final HashSet<String> files = host.removedFiles;
-    synchronized( files )
-    {
-      for( String path : files )
-        builder.processLocallyDeletedFile( VcsUtil.getFilePath( path ) );
-    }
+    for( String path : files )
+      builder.processLocallyDeletedFile( VcsUtil.getFilePath( path ) );
   }
 
   private void addIgnoredFiles( final ChangelistBuilder builder )
