@@ -88,7 +88,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   private VcsShowSettingOption myCheckoutOptions;
   private VcsShowConfirmationOption addConfirmation;
-  private VcsShowConfirmationOption removeConfirmation;
   private VirtualFileListener listener;
 
   public TransparentVcs( Project project )
@@ -125,7 +124,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public VcsShowSettingOption      getCheckoutOptions()   {  return myCheckoutOptions;   }
   public VcsShowConfirmationOption getAddConfirmation()   {  return addConfirmation;     }
-  public VcsShowConfirmationOption getRemoveConfirmation(){  return removeConfirmation;  }
 
   public static TransparentVcs getInstance( Project project ) { return project.getComponent(TransparentVcs.class); }
 
@@ -141,7 +139,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     myCheckoutOptions = vcsManager.getStandardOption( VcsConfiguration.StandardOption.CHECKOUT, this );
 
     addConfirmation = vcsManager.getStandardConfirmation( VcsConfiguration.StandardConfirmation.ADD, this );
-    removeConfirmation = vcsManager.getStandardConfirmation( VcsConfiguration.StandardConfirmation.REMOVE, this );
   }
 
   public void projectClosed() {}
