@@ -288,9 +288,11 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     if( !newPattern.equals( patterns ))
     {
       final String newPat = newPattern;
-      ApplicationManager.getApplication().invokeLater( new Runnable()
-        { public void run() { FileTypeManager.getInstance().setIgnoredFilesList( newPat ); } }
-      );
+      final FileTypeManager mgr = FileTypeManager.getInstance();
+      final Runnable action = new Runnable() { public void run() { mgr.setIgnoredFilesList( newPat ); } };
+      ApplicationManager.getApplication().invokeLater( new Runnable() {
+        public void run() { ApplicationManager.getApplication().runWriteAction( action );  }
+      });
     }
   }
 
