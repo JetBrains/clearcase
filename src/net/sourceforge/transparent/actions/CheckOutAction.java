@@ -37,9 +37,12 @@ public class CheckOutAction extends SynchronousAction
 
   protected boolean isEnabled( VirtualFile file, AnActionEvent e )
   {
-    FileStatus status = getFileStatus( e.getData( DataKeys.PROJECT ), file );
+    Project project = getProject( e );
+    if( !VcsUtil.isPathUnderProject( project, file ))
+      return false;
 
     //  NB: if invoked for a folder, the status is most often "NOT_CHANGED"
+    FileStatus status = getFileStatus( e.getData( DataKeys.PROJECT ), file );
     return status == FileStatus.NOT_CHANGED || status == FileStatus.HIJACKED;
   }
 
