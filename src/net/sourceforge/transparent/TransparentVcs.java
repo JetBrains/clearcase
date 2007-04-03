@@ -62,6 +62,9 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   @NonNls private static final String SNAPSHOT_SIG = "snapshot";
   @NonNls private static final String DYNAMIC_SIG = "dynamic";
 
+  @NonNls private final static String RESERVED_SIG = "reserved";
+  @NonNls private final static String UNRESERVED_SIG = "unreserved";
+
   @NonNls private static final String INIT_FAILED_TITLE = "Server intialization failed";
   @NonNls private static final String SERVER_UNAVAILABLE_MESSAGE = "\nServer is unavailable, ClearCase support is switched to isOffline mode";
   @NonNls private static final String FAILED_TO_INIT_VIEW_MESSAGE = "Plugin failed to initialize view:\n";
@@ -626,6 +629,31 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public Status  getFileStatus( VirtualFile file ) {  return getFileStatus( new File(file.getPresentableUrl() ));  }
   public Status  getFileStatus( File file )        {  return getClearCase().getStatus( file );  }
+
+  public static CheckedOutStatus getCheckedOutStatus( File file )
+  {
+    @NonNls Runner runner = new Runner();
+    runner.run( new String[] { CLEARTOOL_CMD, "lscheckout", "-fmt", "%Rf", "-directory", file.getAbsolutePath() }, true );
+
+    if (!runner.isSuccessfull())
+      return CheckedOutStatus.NOT_CHECKED_OUT;
+
+    if (runner.getOutput().equalsIgnoreCase( RESERVED_SIG ) )
+      return CheckedOutStatus.RESERVED;
+
+    if (runner.getOutput().equalsIgnoreCase( UNRESERVED_SIG ))
+      return CheckedOutStatus.UNRESERVED;
+
+    return CheckedOutStatus.NOT_CHECKED_OUT;
+  }
+
+  public static String getCheckoutComment(File file)
+  {
+    @NonNls Runner runner = new Runner();
+    runner.run( new String[] { CLEARTOOL_CMD, "lscheckout", "-fmt", "%c", "-directory", file.getAbsolutePath() }, true );
+
+    return !runner.isSuccessfull() ? "" : runner.getOutput();
+  }
 
   public static String  updateFile( String fileName )  {  return cleartoolWithOutput( "update", fileName );  }
 

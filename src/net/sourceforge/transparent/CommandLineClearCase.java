@@ -13,8 +13,6 @@ import java.util.Date;
 public class CommandLineClearCase implements ClearCase
 {
   @NonNls private final static String VERSIONED_SIG = "@@";
-  @NonNls private final static String RESERVED_SIG = "reserved";
-  @NonNls private final static String UNRESERVED_SIG = "unreserved";
   @NonNls private final static String HIJACKED_SIG = "[hijacked]";
   @NonNls private final static String CHECKEDOUT_SIG = "Rule: CHECKEDOUT";
 
@@ -119,10 +117,10 @@ public class CommandLineClearCase implements ClearCase
 
   public boolean isCheckedOut(File file) {  return getStatus(file) == Status.CHECKED_OUT;  }
 
-  public Status getStatus(File file)
+  public Status getStatus( File file )
   {
     String fileName = quote( file.getAbsolutePath() );
-    Runner runner = cleartool( new String[] { "ls", "-directory", fileName }, true);
+    Runner runner = cleartool( new String[] { "ls", "-directory", fileName }, true );
     String output = runner.getOutput();
     if( output == null )
       output = "";
@@ -156,6 +154,19 @@ public class CommandLineClearCase implements ClearCase
       return Status.CHECKED_IN;
   }
 
+  public CheckedOutStatus getCheckedOutStatus( File file )
+  {
+    return TransparentVcs.getCheckedOutStatus( file );
+  }
+
+  @Nullable
+  public String getCheckoutComment( File file )
+  {
+    return TransparentVcs.getCheckoutComment( file );
+  }
+
+  public static String quote(String str) {  return "\"" + str.replaceAll("\"", "\\\"") + "\"";  }
+
   public void cleartool( @NonNls String subcmd )
   {
     cleartool( new String[] { "cleartool", subcmd } );
@@ -172,32 +183,4 @@ public class CommandLineClearCase implements ClearCase
     runner.run(cmd, canFail);
     return runner;
   }
-
-  public CheckedOutStatus getCheckedOutStatus(File file)
-  {
-    Runner runner = cleartool(new String[] { "lscheckout", "-fmt", "%Rf", "-directory", file.getAbsolutePath() }, true);
-    
-    if (!runner.isSuccessfull())
-      return CheckedOutStatus.NOT_CHECKED_OUT;
-
-    if (runner.getOutput().equalsIgnoreCase( RESERVED_SIG ) )
-      return CheckedOutStatus.RESERVED;
-
-    if (runner.getOutput().equalsIgnoreCase( UNRESERVED_SIG ))
-      return CheckedOutStatus.UNRESERVED;
-
-    return CheckedOutStatus.NOT_CHECKED_OUT;
-    /*
-    if (runner.getOutput().equals("")) {
-        return CheckedOutStatus.NOT_CHECKED_OUT;
-    } else {
-        return CheckedOutStatus.NOT_CHECKED_OUT;
-    }
-    */
-  }
-
-  @Nullable
-  public String getCheckoutComment(File file) { return null;  }
-
-  public static String quote(String str) {  return "\"" + str.replaceAll("\"", "\\\"") + "\"";  }
 }
