@@ -37,8 +37,8 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
   @NonNls private final static String KEEP_HIJACKED_SIG = "Keeping hijacked object \"";
   @NonNls private final static String UNLOADED_SIG = "Unloaded \"";
   @NonNls private final static String BASE_DELIM = " - base ";
-  @NonNls private final static String MODIFIED_GROUP = "modified";
-  @NonNls private final static String SKIPPED_GROUP = "skipped";
+//  @NonNls private final static String MODIFIED_GROUP = "modified";
+//  @NonNls private final static String SKIPPED_GROUP = "skipped";
   @NonNls private final static String PROGRESS_TEXT = "Synching with repository";
 
   @NonNls private final static String ERROR_MSG_SIG = "valid snapshot view path";
@@ -52,30 +52,27 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
 
   public void fillGroups( UpdatedFiles groups )
   {
-    final FileGroup groupModified = new FileGroup( MODIFIED_GROUP, MODIFIED_GROUP, false, FileGroup.MODIFIED_ID, false);
-    groups.registerGroup(groupModified);
-
-    final FileGroup groupSkipped = new FileGroup( SKIPPED_GROUP, SKIPPED_GROUP, false, FileGroup.SKIPPED_ID, false);
-    groups.registerGroup(groupSkipped);
   }
 
-  public UpdateSession updateDirectories( FilePath[] contentRoots, UpdatedFiles updatedFiles, ProgressIndicator progressIndicator ) throws
-                                                                                                                                    ProcessCanceledException {
+  public UpdateSession updateDirectories( FilePath[] contentRoots, UpdatedFiles updatedFiles,
+                                          ProgressIndicator progressIndicator ) throws ProcessCanceledException
+  {
     final ArrayList<VcsException> errors = new ArrayList<VcsException>();
 
     progressIndicator.setText( PROGRESS_TEXT );
     FileDocumentManager.getInstance().saveAllDocuments();
 
-    CCaseConfig config = CCaseConfig.getInstance( project );
+    for( FilePath root : contentRoots )
+    {
+      String out = TransparentVcs.cleartoolWithOutput( "update", root.getPath() );
 
-    String out = TransparentVcs.cleartoolWithOutput( "update", config.clearcaseRoot );
-
-    //  Correctly process the case when "Update Project" is done over the
-    //  dynamic view (only snapshot views can handle this operation).
-    if( out.indexOf( ERROR_MSG_SIG ) != -1 )
-      errors.add( new VcsException( "You can not update a dynamic view: " + out ) );
-
-    parseOutput( out, updatedFiles );
+      //  Correctly process the case when "Update Project" is done over the
+      //  dynamic view (only snapshot views can handle this operation).
+      if( out.indexOf( ERROR_MSG_SIG ) != -1 )
+        errors.add( new VcsException( "You can not update a dynamic view: " + out ) );
+      else
+        parseOutput( root.getPath(), out, updatedFiles );
+    }
 
     return new UpdateSession(){
       public List<VcsException> getExceptions() { return errors; }
@@ -84,10 +81,10 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
     };
   }
 
-  private void parseOutput( String output, UpdatedFiles updatedFiles )
+  private static void parseOutput( String contentRoot, String output, UpdatedFiles updatedFiles )
   {
     String sepSymbol = new String( new char[] { File.separatorChar } );
-    String rootPath = CCaseConfig.getInstance( project ).clearcaseRoot;
+    String rootPath = contentRoot;
     if( !rootPath.endsWith( sepSymbol ) )
       rootPath += sepSymbol;
 
