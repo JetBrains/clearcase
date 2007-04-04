@@ -133,7 +133,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public void projectOpened()
   {
     changeProvider = new CCaseChangeProvider( myProject, this );
-    updateEnvironment = new CCaseUpdateEnvironment( myProject );
+    updateEnvironment = new CCaseUpdateEnvironment();
     checkinEnvironment = new CCaseCheckinEnvironment( myProject, this );
     editProvider = new CCaseEditFileProvider( this );
     historyProvider = new CCaseHistoryProvider( myProject );

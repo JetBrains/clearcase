@@ -8,7 +8,6 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
@@ -28,8 +27,6 @@ import java.util.List;
  * Created by IntelliJ IDEA.
  * User: lloix
  * Date: Dec 6, 2006
- * Time: 4:20:17 PM
- * To change this template use File | Settings | File Templates.
  */
 public class CCaseUpdateEnvironment implements UpdateEnvironment
 {
@@ -37,22 +34,11 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
   @NonNls private final static String KEEP_HIJACKED_SIG = "Keeping hijacked object \"";
   @NonNls private final static String UNLOADED_SIG = "Unloaded \"";
   @NonNls private final static String BASE_DELIM = " - base ";
-//  @NonNls private final static String MODIFIED_GROUP = "modified";
-//  @NonNls private final static String SKIPPED_GROUP = "skipped";
   @NonNls private final static String PROGRESS_TEXT = "Synching with repository";
 
   @NonNls private final static String ERROR_MSG_SIG = "valid snapshot view path";
 
-  private Project project;
-
-  public CCaseUpdateEnvironment( Project project )
-  {
-    this.project = project;
-  }
-
-  public void fillGroups( UpdatedFiles groups )
-  {
-  }
+  public void fillGroups( UpdatedFiles groups ) {}
 
   public UpdateSession updateDirectories( FilePath[] contentRoots, UpdatedFiles updatedFiles,
                                           ProgressIndicator progressIndicator ) throws ProcessCanceledException
