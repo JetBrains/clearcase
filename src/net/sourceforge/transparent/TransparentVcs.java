@@ -158,7 +158,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
     //  Control the appearance of project items so that we can easily
     //  track down potential changes in the repository.
-    listener = new VFSListener( getProject(), this );
+    listener = new VFSListener( getProject() );
     LocalFileSystem.getInstance().addVirtualFileListener( listener );
 
     addIgnoredFiles();
@@ -219,11 +219,13 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
    */
   private void extractViewProperties()
   {
-    if( StringUtil.isNotEmpty( getConfig().clearcaseRoot ) )
+    ProjectLevelVcsManager mgr = ProjectLevelVcsManager.getInstance( myProject );
+    VirtualFile[] roots = mgr.getRootsUnderVcs( this );
+    if( roots.length > 0 )
     {
       try
       {
-         extractViewType();
+         extractViewType( roots[ 0 ].getPath() );
       }
       catch( ClearCaseNoServerException e )
       {
@@ -243,11 +245,11 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       LOG.info( ">>> getConfig().clearcaseRoot is empty" );
   }
 
-  private void extractViewType() throws ClearCaseNoServerException
+  private void extractViewType( String viewPath ) throws ClearCaseNoServerException
   {
     LOG.info( "--- Analyzing view type ---" );
     
-    String output = cleartoolOnLocalPathWithOutput( LIST_VIEW_CMD, CURRENT_VIEW_SWITCH, PROP_SWITCH, FULL_SWITCH );
+    String output = cleartoolOnLocalPathWithOutput( viewPath, LIST_VIEW_CMD, CURRENT_VIEW_SWITCH, PROP_SWITCH, FULL_SWITCH );
     if( isServerDownMessage( output ) )
       throw new ClearCaseNoServerException( output );
 
@@ -670,10 +672,10 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     return runner.getOutput();
   }
 
-  public String cleartoolOnLocalPathWithOutput(@NonNls String... subcmd) throws ClearCaseException
+  public static String cleartoolOnLocalPathWithOutput(String path, @NonNls String... subcmd) throws ClearCaseException
   {
     Runner runner = new Runner();
-    runner.workingDir = getConfig().clearcaseRoot;
+    runner.workingDir = path;
     runner.run( Runner.getCommand( CLEARTOOL_CMD, subcmd ), true );
     return runner.getOutput();
   }

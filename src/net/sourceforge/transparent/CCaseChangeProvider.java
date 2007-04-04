@@ -164,7 +164,7 @@ public class CCaseChangeProvider implements ChangeProvider
 
   private void iterateOverProjectPath( FilePath path )
   {
-    LOG.info( "-- ChangeProvider - Iterating over project structure starting from scope root: " + path.getPath() );
+    LOG.info( "-- ChangeProvider - Iterating over content root: " + path.getPath() );
     if( progress != null )
       progress.setText( COLLECT_MSG );
 

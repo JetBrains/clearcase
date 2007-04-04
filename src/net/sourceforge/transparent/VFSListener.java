@@ -2,10 +2,7 @@ package net.sourceforge.transparent;
 
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.AbstractVcsHelper;
-import com.intellij.openapi.vcs.FileStatus;
-import com.intellij.openapi.vcs.FileStatusManager;
-import com.intellij.openapi.vcs.VcsShowConfirmationOption;
+import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.*;
 import org.jetbrains.annotations.NonNls;
@@ -24,18 +21,28 @@ public class VFSListener extends VirtualFileAdapter
   private Project project;
   private TransparentVcs  host;
 
-  public VFSListener( Project project, TransparentVcs host )
-  {  this.project = project; this.host = host; }
+  public VFSListener( Project project )
+  {
+    this.project = project;
+    host = TransparentVcs.getInstance( project ); 
+  }
 
   public void beforeFileMovement(VirtualFileMoveEvent event)
   {
-    if( !event.getFile().isDirectory() )
+    VirtualFile file = event.getFile();
+
+    //  In the case of multi-vcs project configurations, we need to skip all
+    //  notifications on non-owned files
+    if( !isMyCCaseFile( file ) )
+      return;
+
+    if( !file.isDirectory() )
     {
-      String oldName = event.getFile().getPath();
-      String newName = event.getNewParent().getPath() + "/" + event.getFile().getName();
+      String oldName = file.getPath();
+      String newName = event.getNewParent().getPath() + "/" + file.getName();
 
       String prevName = host.renamedFiles.get( oldName );
-      if( host.fileIsUnderVcs( event.getFile() ) || prevName != null )
+      if( host.fileIsUnderVcs( file ) || prevName != null )
       {
         //  Newer name must refer to the oldest one in the chain of movements
         if( prevName == null )
@@ -54,6 +61,12 @@ public class VFSListener extends VirtualFileAdapter
   public void beforePropertyChange(VirtualFilePropertyEvent event)
   {
     VirtualFile file = event.getFile();
+
+    //  In the case of multi-vcs project configurations, we need to skip all
+    //  notifications on non-owned files
+    if( !isMyCCaseFile( file ) )
+      return;
+
     if( event.getPropertyName() == VirtualFile.PROP_NAME )
     {
       //  When a folder is renamed (e.g. as the result of the "rename package"
@@ -106,7 +119,14 @@ public class VFSListener extends VirtualFileAdapter
   {
     @NonNls final String TITLE = "Add file(s) to the ClearCase repository?";
     @NonNls final String MESSAGE = "Do you want to schedule the following file for addition to ClearCase?\n{0}";
-    String path = event.getFile().getPath();
+
+    VirtualFile file = event.getFile();
+    String path = file.getPath();
+
+    //  In the case of multi-vcs project configurations, we need to skip all
+    //  notifications on non-owned files
+    if( !isMyCCaseFile( file ) )
+      return;
 
     //  In the case when the project content is synchronized over the
     //  occasionally removed files.
@@ -120,7 +140,7 @@ public class VFSListener extends VirtualFileAdapter
 
     //  Take into account only processable files.
 
-    if( isFileProcessable( event.getFile() ))
+    if( isFileProcessable( file ))
     {
       VcsShowConfirmationOption confirmOption = host.getAddConfirmation();
 
@@ -133,7 +153,7 @@ public class VFSListener extends VirtualFileAdapter
       if( confirmOption.getValue() == VcsShowConfirmationOption.Value.SHOW_CONFIRMATION )
       {
         List<VirtualFile> files = new ArrayList<VirtualFile>();
-        files.add( event.getFile() );
+        files.add( file );
         Collection<VirtualFile> filesToProcess = AbstractVcsHelper.getInstance( project ).selectFilesToProcess( files, TITLE, null, TITLE,
                                                                                                                 MESSAGE, confirmOption );
         if( filesToProcess != null )
@@ -144,13 +164,14 @@ public class VFSListener extends VirtualFileAdapter
 
   public void beforeFileDeletion( VirtualFileEvent event )
   {
+    VirtualFile file = event.getFile();
+    
     //  Do not ask user if the files deletion is caused by the vcs operation
     //  like UPDATE (obviously they are deleted without a necessity to recover
     //  or to keep track).
     if( event.isFromRefresh() )
       return;
 
-    VirtualFile file = event.getFile();
     FileStatus status = FileStatusManager.getInstance( project ).getStatus( file );
     if( host.fileIsUnderVcs( file ) &&
         ( status != FileStatus.ADDED ) && ( status != FileStatus.UNKNOWN ))
@@ -164,6 +185,18 @@ public class VFSListener extends VirtualFileAdapter
       else
         host.removedFiles.add( file.getPath());
     }
+  }
+
+  /**
+   * File is considered to be a valid ClearCase file if it resides under the
+   * content root controlled by our (TransparentVcs) plugin.
+   */
+  private boolean isMyCCaseFile( VirtualFile file )
+  {
+    ProjectLevelVcsManager mgr = ProjectLevelVcsManager.getInstance( project );
+    AbstractVcs vcs = mgr.getVcsFor( file );
+    
+    return vcs == host;
   }
 
   /**
@@ -193,7 +226,7 @@ public class VFSListener extends VirtualFileAdapter
    */
   private boolean isFileProcessable( VirtualFile file )
   {
-    return host.fileIsUnderVcs( file ) && !host.isFileIgnored( file ) &&
+    return !host.isFileIgnored( file ) &&
            !FileTypeManager.getInstance().isFileIgnored( file.getName() );
   }
 }

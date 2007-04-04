@@ -25,7 +25,6 @@ public class CCaseConfig implements ListenerNotifier, JDOMExternalizable, Projec
   @NonNls private final static String PROP_EVENT_NAME = "configuration";
 
   public String implementation = CommandLineClearCase.class.getName();
-  public String clearcaseRoot = "";
   public boolean checkoutReserved = false;
   public boolean markExternalChangeAsUpToDate = true;
   public boolean checkInUseHijack = true;
