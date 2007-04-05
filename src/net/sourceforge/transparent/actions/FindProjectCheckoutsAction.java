@@ -7,10 +7,12 @@ import com.intellij.openapi.vfs.VirtualFile;
 import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
 
-public class FindProjectCheckoutsAction extends FindCheckoutsAction
+public class FindProjectCheckoutsAction extends AsynchronousAction
 {
   @NonNls private final static String WARNING_TEXT = "In graphical mode only one content root as a VOB object can be shown.";
   @NonNls private final static String WARNING_TITLE = "Show One VOB Path";
+
+  @NonNls private final static String ACTION_NAME = "Find Project Checkouts";
 
   public void perform( VirtualFile file, AnActionEvent e )
   {
@@ -24,4 +26,6 @@ public class FindProjectCheckoutsAction extends FindCheckoutsAction
 
     cleartool( "lscheckout", "-g", roots[ 0 ].getPath() );
   }
+
+  protected String getActionName( AnActionEvent e ) { return ACTION_NAME; }
 }

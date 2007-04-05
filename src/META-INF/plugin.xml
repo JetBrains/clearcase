@@ -44,10 +44,8 @@
          <action id="ClearCase.Update" class="net.sourceforge.transparent.actions.UpdateFileAction" text="U_pdate" description="Update current file"/>
          <separator/>
          <reference id="Vcs.ShowTabbedFileHistory"/>
-        <action id="ClearCase.VersionTree" class="net.sourceforge.transparent.actions.VersionTreeAction" text="_Version Tree..." description="Open version tree window"/>
+         <action id="ClearCase.VersionTree" class="net.sourceforge.transparent.actions.VersionTreeAction" text="_Version Tree..." description="Open version tree window"/>
          <action id="ClearCase.Properties" class="net.sourceforge.transparent.actions.PropertiesAction" text="_Properties..." description="Show properties window"/>
-         <separator/>
-         <action id="ClearCase.FindCheckouts" class="net.sourceforge.transparent.actions.FindCheckoutsAction" text="_Find Checkouts..." description="Find checkout files"/>
          <add-to-group group-id="VcsGroup" anchor="last" />
       </group>
    </actions>
