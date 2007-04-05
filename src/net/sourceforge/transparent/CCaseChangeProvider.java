@@ -11,6 +11,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ContentIterator;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.changes.*;
@@ -32,6 +33,9 @@ import java.util.List;
  */
 public class CCaseChangeProvider implements ChangeProvider
 {
+  @NonNls private final static String REMINDER_TITLE = "Reminder";
+  @NonNls private final static String REMINDER_TEXT = "Project started with ClearCase configured to be in the Offline mode.";
+
   @NonNls private final static String COLLECT_MSG = "Collecting Writables";
   @NonNls private final static String SEARCHNEW_MSG = "Searching New";
   @NonNls private final static String FAIL_2_CONNECT_MSG = "Failed to connect to ClearCase Server: ";
@@ -49,6 +53,7 @@ public class CCaseChangeProvider implements ChangeProvider
   private TransparentVcs host;
   private ProgressIndicator progress;
   private boolean isBatchUpdate;
+  private boolean isFirstShow;
 
   private HashSet<String> filesNew = new HashSet<String>();
   private HashSet<String> filesChanged = new HashSet<String>();
@@ -59,6 +64,7 @@ public class CCaseChangeProvider implements ChangeProvider
   {
     this.project = project;
     this.host = host;
+    isFirstShow = true;
   }
 
   public boolean isModifiedDocumentTrackingRequired() { return false;  }
@@ -72,6 +78,15 @@ public class CCaseChangeProvider implements ChangeProvider
 
     progress = progressIndicator;
     isBatchUpdate = (dirtyScope.getRecursivelyDirtyDirectories().size() > 0);
+
+    if( isBatchUpdate && isFirstShow && CCaseConfig.getInstance( project ).isOffline )
+    {
+      ApplicationManager.getApplication().invokeLater( new Runnable() {
+         public void run() {  Messages.showWarningDialog( project, REMINDER_TEXT, REMINDER_TITLE );  }
+       });
+    }
+    
+    isFirstShow = false;
     initInternals();
 
     try
