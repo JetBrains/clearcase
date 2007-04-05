@@ -48,8 +48,6 @@
          <action id="ClearCase.Properties" class="net.sourceforge.transparent.actions.PropertiesAction" text="_Properties..." description="Show properties window"/>
          <separator/>
          <action id="ClearCase.FindCheckouts" class="net.sourceforge.transparent.actions.FindCheckoutsAction" text="_Find Checkouts..." description="Find checkout files"/>
-         <separator/>
-         <action id="ClearCase.About" class="net.sourceforge.transparent.actions.AboutAction" text="A_bout..." description="About transparent plugin"/>
          <add-to-group group-id="VcsGroup" anchor="last" />
       </group>
    </actions>

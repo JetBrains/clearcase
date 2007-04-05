@@ -74,6 +74,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   @NonNls private static final String ALREADY_CHECKEDOUT_SIG = "already checked out";
 
   public static final Key<Boolean> SUCCESSFUL_CHECKOUT = new Key<Boolean>( "SUCCESSFUL_CHECKOUT" );
+  public static final Key<Boolean> MERGE_CONFLICT = new Key<Boolean>( "MERGE_CONFLICT" );
 
   public HashSet<String> removedFiles;
   public HashSet<String> removedFolders;
@@ -367,6 +368,17 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       }
       getClearCase().checkIn( ioFile, comment );
 
+    }
+    catch( ClearCaseException e )
+    {
+      if( isMergeConflictMessage( e.getMessage() ))
+      {
+        //  In the case of the conflict upon checking in - remember the
+        //  particular status of this file for our ChangeProvider.
+        vFile.putUserData( MERGE_CONFLICT, true );
+      }
+
+      handleException( e, vFile, errors );
     }
     catch( Throwable e )
     {
@@ -705,6 +717,14 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     @NonNls final String msgSig3 = "can not contact license server";
 
     return ( msg.indexOf( msgSig1 ) != -1 ) || ( msg.indexOf( msgSig2 ) != -1 ) || ( msg.indexOf( msgSig3 ) != -1 ); 
+  }
+
+  private static boolean isMergeConflictMessage( String msg )
+  {
+    @NonNls final String msgSig1 = "he most recent version";
+    @NonNls final String msgSig2 = "is not the predecessor of this";
+
+    return (msg.indexOf( msgSig1 ) != -1) && (msg.indexOf( msgSig2 ) != -1);
   }
 
   //

@@ -17,6 +17,7 @@ import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
+import static net.sourceforge.transparent.TransparentVcs.MERGE_CONFLICT;
 import static net.sourceforge.transparent.TransparentVcs.SUCCESSFUL_CHECKOUT;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
@@ -59,6 +60,7 @@ public class CCaseChangeProvider implements ChangeProvider
   private HashSet<String> filesChanged = new HashSet<String>();
   private HashSet<String> filesHijacked = new HashSet<String>();
   private HashSet<String> filesIgnored = new HashSet<String>();
+  private HashSet<String> filesMerge = new HashSet<String>();
 
   public CCaseChangeProvider( Project project, TransparentVcs host )
   {
@@ -98,15 +100,16 @@ public class CCaseChangeProvider implements ChangeProvider
       iterateOverDirtyDirectories( dirtyScope );
       iterateOverDirtyFiles( dirtyScope );
 
-      /**
-       * Transform data accumulated in the internal data structures (filesNew,
-       * filesChanged, filesDeleted, host.renamedFiles) into "Change" format
-       * acceptable by ChangelistBuilder.
-      */
+      //-----------------------------------------------------------------------
+      //  Transform data accumulated in the internal data structures (filesNew,
+      //  filesChanged, filesDeleted, host.renamedFiles) into "Change" format
+      //  acceptable by ChangelistBuilder.
+      //-----------------------------------------------------------------------
       addNewOrRenamedFiles( builder );
       addChangedFiles( builder );
       addRemovedFiles( builder );
       addIgnoredFiles( builder );
+      addMergeConflictFiles( builder );
     }
     catch( ClearCaseException e )
     {
@@ -221,11 +224,13 @@ public class CCaseChangeProvider implements ChangeProvider
 
   private void analyzeWritableFiles( List<String> writableFiles )
   {
-    List<String> writableExplicitFiles = new ArrayList<String>();
-
+    ArrayList<String> writableExplicitFiles = new ArrayList<String>();
     final List<String> newFiles = new ArrayList<String>();
 
-    //  Exclude those files for which status is known apriori.
+    //  Exclude those files for which status is known apriori:
+    //  - file has status "changed" right after it was checked out
+    //  - file has status "Merge Conflict" if that was indicated during
+    //    the last commit operation.
     selectExplicitWritableFiles( writableFiles, writableExplicitFiles );
 
     if( host.getClearCase().getName().indexOf( COMMAND_LINE_CLASS_SIG ) == -1 ||
@@ -234,7 +239,7 @@ public class CCaseChangeProvider implements ChangeProvider
       LOG.info( "ChangeProvider - Analyzing writable files on per-file basis" );
       for( String path : writableExplicitFiles )
       {
-        LOG.info( "ChangeProvider - Issue \"ls\" command for getting information on writable file" );
+        LOG.info( "ChangeProvider - Issue \"cleartool ls\" command for getting information on writable file" );
 
         Status _status = host.getStatus( new File( path ) );
         if( _status == Status.NOT_AN_ELEMENT )
@@ -246,7 +251,7 @@ public class CCaseChangeProvider implements ChangeProvider
         if( _status == Status.HIJACKED )
           filesHijacked.add( path );
       }
-      LOG.info( "ChangeProvider - \"PROPERTIES\" command finished" );
+      LOG.info( "ChangeProvider - \"cleartool ls\" command finished" );
     }
     else
     {
@@ -254,7 +259,7 @@ public class CCaseChangeProvider implements ChangeProvider
 
       StatusMultipleProcessor processor = new StatusMultipleProcessor( writableExplicitFiles );
       processor.execute();
-      LOG.info( "ChangeProvider - CLEARTOOL LS batch command finished." );
+      LOG.info( "ChangeProvider - \"CLEARTOOL LS\" batch command finished." );
 
       for( String path : writableFiles )
       {
@@ -298,8 +303,7 @@ public class CCaseChangeProvider implements ChangeProvider
     {
       VirtualFile file = VcsUtil.getVirtualFile( path );
 
-      Boolean isCheckoutResult = file.getUserData( SUCCESSFUL_CHECKOUT );
-      if( isCheckoutResult != null && isCheckoutResult.booleanValue() )
+      if( file.getUserData( SUCCESSFUL_CHECKOUT ) != null  )
       {
         //  Do not forget to delete this property right after the change
         //  is classified, otherwise this file will always be determined
@@ -308,17 +312,22 @@ public class CCaseChangeProvider implements ChangeProvider
         filesChanged.add( file.getPath() );
       }
       else
+      if( file.getUserData( MERGE_CONFLICT ) != null )
+      {
+        filesMerge.add( file.getPath() );
+      }
+      else
       {
         newWritables.add( path );
       }
     }
   }
 
-  //---------------------------------------------------------------------------
-  //  For a given file which is known that it is new, check also its direct
-  //  parent folder for presence in the VSS repository, and then all its indirect
-  //  parent folders until we reach project boundaries.
-  //---------------------------------------------------------------------------
+  /**
+   * For a given file which is known to be new, check also its direct parent
+   * folder for presence in the VSS repository, and then all its indirect parent
+   * folders until we reach project boundaries or find the existing folder.
+  */
   private void analyzeParentFoldersForPresence( String file, List<String> newFolders,
                                                 HashSet<String> processed )
   {
@@ -395,6 +404,15 @@ public class CCaseChangeProvider implements ChangeProvider
       builder.processIgnoredFile( VcsUtil.getVirtualFile( path ) );
   }
 
+  private void addMergeConflictFiles( final ChangelistBuilder builder )
+  {
+    for( String path : filesMerge )
+    {
+      final FilePath fp = VcsUtil.getFilePath( path );
+      builder.processChange( new Change( new CCaseContentRevision( host, fp, project ), new CurrentContentRevision( fp ), FileStatus.MERGED_WITH_CONFLICTS ));
+    }
+  }
+
   private static boolean isPathUnderProcessedFolders( HashSet<String> folders, String path )
   {
     String parentPathToCheck = new File( path ).getParent().toLowerCase();
@@ -431,6 +449,7 @@ public class CCaseChangeProvider implements ChangeProvider
     filesChanged.clear();
     filesHijacked.clear();
     filesIgnored.clear();
+    filesMerge.clear();
   }
 
   private boolean isFileCCaseProcessable( VirtualFile file )

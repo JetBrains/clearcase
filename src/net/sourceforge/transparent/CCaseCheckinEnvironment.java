@@ -117,12 +117,30 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     List<VcsException> errors = new ArrayList<VcsException>();
     HashSet<FilePath> processedFiles = new HashSet<FilePath>();
 
+    clearTemporaryStatuses( changes );
     commitNew( changes, comment, processedFiles, errors );
     commitChanged( changes, comment, processedFiles, errors );
 
     VcsUtil.refreshFiles( project, processedFiles );
 
     return errors;
+  }
+
+  /**
+   * Before new commit, clear all "Merge Conflict" statuses on files set on
+   * them since the last commit. 
+   */
+  private static void clearTemporaryStatuses( List<Change> changes )
+  {
+    for( Change change : changes )
+    {
+      FilePath filePath = change.getAfterRevision().getFile();
+      if( filePath != null )
+      {
+        VirtualFile file = filePath.getVirtualFile();
+        file.putUserData( TransparentVcs.MERGE_CONFLICT, null );
+      }
+    }
   }
 
   private void commitNew( List<Change> changes, String comment,

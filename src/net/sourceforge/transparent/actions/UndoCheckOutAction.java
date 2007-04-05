@@ -15,16 +15,14 @@ public class UndoCheckOutAction extends SynchronousAction
 
   protected boolean isEnabled( VirtualFile file, AnActionEvent e )
   {
-    return file.isDirectory() ||
-           getFileStatus( getProject( e ), file ) == FileStatus.MODIFIED;
+    return file.isDirectory() || properStatus( e, file );
   }
 
   protected void perform( VirtualFile file, AnActionEvent e ) throws VcsException
   {
     List<VcsException> errors = new ArrayList<VcsException>();
-    FileStatus status = getFileStatus( getProject( e ), file );
     
-    if( !file.isDirectory() && (status == FileStatus.MODIFIED))
+    if( !file.isDirectory() && properStatus( e, file ) )
     {
       getHost( e ).undoCheckoutFile( file, errors );
       file.refresh( true, false );
@@ -35,4 +33,10 @@ public class UndoCheckOutAction extends SynchronousAction
   }
 
   protected String getActionName( AnActionEvent e ) { return ACTION_NAME; }
+
+  private static boolean properStatus( AnActionEvent e, VirtualFile file )
+  {
+    FileStatus status = getFileStatus( getProject( e ), file );
+    return (status == FileStatus.MODIFIED) || (status == FileStatus.MERGED_WITH_CONFLICTS);
+  }
 }
