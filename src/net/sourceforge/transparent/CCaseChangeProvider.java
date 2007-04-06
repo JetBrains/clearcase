@@ -81,6 +81,8 @@ public class CCaseChangeProvider implements ChangeProvider
     progress = progressIndicator;
     isBatchUpdate = (dirtyScope.getRecursivelyDirtyDirectories().size() > 0);
 
+    //  When we start for the very first time - show reminder that user possibly
+    //  forgot that last time he set option to "Work offline".
     if( isBatchUpdate && isFirstShow && CCaseConfig.getInstance( project ).isOffline )
     {
       ApplicationManager.getApplication().invokeLater( new Runnable() {

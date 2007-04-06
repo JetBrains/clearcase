@@ -117,7 +117,7 @@ public class VFSListener extends VirtualFileAdapter
 
   public void fileCreated( VirtualFileEvent event )
   {
-    @NonNls final String TITLE = "Add file(s) to the ClearCase repository?";
+    @NonNls final String TITLE = "Add file(s)";
     @NonNls final String MESSAGE = "Do you want to schedule the following file for addition to ClearCase?\n{0}";
 
     VirtualFile file = event.getFile();
@@ -221,8 +221,8 @@ public class VFSListener extends VirtualFileAdapter
   }
 
   /**
-   * File is not processable if e.g. it was created during "GetLatestVersion",
-   * if it outside the vcs scope or it is in the list of excluded project files.
+   * File is not processable if it is outside the vcs scope or it is in the 
+   * list of excluded project files.
    */
   private boolean isFileProcessable( VirtualFile file )
   {
