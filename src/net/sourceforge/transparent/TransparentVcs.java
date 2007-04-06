@@ -317,14 +317,24 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public boolean fileExistsInVcs(VirtualFile file)
   {
     boolean exists = false;
-    if( file != null )
+    try
     {
-      String path = file.getPath();
-      if( renamedFiles.containsKey( path ))
-        path = renamedFiles.get( path );
+      if( file != null )
+      {
+        String path = file.getPath();
+        if( renamedFiles.containsKey( path ))
+          path = renamedFiles.get( path );
 
-      Status status = getStatus( new File( path ) );
-      exists = (status != Status.NOT_AN_ELEMENT);
+        Status status = getStatus( new File( path ) );
+        exists = (status != Status.NOT_AN_ELEMENT);
+      }
+    }
+    catch( RuntimeException e )
+    {
+      //  <fileExistsInVcs> is an interface method and sometimes is called
+      //  when e.g. ClearCase plugin is installed but the ClearCase per se
+      //  isn't.
+      //  Just ignore the exception.
     }
     return exists;
   }
