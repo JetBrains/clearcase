@@ -52,6 +52,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   @NonNls private static final String CCASE_KEEP_FILE_SIG = "*.keep";
   @NonNls private static final String CCASE_KEEP_FILE_MID_SIG = "*.keep.*";
   @NonNls private static final String CCASE_CONTRIB_FILE_SIG = "*.contrib";
+  @NonNls private static final String CCASE_CONTRIB_FILE_MID_SIG = "*.contrib.*";
   @NonNls private static final String HIJACKED_EXT = ".hijacked";
 
   @NonNls private static final String LIST_VIEW_CMD = "lsview";
@@ -290,6 +291,9 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
     if( patterns.indexOf(CCASE_CONTRIB_FILE_SIG) == -1 )
       newPattern += (( newPattern.charAt( newPattern.length() - 1 ) == ';') ? "" : ";" ) + CCASE_CONTRIB_FILE_SIG;
+
+    if( patterns.indexOf(CCASE_CONTRIB_FILE_MID_SIG) == -1 )
+      newPattern += (( newPattern.charAt( newPattern.length() - 1 ) == ';') ? "" : ";" ) + CCASE_CONTRIB_FILE_MID_SIG;
 
     if( !newPattern.equals( patterns ))
     {
