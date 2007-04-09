@@ -9,6 +9,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
+import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -132,6 +133,11 @@ public class CheckOutAction extends SynchronousAction
     }
 
     getHost( e ).checkoutFile( file, keepHijack, comment );
+
+    //  Assign the special marker to the file indicating that there is no need
+    //  to run <cleartool> command on the file - it is known to be modified
+    //  after the checkout command.
+    file.putUserData( TransparentVcs.SUCCESSFUL_CHECKOUT, true );
     file.refresh( true, file.isDirectory() );
   }
 
