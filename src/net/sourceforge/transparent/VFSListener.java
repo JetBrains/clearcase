@@ -67,6 +67,13 @@ public class VFSListener extends VirtualFileAdapter
     if( !isMyCCaseFile( file ) )
       return;
 
+    if( event.getPropertyName() == VirtualFile.PROP_WRITABLE )
+    {
+      //  If user managed to perform maerge on the file outside the
+      //  environment, clear this mark so that we will not confuse ourselves.
+      file.putUserData( TransparentVcs.MERGE_CONFLICT, null );
+    }
+    else
     if( event.getPropertyName() == VirtualFile.PROP_NAME )
     {
       //  When a folder is renamed (e.g. as the result of the "rename package"
