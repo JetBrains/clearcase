@@ -2,9 +2,13 @@ package net.sourceforge.transparent;
 
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.*;
+import com.intellij.openapi.vcs.AbstractVcsHelper;
+import com.intellij.openapi.vcs.FileStatus;
+import com.intellij.openapi.vcs.FileStatusManager;
+import com.intellij.openapi.vcs.VcsShowConfirmationOption;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.*;
+import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NonNls;
 
 import java.util.ArrayList;
@@ -33,7 +37,7 @@ public class VFSListener extends VirtualFileAdapter
 
     //  In the case of multi-vcs project configurations, we need to skip all
     //  notifications on non-owned files
-    if( !isMyCCaseFile( file ) )
+    if( !VcsUtil.isFileForVcs( file, project, host ))
       return;
 
     if( !file.isDirectory() )
@@ -64,7 +68,7 @@ public class VFSListener extends VirtualFileAdapter
 
     //  In the case of multi-vcs project configurations, we need to skip all
     //  notifications on non-owned files
-    if( !isMyCCaseFile( file ) )
+    if( !VcsUtil.isFileForVcs( file, project, host ))
       return;
 
     if( event.getPropertyName() == VirtualFile.PROP_WRITABLE )
@@ -132,7 +136,7 @@ public class VFSListener extends VirtualFileAdapter
 
     //  In the case of multi-vcs project configurations, we need to skip all
     //  notifications on non-owned files
-    if( !isMyCCaseFile( file ) )
+    if( !VcsUtil.isFileForVcs( file, project, host ))
       return;
 
     //  In the case when the project content is synchronized over the
@@ -192,18 +196,6 @@ public class VFSListener extends VirtualFileAdapter
       else
         host.removedFiles.add( file.getPath());
     }
-  }
-
-  /**
-   * File is considered to be a valid ClearCase file if it resides under the
-   * content root controlled by our (TransparentVcs) plugin.
-   */
-  private boolean isMyCCaseFile( VirtualFile file )
-  {
-    ProjectLevelVcsManager mgr = ProjectLevelVcsManager.getInstance( project );
-    AbstractVcs vcs = mgr.getVcsFor( file );
-    
-    return vcs == host;
   }
 
   /**
