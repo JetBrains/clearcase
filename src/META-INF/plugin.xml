@@ -33,20 +33,21 @@
         <action id="ClearCase.FindProjectCheckouts" class="net.sourceforge.transparent.actions.FindProjectCheckoutsAction" text="_Find Project Checkouts..." description="Find project checkout files"/>
         <action id="ClearCase.MergeProject" class="net.sourceforge.transparent.actions.MergeProjectAction" text="_Merge Project..." description="Merge main changes into project"/>
         <action id="ClearCase.RebaseProject" class="net.sourceforge.transparent.actions.RebaseAction" text="_Rebase project..." description="Rebase project along baselines"/>
-         <add-to-group group-id="VcsGlobalGroup" anchor="first" />
+        <add-to-group group-id="VcsGlobalGroup" anchor="first" />
       </group>
       <group id="ClearCaseFile" text="ClearCase" class="net.sourceforge.transparent.ClearCaseGroup">
-         <separator/>
-         <action id="ClearCase.Add" class="net.sourceforge.transparent.actions.AddAction" text="_Add" description="Add file"/>
-         <action id="ClearCase.CheckOut" class="net.sourceforge.transparent.actions.CheckOutAction" text="_Check Out" description="Check out file"/>
-         <action id="ClearCase.Hijack" class="net.sourceforge.transparent.actions.HijackAction" text="_Hijack" description="Hijack file"/>
-         <action id="ClearCase.UndoCheckOut" class="net.sourceforge.transparent.actions.UndoCheckOutAction" text="_Undo Check Out" description="Revert back to the previous version"/>
-         <action id="ClearCase.Update" class="net.sourceforge.transparent.actions.UpdateFileAction" text="U_pdate" description="Update current file"/>
-         <separator/>
-         <reference id="Vcs.ShowTabbedFileHistory"/>
-         <action id="ClearCase.VersionTree" class="net.sourceforge.transparent.actions.VersionTreeAction" text="_Version Tree..." description="Open version tree window"/>
-         <action id="ClearCase.Properties" class="net.sourceforge.transparent.actions.PropertiesAction" text="_Properties..." description="Show properties window"/>
-         <add-to-group group-id="VcsGroup" anchor="last" />
+        <separator/>
+        <action id="ClearCase.Add" class="net.sourceforge.transparent.actions.AddAction" text="_Add" description="Add file"/>
+        <action id="ClearCase.CheckOut" class="net.sourceforge.transparent.actions.CheckOutAction" text="_Check Out" description="Check out file"/>
+        <action id="ClearCase.Hijack" class="net.sourceforge.transparent.actions.HijackAction" text="_Hijack" description="Hijack file"/>
+        <action id="ClearCase.UndoCheckOut" class="net.sourceforge.transparent.actions.UndoCheckOutAction" text="_Undo Check Out" description="Revert back to the previous version"/>
+        <action id="ClearCase.Update" class="net.sourceforge.transparent.actions.UpdateFileAction" text="U_pdate" description="Update current file"/>
+        <action id="ClearCase.Merge" class="net.sourceforge.transparent.actions.MergeAction" text="_Merge file..." description="Merge current file"/>
+        <separator/>
+        <reference id="Vcs.ShowTabbedFileHistory"/>
+        <action id="ClearCase.VersionTree" class="net.sourceforge.transparent.actions.VersionTreeAction" text="_Version Tree..." description="Open version tree window"/>
+        <action id="ClearCase.Properties" class="net.sourceforge.transparent.actions.PropertiesAction" text="_Properties..." description="Show properties window"/>
+        <add-to-group group-id="VcsGroup" anchor="last" />
       </group>
    </actions>
   <extensions xmlns="com.intellij">
