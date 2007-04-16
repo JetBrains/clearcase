@@ -7,6 +7,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.io.ReadOnlyAttributeUtil;
+import net.sourceforge.transparent.actions.CheckoutDialog;
 import org.jetbrains.annotations.NonNls;
 
 import java.io.IOException;
@@ -49,11 +50,23 @@ public class CCaseEditFileProvider implements EditFileProvider
       if( toHijack )
         hijackFile( file );
       else
-        host.checkoutFile( file, false );
+      {
+        String comment = "";
+        if( host.getCheckoutOptions().getValue() )
+        {
+          CheckoutDialog dialog = new CheckoutDialog( host.getProject(), file );
+          dialog.show();
+          if( dialog.getExitCode() == CheckoutDialog.CANCEL_EXIT_CODE )
+            return;
+
+          comment = dialog.getComment();
+        }
+        host.checkoutFile( file, false, comment );
+      }
     }
     catch( Throwable e )
     {
-      String message = "Exception while " + ( toHijack ? "hijacking " : "checking out ") +
+      String message = "Operation failed while " + ( toHijack ? "hijacking " : "checking out ") +
                        file.getPresentableUrl() + "\n" + e.getMessage();
       Messages.showErrorDialog( message, FAIL_DIALOG_TITLE );
     }
