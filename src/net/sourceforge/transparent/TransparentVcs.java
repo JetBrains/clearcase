@@ -74,6 +74,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   //  the presence of this substring in the error message.
   @NonNls private static final String ALREADY_CHECKEDOUT_SIG = "already checked out";
 
+  @NonNls private static final String NOT_A_VOB_OBJECT_SIG = "Not a vob object";
+
   public static final Key<Boolean> SUCCESSFUL_CHECKOUT = new Key<Boolean>( "SUCCESSFUL_CHECKOUT" );
   public static final Key<Boolean> MERGE_CONFLICT = new Key<Boolean>( "MERGE_CONFLICT" );
 
@@ -680,7 +682,15 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     @NonNls Runner runner = new Runner();
     runner.run( new String[] { CLEARTOOL_CMD, "lscheckout", "-fmt", "%c", "-directory", file.getAbsolutePath() }, true );
 
-    return !runner.isSuccessfull() ? "" : runner.getOutput();
+    String output = runner.getOutput();
+
+    //  We return the output from the command only if the command executed
+    //  successfully OR ELSE it does not says us that this is not a valid
+    //  repository object.
+    //  NB: the latter though is fantastic!!! E.g. for a hijacked file the
+    //      command says it has been successfully run but returns a rubbish
+    //      as the result.
+    return !runner.isSuccessfull() || (output.indexOf( NOT_A_VOB_OBJECT_SIG ) != -1)? "" : output;
   }
 
   public static String  updateFile( String fileName )  {  return cleartoolWithOutput( "update", fileName );  }
