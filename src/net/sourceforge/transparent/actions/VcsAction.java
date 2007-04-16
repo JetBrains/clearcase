@@ -1,10 +1,10 @@
 package net.sourceforge.transparent.actions;
 
+import com.intellij.localvcs.integration.LocalHistoryAction;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataKeys;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
-import com.intellij.openapi.localVcs.LvcsAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
@@ -18,62 +18,59 @@ import org.jetbrains.annotations.NonNls;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class VcsAction extends AnAction
-{
+public abstract class VcsAction extends AnAction {
   @NonNls private static final String OPERATION_FAILED_TEXT = "One or more errors occured during operation";
 
-  public void update( AnActionEvent e )
-  {
-    String actionName = getActionName( e );
-    if( actionName == null )  throw new IllegalStateException( "Internal error - Action Name is NULL.");
-    
-    e.getPresentation().setText( actionName );
+  public void update(AnActionEvent e) {
+    String actionName = getActionName(e);
+    if (actionName == null) throw new IllegalStateException("Internal error - Action Name is NULL.");
+
+    e.getPresentation().setText(actionName);
   }
 
-  protected abstract String getActionName( AnActionEvent e );
+  protected abstract String getActionName(AnActionEvent e);
 
-  protected void execute( AnActionEvent e, List<VcsException> errors ) {}
+  protected void execute(AnActionEvent e, List<VcsException> errors) {
+  }
 
-  public void actionPerformed( AnActionEvent e )
-  {
-    Project project = e.getData( DataKeys.PROJECT );
+  public void actionPerformed(AnActionEvent e) {
+    Project project = e.getData(DataKeys.PROJECT);
     FileDocumentManager.getInstance().saveAllDocuments();
-    List<VcsException> errors = runAction( e );
+    List<VcsException> errors = runAction(e);
 
-    if( errors.size() > 0 )
-    {
-      @NonNls final String title = getActionName( e ) + " failed";
-      AbstractVcsHelper.getInstance( project ).showErrors( errors, title );
-      Messages.showErrorDialog( project, OPERATION_FAILED_TEXT, title );
+    if (errors.size() > 0) {
+      @NonNls final String title = getActionName(e) + " failed";
+      AbstractVcsHelper.getInstance(project).showErrors(errors, title);
+      Messages.showErrorDialog(project, OPERATION_FAILED_TEXT, title);
     }
   }
 
-  protected List<VcsException> runAction( AnActionEvent e )
-  {
-    List<VcsException> list = new ArrayList<VcsException> ();
+  protected List<VcsException> runAction(AnActionEvent e) {
+    List<VcsException> list = new ArrayList<VcsException>();
 
-    AbstractVcsHelper helper = AbstractVcsHelper.getInstance( e.getData( DataKeys.PROJECT ) );
-    LvcsAction lvcsAction = helper.startVcsAction( e.getPresentation().getText() );
+    AbstractVcsHelper helper = AbstractVcsHelper.getInstance(e.getData(DataKeys.PROJECT));
+    LocalHistoryAction lvcsAction = helper.startVcsAction(e.getPresentation().getText());
 
-    try     {  execute( e, list );  }
-    finally {  helper.finishVcsAction( lvcsAction );  }
+    try {
+      execute(e, list);
+    }
+    finally {
+      helper.finishVcsAction(lvcsAction);
+    }
 
     return list;
   }
 
-  protected static FileStatus getFileStatus( Project project, VirtualFile file )
-  {
-    ChangeListManager mgr = ChangeListManager.getInstance( project );
-    return mgr.getStatus( file );
+  protected static FileStatus getFileStatus(Project project, VirtualFile file) {
+    ChangeListManager mgr = ChangeListManager.getInstance(project);
+    return mgr.getStatus(file);
   }
 
-  protected static Project getProject( AnActionEvent e )
-  {
-    return e.getData( DataKeys.PROJECT );
+  protected static Project getProject(AnActionEvent e) {
+    return e.getData(DataKeys.PROJECT);
   }
 
-  protected static TransparentVcs getHost( AnActionEvent e )
-  {
-    return TransparentVcs.getInstance( e.getData( DataKeys.PROJECT ) );
+  protected static TransparentVcs getHost(AnActionEvent e) {
+    return TransparentVcs.getInstance(e.getData(DataKeys.PROJECT));
   }
 }
