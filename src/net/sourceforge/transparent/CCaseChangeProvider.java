@@ -23,9 +23,7 @@ import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -75,7 +73,7 @@ public class CCaseChangeProvider implements ChangeProvider
                           final ProgressIndicator progressIndicator )
   {
     LOG.info( "-- ChangeProvider -- ");
-    LOG.info( "   Dirty files: " + dirtyScope.getDirtyFiles().size() +
+    LOG.info( "   Dirty files: " + dirtyScope.getDirtyFiles().size() + extMasks( dirtyScope.getDirtyFiles() ) +
               ", dirty recursive directories: " + dirtyScope.getRecursivelyDirtyDirectories().size() );
 
     progress = progressIndicator;
@@ -151,16 +149,16 @@ public class CCaseChangeProvider implements ChangeProvider
     for( FilePath path : dirtyScope.getDirtyFiles() )
     {
       String fileName = path.getPath();
-      VirtualFile file = VcsUtil.getVirtualFile( fileName );
+      VirtualFile file = path.getVirtualFile();
 
       if( file != null && path.isDirectory() && host.fileIsUnderVcs( file ) )
       {
         if( host.isFileIgnored( file ))
-          filesIgnored.add( path.getPath() );
+          filesIgnored.add( fileName );
         else
         //  Check that folder physically exists.
         if( !host.fileExistsInVcs( path ))
-          filesNew.add( path.getPath() );
+          filesNew.add( fileName );
       }
     }
   }
@@ -171,7 +169,7 @@ public class CCaseChangeProvider implements ChangeProvider
     for( FilePath path : scope.getDirtyFiles() )
     {
       String fileName = path.getPath();
-      VirtualFile file = VcsUtil.getVirtualFile( fileName );
+      VirtualFile file = path.getVirtualFile();
 
       if( host.isFileIgnored( file ))
         filesIgnored.add( fileName );
@@ -202,7 +200,7 @@ public class CCaseChangeProvider implements ChangeProvider
     final ProjectFileIndex fileIndex = ProjectRootManager.getInstance( project ).getFileIndex();
     final List<String> writableFiles = new ArrayList<String>();
 
-    VirtualFile vf = VcsUtil.getVirtualFile( filePath.getPath() );
+    VirtualFile vf = filePath.getVirtualFile();
     if( vf != null )
     {
       fileIndex.iterateContentUnderDirectory( vf, new ContentIterator()
@@ -462,5 +460,27 @@ public class CCaseChangeProvider implements ChangeProvider
   private static boolean isValidFile( VirtualFile file )
   {
     return (file != null) && file.isWritable() && !file.isDirectory();
+  }
+
+  private static String extMasks( Set<FilePath> scope )
+  {
+    HashMap<String, Integer> masks = new HashMap<String, Integer>();
+    for( FilePath path : scope )
+    {
+      int index = path.getName().lastIndexOf( '.' );
+      if( index != -1 )
+      {
+        String ext = path.getName().substring( index );
+        Integer count = masks.get( ext );
+        masks.put( ext, (count == null) ? 1 : (count.intValue() + 1 ) );
+      }
+    }
+
+    String masksStr = "";
+    for( String ext : masks.keySet() )
+    {
+      masksStr += ext + ":" + masks.get( ext ).intValue() + "; ";
+    }
+    return masksStr;
   }
 }
