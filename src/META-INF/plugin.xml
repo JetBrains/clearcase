@@ -37,6 +37,7 @@
       </group>
       <group id="ClearCaseFile" text="ClearCase" class="net.sourceforge.transparent.ClearCaseGroup">
         <separator/>
+        <reference id="CheckinFiles"/>
         <action id="ClearCase.Add" class="net.sourceforge.transparent.actions.AddAction" text="_Add" description="Add file"/>
         <action id="ClearCase.CheckOut" class="net.sourceforge.transparent.actions.CheckOutAction" text="_Check Out" description="Check out file"/>
         <action id="ClearCase.Hijack" class="net.sourceforge.transparent.actions.HijackAction" text="_Hijack" description="Hijack file"/>
