@@ -64,7 +64,7 @@ class CCaseContentRevision implements ContentRevision
     //  For files which are in the project but reside outside the repository
     //  root their base revision version content is not defined (NULL).
 
-    if( host.fileIsUnderVcs( file ))
+    if( host.fileIsUnderVcs( revisionPath ))
     {
       try
       {
@@ -85,6 +85,12 @@ class CCaseContentRevision implements ContentRevision
         String version = null;
         FileStatusManager mgr = FileStatusManager.getInstance( project );
 
+        if( file == null )
+        {
+          String out = TransparentVcs.cleartoolWithOutput( "describe", revisionPath.getPath() );
+          version = parseLastRepositoryVersion( out );
+        }
+        else
         //---------------------------------------------------------------------
         //  We need to explicitely distinguish between normal (checked out)
         //  files and hijacked files - CCase treats the latter as "private files"
@@ -133,7 +139,7 @@ class CCaseContentRevision implements ContentRevision
       }
       catch( Exception e )
       {
-        VcsUtil.showErrorMessage( project, e.getMessage(), TITLE );
+         VcsUtil.showErrorMessage( project, e.getMessage(), TITLE );
       }
     }
 
@@ -160,7 +166,7 @@ class CCaseContentRevision implements ContentRevision
   //  string "predecessor version:" in this log and extract the version string
   //  in the CCase format.
   //-------------------------------------------------------------------------
-  private String parseLastRepositoryVersion( String text )
+  private static String parseLastRepositoryVersion( String text )
   {
     @NonNls final String SIG = "predecessor version:";
     String version = null;

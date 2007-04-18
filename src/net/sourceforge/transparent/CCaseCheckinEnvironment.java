@@ -25,6 +25,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -118,6 +119,27 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     HashSet<FilePath> processedFiles = new HashSet<FilePath>();
 
     clearTemporaryStatuses( changes );
+
+    Set<VirtualFile> renamedFolders = getNecessaryRenamedFoldersForList( changes );
+    if( renamedFolders.size() > 0 )
+    {
+      for( VirtualFile folder : renamedFolders )
+        changes.add( ChangeListManager.getInstance( project ).getChange( folder ) );
+    }
+
+    //  Committing of renamed folders must be performed first since they
+    //  affect all other checkings under them (except those having status
+    //  "ADDED") since:
+    //  - if modified file is checked in before renamed folder checkin then
+    //    we need to checkin from (yet) nonexisting file into (already) non-
+    //    existing space. It is too tricky to recreate the old folders
+    //    structure and commit from out of there.
+    //  - if modified file is checked AFTER the renamed folder has been
+    //    checked in, we just have to checkin in into the necessary place,
+    //    just get the warning that we checking in file which was checked out
+    //    from another location. Supress it.
+    commitRenamedFolders( changes, comment, errors );
+
     commitNew( changes, comment, processedFiles, errors );
     commitChanged( changes, comment, processedFiles, errors );
 
@@ -139,6 +161,21 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
       {
         VirtualFile file = filePath.getVirtualFile();
         file.putUserData( TransparentVcs.MERGE_CONFLICT, null );
+      }
+    }
+  }
+
+  private void commitRenamedFolders( List<Change> changes, String comment, List<VcsException> errors )
+  {
+    for (Change change : changes)
+    {
+      FilePath newFile = change.getAfterRevision().getFile();
+      if (VcsUtil.isRenameChange(change) && newFile.isDirectory())
+      {
+        FilePath oldFile = change.getBeforeRevision().getFile();
+
+        host.renameAndCheckInFile( oldFile.getIOFile(), newFile.getName(), comment, errors );
+        host.renamedFolders.remove( newFile.getPath() );
       }
     }
   }
@@ -220,7 +257,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
       FilePath file = change.getAfterRevision().getFile();
       ContentRevision before = change.getBeforeRevision();
 
-      if( !VcsUtil.isChangeForNew( change ) )
+      if( !VcsUtil.isChangeForNew( change ) && !file.isDirectory() )
       {
         String newPath = file.getPath();
         String oldPath = host.renamedFiles.get( newPath );
@@ -476,6 +513,30 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
       }
     }
     catch( ClearCaseException e ) {  errors.add( new VcsException( e ) );  }
+  }
+
+  private Set<VirtualFile> getNecessaryRenamedFoldersForList( List<Change> changes )
+  {
+    Set<VirtualFile> set = new HashSet<VirtualFile>();
+    for( Change change : changes )
+    {
+      for( String newFolderName : host.renamedFolders.keySet() )
+      {
+        if( change.getAfterRevision().getFile().getPath().startsWith( newFolderName ) )
+        {
+          VirtualFile parent = VcsUtil.getVirtualFile( newFolderName );
+          set.add( parent );
+        }
+      }
+    }
+    for( Change change : changes )
+    {
+      VirtualFile submittedParent = change.getAfterRevision().getFile().getVirtualFile();
+      if( submittedParent != null )
+        set.remove( submittedParent );
+    }
+
+    return set;
   }
 
   private static boolean isUnknownFileError( List<VcsException> errors )

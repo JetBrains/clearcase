@@ -6,15 +6,11 @@ import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vcs.VcsShowConfirmationOption;
-import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.*;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NonNls;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * User: lloix
@@ -46,7 +42,7 @@ public class VFSListener extends VirtualFileAdapter
       String newName = event.getNewParent().getPath() + "/" + file.getName();
 
       String prevName = host.renamedFiles.get( oldName );
-      if( host.fileIsUnderVcs( file ) || prevName != null )
+      if( host.fileIsUnderVcs( oldName ) || prevName != null )
       {
         //  Newer name must refer to the oldest one in the chain of movements
         if( prevName == null )
@@ -80,50 +76,27 @@ public class VFSListener extends VirtualFileAdapter
     else
     if( event.getPropertyName() == VirtualFile.PROP_NAME )
     {
-      //  When a folder is renamed (e.g. as the result of the "rename package"
-      //  refactoring), we do not support renaming in the "Changes" dataflow,
-      //  so we emulate that by "deleting" old subdirectory structure and
-      //  marking the renamed one as new.
-      //  Rename of files is supported as usual.
-      if( file.isDirectory() )
-      {
-        host.removedFolders.add( file.getPath() );
-        markSubfolderStructure( file.getPath() );
+      String parentDir = file.getParent().getPath() + "/";
+      String oldName = parentDir + event.getOldValue();
+      String newName = parentDir + event.getNewValue();
 
-        //  During folder rename the sequence of the actions is as follows:
-        //  - files under this folder are checked out (if they are not yet)
-        //  - they are changed
-        //  - folder is renamed
-        //  So as input to the ChangeProvider we have not very complete
-        //  information about what have been done actually. Since we emulate
-        //  package rename with "removed/add package" all files under the
-        //  renamed folder must be marked as "new" (as a new request).
-        VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance(project);
-        mgr.dirDirtyRecursively( file, true );
-      }
-      else
-      {
-        String parentDir = file.getParent().getPath() + "/";
-        String oldName = parentDir + event.getOldValue();
-        String newName = parentDir + event.getNewValue();
-
-        //  Do not react on files which are not under this vcs
-        if( host.fileIsUnderVcs( file ))
-        {
-          //  Newer name must refer to the oldest name in the chain of renamings
-          String prevName = host.renamedFiles.get( oldName );
-          if( prevName == null )
-            prevName = oldName;
-
-          //  Check whether we are trying to rename the file back - if so,
-          //  just delete the old key-value pair
-          if( !prevName.equals( newName ) )
-            host.renamedFiles.put( newName, prevName );
-
-          host.renamedFiles.remove( oldName );
-        }
-      }
+      performRename( file.isDirectory() ? host.renamedFolders : host.renamedFiles, oldName, newName );
     }
+  }
+
+  private static void performRename( HashMap<String, String> store, String oldName, String newName )
+  {
+    //  Newer name must refer to the oldest name in the chain of renamings
+    String prevName = store.get( oldName );
+    if( prevName == null )
+      prevName = oldName;
+
+    //  Check whether we are trying to rename the file back - if so,
+    //  just delete the old key-value pair
+    if( !prevName.equals( newName ) )
+      store.put( newName, prevName );
+
+    store.remove( oldName );
   }
 
   public void fileCreated( VirtualFileEvent event )
@@ -184,7 +157,7 @@ public class VFSListener extends VirtualFileAdapter
       return;
 
     FileStatus status = FileStatusManager.getInstance( project ).getStatus( file );
-    if( host.fileIsUnderVcs( file ) &&
+    if( host.fileIsUnderVcs( file.getPath() ) &&
         ( status != FileStatus.ADDED ) && ( status != FileStatus.UNKNOWN ))
     {
       if( file.isDirectory() )

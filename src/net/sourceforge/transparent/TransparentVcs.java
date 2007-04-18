@@ -16,6 +16,8 @@ import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
+import com.intellij.openapi.vcs.checkin.CheckinHandler;
+import com.intellij.openapi.vcs.checkin.CheckinHandlerFactory;
 import com.intellij.openapi.vcs.history.VcsHistoryProvider;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vfs.LocalFileSystem;
@@ -47,7 +49,9 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   @NonNls private static final String PERSISTENCY_REMOVED_FILE_TAG = "ClearCasePersistencyRemovedFile";
   @NonNls private static final String PERSISTENCY_REMOVED_FOLDER_TAG = "ClearCasePersistencyRemovedFolder";
   @NonNls private static final String PERSISTENCY_RENAMED_FILE_TAG = "ClearCasePersistencyRenamedFile";
+  @NonNls private static final String PERSISTENCY_RENAMED_FOLDER_TAG = "ClearCasePersistencyRenamedFolder";
   @NonNls private static final String PERSISTENCY_NEW_FILE_TAG = "ClearCasePersistencyNewFile";
+
   @NonNls private static final String PATH_DELIMITER = "%%%";
   @NonNls private static final String CCASE_KEEP_FILE_SIG = "*.keep";
   @NonNls private static final String CCASE_KEEP_FILE_MID_SIG = "*.keep.*";
@@ -70,6 +74,12 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   @NonNls private static final String SERVER_UNAVAILABLE_MESSAGE = "\nServer is unavailable, ClearCase support is switched to isOffline mode";
   @NonNls private static final String FAILED_TO_INIT_VIEW_MESSAGE = "Plugin failed to initialize view:\n";
 
+  //  Sometimes we need to explicitely distinguish between different
+  //  ClearCase implementations since for one of them we use optimized
+  //  scheme for file statuses determination. Part of class name is the
+  //  best way for that.
+  @NonNls private final static String COMMAND_LINE_CLASS_SIG = "Line";
+
   //  Resolve the case when parent folder was already checked out by
   //  the presence of this substring in the error message.
   @NonNls private static final String ALREADY_CHECKEDOUT_SIG = "already checked out";
@@ -83,6 +93,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public HashSet<String> removedFolders;
   private HashSet<String> newFiles;
   public HashMap<String, String> renamedFiles;
+  public HashMap<String, String> renamedFolders;
 
   private ClearCase clearcase;
   private CCaseConfig config;
@@ -105,6 +116,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     removedFolders = new HashSet<String>();
     newFiles = new HashSet<String>();
     renamedFiles = new HashMap<String, String>();
+    renamedFolders = new HashMap<String, String>();
   }
 
   @NotNull
@@ -113,6 +125,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public String getDisplayName()    {  return "ClearCase";  }
   public String getMenuItemText()   {  return super.getMenuItemText();  }
   public Project getProject()       {  return myProject;   }
+  public boolean isCmdImpl()        {  return getClearCase().getName().indexOf( COMMAND_LINE_CLASS_SIG ) != -1; }
 
   public Configurable         getConfigurable()       {  return new TransparentConfigurable( myProject );  }
   public CCaseConfig          getConfig()             {  return config;           }
@@ -144,8 +157,12 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
     final ProjectLevelVcsManager vcsManager = ProjectLevelVcsManager.getInstance( myProject );
     myCheckoutOptions = vcsManager.getStandardOption( VcsConfiguration.StandardOption.CHECKOUT, this );
-
     addConfirmation = vcsManager.getStandardConfirmation( VcsConfiguration.StandardConfirmation.ADD, this );
+
+    vcsManager.registerCheckinHandlerFactory( new CheckinHandlerFactory() {
+      @NotNull public CheckinHandler createHandler(final CheckinProjectPanel panel)
+      {  return new CCaseCheckinHandler( TransparentVcs.getInstance( myProject ), panel );  }
+    } );
   }
 
   public void projectClosed() {}
@@ -316,24 +333,21 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     return clearcase;
   }
 
-  public boolean fileIsUnderVcs (FilePath path)   {  return VcsUtil.isFileUnderVcs( myProject, path ); }
-  public boolean fileIsUnderVcs (VirtualFile file){  return VcsUtil.isFileUnderVcs( myProject, file ); }
+  public boolean fileIsUnderVcs( FilePath path ) {  return VcsUtil.isFileUnderVcs( myProject, path ); }
+  public boolean fileIsUnderVcs( String path )   {  return VcsUtil.isFileUnderVcs( myProject, path ); }
 
-  public boolean fileExistsInVcs(FilePath path)   {  return fileExistsInVcs( path.getVirtualFile() );  }
-  public boolean fileExistsInVcs(VirtualFile file)
+  public boolean fileExistsInVcs( FilePath path )   {  return fileExistsInVcs( path.getPath() );  }
+  public boolean fileExistsInVcs( @NotNull String path )
   {
     boolean exists = false;
     try
     {
-      if( file != null )
-      {
-        String path = file.getPath();
-        if( renamedFiles.containsKey( path ))
-          path = renamedFiles.get( path );
+      path = VcsUtil.getCanonicalLocalPath( path );
+      if( renamedFiles.containsKey( path ))
+        path = renamedFiles.get( path );
 
-        Status status = getStatus( new File( path ) );
-        exists = (status != Status.NOT_AN_ELEMENT);
-      }
+      Status status = getStatus( new File( path ) );
+      exists = (status != Status.NOT_AN_ELEMENT);
     }
     catch( RuntimeException e )
     {
@@ -552,7 +566,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
           if( ioParent.exists() )
           {
             renameFile( newFile, oldFile );
-            checkinFile( oldFile, modComment, errors );
+            if( !oldFile.isDirectory() )
+              checkinFile( oldFile, modComment, errors );
 
             getClearCase().checkOut( ioParent, false, modComment );
             getClearCase().move( oldFile, newFile, modComment );
@@ -755,8 +770,23 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   // JDOMExternalizable methods
   //
 
-  public void readExternal(final Element element) throws InvalidDataException {
-    List files = element.getChildren( PERSISTENCY_REMOVED_FILE_TAG );
+  public void readExternal(final Element element) throws InvalidDataException
+  {
+    readElements( element, removedFiles, PERSISTENCY_REMOVED_FILE_TAG, false );
+    readElements( element, removedFolders, PERSISTENCY_REMOVED_FOLDER_TAG, false );
+    readElements( element, newFiles, PERSISTENCY_NEW_FILE_TAG, true );
+
+    readRenamedElements( element, renamedFiles, PERSISTENCY_RENAMED_FILE_TAG, true );
+    readRenamedElements( element, renamedFolders, PERSISTENCY_RENAMED_FOLDER_TAG, true );
+
+    HashSet<String> tmp = new HashSet<String>( newFiles );
+    newFiles.clear();
+    for( String value : tmp )  newFiles.add( value.toLowerCase() );
+  }
+
+  private static void readElements( final Element element, HashSet<String> list, String tag, boolean isExist )
+  {
+    List files = element.getChildren( tag );
     for (Object cclObj : files)
     {
       if (cclObj instanceof Element)
@@ -765,40 +795,16 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
         final String path = currentCLElement.getValue();
 
         // Safety check - file can be added again between IDE sessions.
-        if( ! new File( path ).exists() )
-          removedFiles.add( path );
+        if( new File( path ).exists() == isExist )
+          list.add( path );
       }
     }
+  }
 
-    files = element.getChildren( PERSISTENCY_REMOVED_FOLDER_TAG );
-    for (Object cclObj : files)
-    {
-      if (cclObj instanceof Element)
-      {
-        final Element currentCLElement = ((Element)cclObj);
-        final String path = currentCLElement.getValue();
-
-        // Safety check - file can be added again between IDE sessions.
-        if( ! new File( path ).exists() )
-          removedFolders.add( path );
-      }
-    }
-
-    files = element.getChildren( PERSISTENCY_NEW_FILE_TAG );
-    for (Object cclObj : files)
-    {
-      if (cclObj instanceof Element)
-      {
-        final Element currentCLElement = ((Element)cclObj);
-        final String path = currentCLElement.getValue();
-
-        // Safety check - file can be deleted or changed between IDE sessions.
-        if( new File( path ).exists() )
-          newFiles.add( path.toLowerCase() );
-      }
-    }
-
-    files = element.getChildren( PERSISTENCY_RENAMED_FILE_TAG );
+  private static void readRenamedElements( final Element element, HashMap<String, String> list,
+                                           String tag, boolean isExist )
+  {
+    List files = element.getChildren( tag );
     for (Object cclObj : files)
     {
       if (cclObj instanceof Element)
@@ -812,8 +818,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
           final String oldName = pathPair.substring( delimIndex + PATH_DELIMITER.length() );
 
           // Safety check - file can be deleted or changed between IDE sessions.
-          if( new File( newName ).exists() )
-            renamedFiles.put( newName, oldName );
+          if( new File( newName ).exists() == isExist )
+            list.put( newName, oldName );
         }
       }
     }
@@ -825,14 +831,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     writeExternalElement( element, removedFolders, PERSISTENCY_REMOVED_FOLDER_TAG );
     writeExternalElement( element, newFiles, PERSISTENCY_NEW_FILE_TAG );
 
-    for( String file : renamedFiles.keySet() )
-    {
-      final Element listElement = new Element(PERSISTENCY_RENAMED_FILE_TAG);
-      final String pathPair = file.concat( PATH_DELIMITER ).concat( renamedFiles.get( file ) );
-
-      listElement.addContent( pathPair );
-      element.addContent( listElement );
-    }
+    writeRenElement( element, renamedFiles, PERSISTENCY_RENAMED_FILE_TAG );
+    writeRenElement( element, renamedFolders, PERSISTENCY_RENAMED_FOLDER_TAG );
   }
 
   private static void writeExternalElement( final Element element, HashSet<String> files, String tag )
@@ -846,6 +846,18 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     {
       final Element listElement = new Element( tag );
       listElement.addContent( file );
+      element.addContent( listElement );
+    }
+  }
+
+  private static void writeRenElement( final Element element, HashMap<String, String> files, String tag )
+  {
+    for( String file : files.keySet() )
+    {
+      final Element listElement = new Element( tag );
+      final String pathPair = file.concat( PATH_DELIMITER ).concat( files.get( file ) );
+
+      listElement.addContent( pathPair );
       element.addContent( listElement );
     }
   }

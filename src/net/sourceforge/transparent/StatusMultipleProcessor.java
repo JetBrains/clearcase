@@ -1,8 +1,6 @@
 package net.sourceforge.transparent;
 
 import com.intellij.openapi.util.text.LineTokenizer;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NonNls;
 
 import java.util.HashSet;
@@ -21,10 +19,11 @@ public class StatusMultipleProcessor
   @NonNls private static final String VERSIONED_SIG = "@@";
   @NonNls private static final String HIJACKED_SIG = "[hijacked]";
   @NonNls private static final String CHECKEDOUT_SIG = "Rule: CHECKEDOUT";
+  @NonNls private final static String CHECKEDOUT_REMOVED_SIG = "checkedout but removed";
 
   private static final int  CMDLINE_MAX_LENGTH = 500;
 
-  private VirtualFile[] files;
+  private String[] files;
 
   private HashSet<String> deletedFiles;
   private HashSet<String> nonexistingFiles;
@@ -33,11 +32,12 @@ public class StatusMultipleProcessor
 
   public StatusMultipleProcessor( List<String> paths )
   {
-    files = new VirtualFile[ paths.size() ];
+    files = new String[ paths.size() ];
     for( int i = 0; i < paths.size(); i++ )
     {
-      VirtualFile file = VcsUtil.getVirtualFile( paths.get( i ) );
-      files[ i ] = file;
+//      VirtualFile file = VcsUtil.getVirtualFile( paths.get( i ) );
+//      files[ i ] = file;
+      files[ i ] = paths.get( i );
     }
   }
 
@@ -77,9 +77,10 @@ public class StatusMultipleProcessor
 
       while( currFileIndex < files.length && cmdLineLen < CMDLINE_MAX_LENGTH )
       {
-        String vssPath = files[ currFileIndex++ ].getPath();
-        options.add( vssPath );
-        cmdLineLen += vssPath.length() + 1;
+//        String path = files[ currFileIndex++ ].getPath();
+        String path = files[ currFileIndex++ ];
+        options.add( path );
+        cmdLineLen += path.length() + 1;
       }
 
       String[] aOptions = options.toArray( new String[ options.size() ]);
@@ -95,13 +96,17 @@ public class StatusMultipleProcessor
     for( int i = 0; i < lines.length; i++ )
     {
       if( lines[ i ].indexOf( VERSIONED_SIG ) == -1 )
-        nonexistingFiles.add( files[ startIndex + i ].getPath().toLowerCase() );
+//        nonexistingFiles.add( files[ startIndex + i ].getPath().toLowerCase() );
+        nonexistingFiles.add( files[ startIndex + i ].toLowerCase() );
       else
-      if( lines[ i ].indexOf( CHECKEDOUT_SIG ) != -1 )
-        checkoutFiles.add( files[ startIndex + i ].getPath().toLowerCase() );
+      if( lines[ i ].indexOf( CHECKEDOUT_SIG ) != -1 ||
+          lines[ i ].indexOf( CHECKEDOUT_REMOVED_SIG ) != -1 )
+//        checkoutFiles.add( files[ startIndex + i ].getPath().toLowerCase() );
+        checkoutFiles.add( files[ startIndex + i ].toLowerCase() );
       else
       if( lines[ i ].indexOf( HIJACKED_SIG ) != -1 )
-        hijackedFiles.add( files[ startIndex + i ].getPath().toLowerCase() );
+//        hijackedFiles.add( files[ startIndex + i ].getPath().toLowerCase() );
+        hijackedFiles.add( files[ startIndex + i ].toLowerCase() );
     }
   }
 }

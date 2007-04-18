@@ -15,6 +15,7 @@ public class CommandLineClearCase implements ClearCase
   @NonNls private final static String VERSIONED_SIG = "@@";
   @NonNls private final static String HIJACKED_SIG = "[hijacked]";
   @NonNls private final static String CHECKEDOUT_SIG = "Rule: CHECKEDOUT";
+  @NonNls private final static String CHECKEDOUT_REMOVED_SIG = "checkedout but removed";
 
   @NonNls private final static String NOT_VOB_ELEMENT = "Pathname is not within";
   @NonNls private final static String UNABLE_TO_ACCESS = "Unable to access";
@@ -148,7 +149,8 @@ public class CommandLineClearCase implements ClearCase
     if( output.indexOf( HIJACKED_SIG ) != -1 )
       return Status.HIJACKED;
 
-    if( output.indexOf( CHECKEDOUT_SIG ) != -1 )
+    if( output.indexOf( CHECKEDOUT_SIG ) != -1 ||
+        output.indexOf( CHECKEDOUT_REMOVED_SIG ) != -1 )
       return Status.CHECKED_OUT;
     else
       return Status.CHECKED_IN;
