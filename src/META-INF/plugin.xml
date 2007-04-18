@@ -25,10 +25,6 @@
    </project-components>
 
    <actions>
-      <!--
-      <action id="ClearCase.CheckOut" class="net.sourceforge.transparent.actions.CheckOutAction" text="_Check Out" description="Check out file"/>
-      <action id="ClearCase.Hijack" class="net.sourceforge.transparent.actions.HijackAction" text="_Hijack" description="Hijack file"/>
-      -->
       <group id="ClearCaseProject" class="net.sourceforge.transparent.ClearCaseGroup">
         <action id="ClearCase.FindProjectCheckouts" class="net.sourceforge.transparent.actions.FindProjectCheckoutsAction" text="_Find Project Checkouts..." description="Find project checkout files"/>
         <action id="ClearCase.MergeProject" class="net.sourceforge.transparent.actions.MergeProjectAction" text="_Merge Project..." description="Merge main changes into project"/>

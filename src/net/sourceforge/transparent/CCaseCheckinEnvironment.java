@@ -296,12 +296,36 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     List<VcsException> errors = new ArrayList<VcsException>();
     HashSet<FilePath> processedFiles = new HashSet<FilePath>();
 
+    rollbackRenamedFolders( changes, processedFiles );
     rollbackNew( changes, processedFiles );
     rollbackChanged( changes, processedFiles, errors );
 
     VcsUtil.refreshFiles( project, processedFiles );
 
     return errors;
+  }
+
+  private void rollbackRenamedFolders( List<Change> changes, HashSet<FilePath> processedFiles )
+  {
+    for( Change change : changes )
+    {
+      if( VcsUtil.isRenameChange( change ) )
+      {
+        FilePath folder = change.getAfterRevision().getFile();
+        if( folder.isDirectory() )
+        {
+          //  The only thing which we can perform on this step is physical
+          //  rename of the folder back to its former name, since we can't
+          //  keep track of what consequent changes were done (due to Java
+          //  semantics of the package rename).
+          File folderNew = folder.getIOFile();
+          File folderOld = change.getBeforeRevision().getFile().getIOFile();
+          folderNew.renameTo( folderOld );
+          host.renamedFolders.remove( VcsUtil.getCanonicalLocalPath( folderNew.getPath() ) );
+          processedFiles.add( folder );
+        }
+      }
+    }
   }
 
   private void rollbackNew( List<Change> changes, HashSet<FilePath> processedFiles )
@@ -369,31 +393,34 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
         FilePath filePath = change.getAfterRevision().getFile();
         String path = filePath.getPath();
 
-        if( VcsUtil.isRenameChange( change ) )
+        if( !filePath.isDirectory() )
         {
-          //  Track two different cases:
-          //  - we delete the file which is already in the repository.
-          //    Here we need to "Get" the latest version of the original
-          //    file from the repository and delete the new file.
-          //  - we delete the renamed file which is new and does not exist
-          //    in the repository. We need to ignore the error message from
-          //    the SourceSafe ("file not existing") and just delete the
-          //    new file.
+          if( VcsUtil.isRenameChange( change ) )
+          {
+            //  Track two different cases:
+            //  - we delete the file which is already in the repository.
+            //    Here we need to "Get" the latest version of the original
+            //    file from the repository and delete the new file.
+            //  - we delete the renamed file which is new and does not exist
+            //    in the repository. We need to ignore the error message from
+            //    the SourceSafe ("file not existing") and just delete the
+            //    new file.
 
-          List<VcsException> localErrors = new ArrayList<VcsException>();
-          FilePath oldFile = change.getBeforeRevision().getFile();
-          host.undoCheckoutFile( oldFile.getIOFile(), localErrors );
-          if( localErrors.size() > 0 && !isUnknownFileError( localErrors ) )
-            errors.addAll( localErrors );
+            List<VcsException> localErrors = new ArrayList<VcsException>();
+            FilePath oldFile = change.getBeforeRevision().getFile();
+            host.undoCheckoutFile( oldFile.getIOFile(), localErrors );
+            if( localErrors.size() > 0 && !isUnknownFileError( localErrors ) )
+              errors.addAll( localErrors );
 
-          host.renamedFiles.remove( filePath.getPath() );
-          FileUtil.delete( new File( path ) );
+            host.renamedFiles.remove( filePath.getPath() );
+            FileUtil.delete( new File( path ) );
+          }
+          else
+          {
+            host.undoCheckoutFile( filePath.getVirtualFile(), errors );
+          }
+          processedFiles.add( filePath );
         }
-        else
-        {
-          host.undoCheckoutFile( filePath.getVirtualFile(), errors );
-        }
-        processedFiles.add( filePath );
       }
     }
   }
