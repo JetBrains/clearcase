@@ -12,6 +12,7 @@ import com.intellij.openapi.roots.ContentIterator;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.vcs.AbstractVcs;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
@@ -67,6 +68,7 @@ public class CCaseChangeProvider implements ChangeProvider
   public void getChanges( final VcsDirtyScope dirtyScope, final ChangelistBuilder builder,
                           final ProgressIndicator progressIndicator )
   {
+    validateChangesOverTheHost( dirtyScope );
     LOG.info( "-- ChangeProvider -- ");
     LOG.info( "   Dirty files (" + dirtyScope.getDirtyFiles().size() + "): " + extMasks( dirtyScope.getDirtyFiles() ) +
               ", dirty recursive directories: " + dirtyScope.getRecursivelyDirtyDirectories().size() );
@@ -161,7 +163,13 @@ public class CCaseChangeProvider implements ChangeProvider
           if( !host.fileExistsInVcs( refName ))
             filesNew.add( fileName );
           else
-          if( !refName.equals( fileName ) )
+          //  NB: Do not put to the "Changed" list those folders which are under
+          //      the renamed one since we will have troubles in checking such
+          //      folders in (it is useless, BTW).
+          //      Simultaneously, this prevents valid processing of renamed folders
+          //      that are under another renamed folders.
+          //  Todo Inner rename.
+          if( !refName.equals( fileName ) && !isUnderRenamedFolder( fileName ) )
             filesChanged.add( fileName );
         }
       }
@@ -537,6 +545,16 @@ public class CCaseChangeProvider implements ChangeProvider
     return fileInOldFolder;
   }
 
+  private boolean isUnderRenamedFolder( String fileName )
+  {
+    for( String folder : host.renamedFolders.keySet() )
+    {
+      if( fileName.startsWith( folder ) )
+        return true;
+    }
+    return false;
+  }
+
   private boolean isFileCCaseProcessable( VirtualFile file )
   {
     return isValidFile( file ) && VcsUtil.isPathUnderProject( project, file.getPath() );
@@ -567,5 +585,24 @@ public class CCaseChangeProvider implements ChangeProvider
       masksStr += ext + " - " + masks.get( ext ).intValue() + "; ";
     }
     return masksStr;
+  }
+
+  private void validateChangesOverTheHost( final VcsDirtyScope scope )
+  {
+    ApplicationManager.getApplication().invokeLater( new Runnable() {
+      public void run() {
+        HashSet<FilePath> set = new HashSet<FilePath>();
+        set.addAll( scope.getDirtyFiles() );
+        set.addAll( scope.getRecursivelyDirtyDirectories() );
+
+        ProjectLevelVcsManager mgr = ProjectLevelVcsManager.getInstance( project );
+        for( FilePath path : set )
+        {
+          AbstractVcs fileHost = mgr.getVcsFor( path );
+          if( fileHost != host )
+            throw new IllegalArgumentException( "Not valid scope for current Vcs: " + path.getPath() );
+        }
+      }
+    });
   }
 }
