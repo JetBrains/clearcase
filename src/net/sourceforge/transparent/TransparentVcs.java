@@ -51,6 +51,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   @NonNls private static final String PERSISTENCY_RENAMED_FILE_TAG = "ClearCasePersistencyRenamedFile";
   @NonNls private static final String PERSISTENCY_RENAMED_FOLDER_TAG = "ClearCasePersistencyRenamedFolder";
   @NonNls private static final String PERSISTENCY_NEW_FILE_TAG = "ClearCasePersistencyNewFile";
+  @NonNls private static final String PERSISTENCY_DELETED_FILE_TAG = "ClearCasePersistencyDeletedFile";
+  @NonNls private static final String PERSISTENCY_DELETED_FOLDER_TAG = "ClearCasePersistencyDeletedFolder";
 
   @NonNls private static final String PATH_DELIMITER = "%%%";
   @NonNls private static final String CCASE_KEEP_FILE_SIG = "*.keep";
@@ -94,6 +96,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   private HashSet<String> newFiles;
   public HashMap<String, String> renamedFiles;
   public HashMap<String, String> renamedFolders;
+  public  HashSet<String> deletedFiles;
+  public  HashSet<String> deletedFolders;
 
   private ClearCase clearcase;
   private CCaseConfig config;
@@ -106,6 +110,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   private VcsShowSettingOption myCheckoutOptions;
   private VcsShowConfirmationOption addConfirmation;
+  private VcsShowConfirmationOption removeConfirmation;
   private VirtualFileListener listener;
 
   public TransparentVcs( Project project )
@@ -115,6 +120,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     removedFiles = new HashSet<String>();
     removedFolders = new HashSet<String>();
     newFiles = new HashSet<String>();
+    deletedFiles = new HashSet<String>();
+    deletedFolders = new HashSet<String>();
     renamedFiles = new HashMap<String, String>();
     renamedFolders = new HashMap<String, String>();
   }
@@ -126,6 +133,10 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public String getMenuItemText()   {  return super.getMenuItemText();  }
   public Project getProject()       {  return myProject;   }
   public boolean isCmdImpl()        {  return getClearCase().getName().indexOf( COMMAND_LINE_CLASS_SIG ) != -1; }
+
+  public VcsShowSettingOption      getCheckoutOptions()   {  return myCheckoutOptions;   }
+  public VcsShowConfirmationOption getAddConfirmation()   {  return addConfirmation;     }
+  public VcsShowConfirmationOption getRemoveConfirmation(){  return removeConfirmation;  }
 
   public Configurable         getConfigurable()       {  return new TransparentConfigurable( myProject );  }
   public CCaseConfig          getConfig()             {  return config;           }
@@ -142,10 +153,12 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     return (config == null) || config.isViewDynamic() ? null : updateEnvironment;
   }
 
-  public VcsShowSettingOption      getCheckoutOptions()   {  return myCheckoutOptions;   }
-  public VcsShowConfirmationOption getAddConfirmation()   {  return addConfirmation;     }
-
   public static TransparentVcs getInstance( Project project ) { return project.getComponent(TransparentVcs.class); }
+
+  public void initComponent()     {}
+  public void disposeComponent()  {}
+  public void start() throws VcsException {}
+  public void shutdown() throws VcsException {}
 
   public void projectOpened()
   {
@@ -158,6 +171,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     final ProjectLevelVcsManager vcsManager = ProjectLevelVcsManager.getInstance( myProject );
     myCheckoutOptions = vcsManager.getStandardOption( VcsConfiguration.StandardOption.CHECKOUT, this );
     addConfirmation = vcsManager.getStandardConfirmation( VcsConfiguration.StandardConfirmation.ADD, this );
+    removeConfirmation = vcsManager.getStandardConfirmation( VcsConfiguration.StandardConfirmation.REMOVE, this );
 
     vcsManager.registerCheckinHandlerFactory( new CheckinHandlerFactory() {
       @NotNull public CheckinHandler createHandler(final CheckinProjectPanel panel)
@@ -189,11 +203,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   {
     LocalFileSystem.getInstance().removeVirtualFileListener( listener );
   }
-
-  public void initComponent()     {}
-  public void disposeComponent()  {}
-  public void start() throws VcsException {}
-  public void shutdown() throws VcsException {}
 
   public void initTransparentConfiguration()
   {
@@ -775,6 +784,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     readElements( element, removedFiles, PERSISTENCY_REMOVED_FILE_TAG, false );
     readElements( element, removedFolders, PERSISTENCY_REMOVED_FOLDER_TAG, false );
     readElements( element, newFiles, PERSISTENCY_NEW_FILE_TAG, true );
+    readElements( element, deletedFiles, PERSISTENCY_DELETED_FILE_TAG, false );
+    readElements( element, deletedFolders, PERSISTENCY_DELETED_FOLDER_TAG, false );
 
     readRenamedElements( element, renamedFiles, PERSISTENCY_RENAMED_FILE_TAG, true );
     readRenamedElements( element, renamedFolders, PERSISTENCY_RENAMED_FOLDER_TAG, true );
@@ -827,15 +838,17 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public void writeExternal(final Element element) throws WriteExternalException
   {
-    writeExternalElement( element, removedFiles, PERSISTENCY_REMOVED_FILE_TAG );
-    writeExternalElement( element, removedFolders, PERSISTENCY_REMOVED_FOLDER_TAG );
-    writeExternalElement( element, newFiles, PERSISTENCY_NEW_FILE_TAG );
+    writeElement( element, removedFiles, PERSISTENCY_REMOVED_FILE_TAG );
+    writeElement( element, removedFolders, PERSISTENCY_REMOVED_FOLDER_TAG );
+    writeElement( element, newFiles, PERSISTENCY_NEW_FILE_TAG );
+    writeElement( element, deletedFiles, PERSISTENCY_DELETED_FILE_TAG );
+    writeElement( element, deletedFolders, PERSISTENCY_DELETED_FOLDER_TAG );
 
     writeRenElement( element, renamedFiles, PERSISTENCY_RENAMED_FILE_TAG );
     writeRenElement( element, renamedFolders, PERSISTENCY_RENAMED_FOLDER_TAG );
   }
 
-  private static void writeExternalElement( final Element element, HashSet<String> files, String tag )
+  private static void writeElement( final Element element, HashSet<String> files, String tag )
   {
     //  Sort elements of the list so that there is no perturbation in .ipr/.iml
     //  files in the case when no data has changed.

@@ -442,6 +442,12 @@ public class CCaseChangeProvider implements ChangeProvider
 
     for( String path : files )
       builder.processLocallyDeletedFile( VcsUtil.getFilePath( path ) );
+
+    files.clear();
+    files.addAll( host.deletedFolders );
+    files.addAll( host.deletedFiles );
+    for( String path : files )
+      builder.processChange( new Change( new CurrentContentRevision( VcsUtil.getFilePath( path )), null, FileStatus.DELETED ));
   }
 
   private void addIgnoredFiles( final ChangelistBuilder builder )

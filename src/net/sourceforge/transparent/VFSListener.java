@@ -116,6 +116,8 @@ public class VFSListener extends VirtualFileAdapter
     //  occasionally removed files.
     host.removedFiles.remove( path );
     host.removedFolders.remove( path );
+    host.deletedFiles.remove( path );
+    host.deletedFolders.remove( path );
 
     //  Do not ask user if the files created came from the vcs per se
     //  (obviously they are not new).
@@ -148,6 +150,9 @@ public class VFSListener extends VirtualFileAdapter
 
   public void beforeFileDeletion( VirtualFileEvent event )
   {
+    @NonNls final String TITLE = "Delete file(s)";
+    @NonNls final String MESSAGE = "Do you want to schedule the following file for removal from ClearCase?\n{0}";
+
     VirtualFile file = event.getFile();
     
     //  Do not ask user if the files deletion is caused by the vcs operation
@@ -160,15 +165,44 @@ public class VFSListener extends VirtualFileAdapter
     if( host.fileIsUnderVcs( file.getPath() ) &&
         ( status != FileStatus.ADDED ) && ( status != FileStatus.UNKNOWN ))
     {
-      if( file.isDirectory() )
+      VcsShowConfirmationOption confirmOption = host.getRemoveConfirmation();
+
+      //  In the case when we need to perform "Delete" vcs action right upon
+      //  the file's deletion, put the file into the host's cache until it
+      //  will be analyzed by the ChangeProvider.
+      if( confirmOption.getValue() == VcsShowConfirmationOption.Value.DO_ACTION_SILENTLY )
       {
-        String path = file.getPath();
-        markSubfolderStructure( path );
-        host.removedFolders.add( path );
+        markFileRemoval( file, host.deletedFolders, host.deletedFiles );
       }
       else
-        host.removedFiles.add( file.getPath());
+      if( confirmOption.getValue() == VcsShowConfirmationOption.Value.DO_NOTHING_SILENTLY )
+      {
+        markFileRemoval( file, host.removedFolders, host.removedFiles );
+      }
+      else
+      {
+        List<VirtualFile> files = new ArrayList<VirtualFile>();
+        files.add( event.getFile() );
+        Collection<VirtualFile> filesToProcess = AbstractVcsHelper.getInstance( project ).selectFilesToProcess( files, TITLE, null, TITLE,
+                                                                                                                MESSAGE, confirmOption );
+        if( filesToProcess != null )
+          markFileRemoval( file, host.deletedFolders, host.deletedFiles );
+        else
+          markFileRemoval( file, host.removedFolders, host.removedFiles );
+      }
     }
+  }
+
+  private void markFileRemoval( VirtualFile file, HashSet<String> folders, HashSet<String> files )
+  {
+    String path = file.getPath();
+    if( file.isDirectory() )
+    {
+      markSubfolderStructure( path );
+      folders.add( path );
+    }
+    else
+      files.add( path );
   }
 
   /**

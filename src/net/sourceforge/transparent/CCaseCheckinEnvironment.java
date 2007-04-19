@@ -4,12 +4,16 @@
 
 package net.sourceforge.transparent;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.*;
-import com.intellij.openapi.vcs.changes.*;
+import com.intellij.openapi.vcs.changes.Change;
+import com.intellij.openapi.vcs.changes.ChangeListManager;
+import com.intellij.openapi.vcs.changes.ChangesUtil;
+import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -120,12 +124,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
 
     clearTemporaryStatuses( changes );
 
-    Set<VirtualFile> renamedFolders = getNecessaryRenamedFoldersForList( changes );
-    if( renamedFolders.size() > 0 )
-    {
-      for( VirtualFile folder : renamedFolders )
-        changes.add( ChangeListManager.getInstance( project ).getChange( folder ) );
-    }
+    adjustChangesWithRenamedParentFolders( changes );
 
     //  Committing of renamed folders must be performed first since they
     //  affect all other checkings under them (except those having status
@@ -141,6 +140,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     commitRenamedFolders( changes, comment, errors );
 
     commitNew( changes, comment, processedFiles, errors );
+    commitDeleted( changes, comment, errors );
     commitChanged( changes, comment, processedFiles, errors );
 
     VcsUtil.refreshFiles( project, processedFiles );
@@ -165,13 +165,23 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     }
   }
 
+  private void adjustChangesWithRenamedParentFolders( List<Change> changes )
+  {
+    Set<VirtualFile> renamedFolders = getNecessaryRenamedFoldersForList( changes );
+    if( renamedFolders.size() > 0 )
+    {
+      for( VirtualFile folder : renamedFolders )
+        changes.add( ChangeListManager.getInstance( project ).getChange( folder ) );
+    }
+  }
+
   private void commitRenamedFolders( List<Change> changes, String comment, List<VcsException> errors )
   {
     for (Change change : changes)
     {
-      FilePath newFile = change.getAfterRevision().getFile();
-      if (VcsUtil.isRenameChange(change) && newFile.isDirectory())
+      if( VcsUtil.isRenameChange( change ) && VcsUtil.isChangeForFolder( change ) )
       {
+        FilePath newFile = change.getAfterRevision().getFile();
         FilePath oldFile = change.getBeforeRevision().getFile();
 
         host.renameAndCheckInFile( oldFile.getIOFile(), newFile.getName(), comment, errors );
@@ -249,21 +259,40 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     }
   }
 
+  private void commitDeleted( List<Change> changes, String comment, List<VcsException> errors )
+  {
+    for( Change change : changes )
+    {
+      if( VcsUtil.isChangeForDeleted( change ) )
+      {
+        final FilePath fp = change.getBeforeRevision().getFile();
+        host.removeFile( fp.getIOFile(), comment, errors );
+
+        String path = VcsUtil.getCanonicalLocalPath( fp.getPath() );
+        host.deletedFiles.remove( path );
+        host.deletedFolders.remove( path );
+        ApplicationManager.getApplication().invokeLater( new Runnable() {
+          public void run() { VcsDirtyScopeManager.getInstance( project ).fileDirty( fp );  }
+        });
+      }
+    }
+  }
+
   private void commitChanged( List<Change> changes, String comment,
                               HashSet<FilePath> processedFiles, List<VcsException> errors )
   {
     for( Change change : changes )
     {
-      FilePath file = change.getAfterRevision().getFile();
-      ContentRevision before = change.getBeforeRevision();
-
-      if( !VcsUtil.isChangeForNew( change ) && !file.isDirectory() )
+      if( !VcsUtil.isChangeForNew( change ) &&
+          !VcsUtil.isChangeForDeleted( change ) &&
+          !VcsUtil.isChangeForFolder( change ) )
       {
+        FilePath file = change.getAfterRevision().getFile();
         String newPath = file.getPath();
         String oldPath = host.renamedFiles.get( newPath );
         if( oldPath != null )
         {
-          FilePath oldFile = before.getFile();
+          FilePath oldFile = change.getBeforeRevision().getFile();
           String prevPath = oldFile.getPath();
 
           //  If parent folders' names of the revisions coinside, then we
@@ -298,6 +327,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
 
     rollbackRenamedFolders( changes, processedFiles );
     rollbackNew( changes, processedFiles );
+    rollbackDeleted( changes, processedFiles, errors );
     rollbackChanged( changes, processedFiles, errors );
 
     VcsUtil.refreshFiles( project, processedFiles );
@@ -309,21 +339,18 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   {
     for( Change change : changes )
     {
-      if( VcsUtil.isRenameChange( change ) )
+      if( VcsUtil.isRenameChange( change ) && VcsUtil.isChangeForFolder( change ) )
       {
+        //  The only thing which we can perform on this step is physical
+        //  rename of the folder back to its former name, since we can't
+        //  keep track of what consequent changes were done (due to Java
+        //  semantics of the package rename).
         FilePath folder = change.getAfterRevision().getFile();
-        if( folder.isDirectory() )
-        {
-          //  The only thing which we can perform on this step is physical
-          //  rename of the folder back to its former name, since we can't
-          //  keep track of what consequent changes were done (due to Java
-          //  semantics of the package rename).
-          File folderNew = folder.getIOFile();
-          File folderOld = change.getBeforeRevision().getFile().getIOFile();
-          folderNew.renameTo( folderOld );
-          host.renamedFolders.remove( VcsUtil.getCanonicalLocalPath( folderNew.getPath() ) );
-          processedFiles.add( folder );
-        }
+        File folderNew = folder.getIOFile();
+        File folderOld = change.getBeforeRevision().getFile().getIOFile();
+        folderNew.renameTo( folderOld );
+        host.renamedFolders.remove( VcsUtil.getCanonicalLocalPath( folderNew.getPath() ) );
+        processedFiles.add( folder );
       }
     }
   }
@@ -384,43 +411,56 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     }
     newFilesAndfolders.addAll( foldersNew );
   }
+
+  private void rollbackDeleted( List<Change> changes, HashSet<FilePath> processedFiles, List<VcsException> errors )
+  {
+    for( Change change : changes )
+    {
+      if( VcsUtil.isChangeForDeleted( change ))
+      {
+        FilePath filePath = change.getBeforeRevision().getFile();
+        rollbackMissingFileDeletion( filePath, errors );
+        processedFiles.add( filePath );
+      }
+    }
+  }
+
   private void rollbackChanged( List<Change> changes, HashSet<FilePath> processedFiles, List<VcsException> errors )
   {
     for( Change change : changes )
     {
-      if( !VcsUtil.isChangeForNew( change ) )
+      if( !VcsUtil.isChangeForNew( change ) &&
+          !VcsUtil.isChangeForDeleted( change ) &&
+          !VcsUtil.isChangeForFolder( change ) )
       {
         FilePath filePath = change.getAfterRevision().getFile();
         String path = filePath.getPath();
 
-        if( !filePath.isDirectory() )
+        if( VcsUtil.isRenameChange( change ) )
         {
-          if( VcsUtil.isRenameChange( change ) )
-          {
-            //  Track two different cases:
-            //  - we delete the file which is already in the repository.
-            //    Here we need to "Get" the latest version of the original
-            //    file from the repository and delete the new file.
-            //  - we delete the renamed file which is new and does not exist
-            //    in the repository. We need to ignore the error message from
-            //    the SourceSafe ("file not existing") and just delete the
-            //    new file.
+          //  Track two different cases:
+          //  - we delete the file which is already in the repository.
+          //    Here we need to "Get" the latest version of the original
+          //    file from the repository and delete the new file.
+          //  - we delete the renamed file which is new and does not exist
+          //    in the repository. We need to ignore the error message from
+          //    the SourceSafe ("file not existing") and just delete the
+          //    new file.
 
-            List<VcsException> localErrors = new ArrayList<VcsException>();
-            FilePath oldFile = change.getBeforeRevision().getFile();
-            host.undoCheckoutFile( oldFile.getIOFile(), localErrors );
-            if( localErrors.size() > 0 && !isUnknownFileError( localErrors ) )
-              errors.addAll( localErrors );
+          List<VcsException> localErrors = new ArrayList<VcsException>();
+          FilePath oldFile = change.getBeforeRevision().getFile();
+          host.undoCheckoutFile( oldFile.getIOFile(), localErrors );
+          if( localErrors.size() > 0 && !isUnknownFileError( localErrors ) )
+            errors.addAll( localErrors );
 
-            host.renamedFiles.remove( filePath.getPath() );
-            FileUtil.delete( new File( path ) );
-          }
-          else
-          {
-            host.undoCheckoutFile( filePath.getVirtualFile(), errors );
-          }
-          processedFiles.add( filePath );
+          host.renamedFiles.remove( filePath.getPath() );
+          FileUtil.delete( new File( path ) );
         }
+        else
+        {
+          host.undoCheckoutFile( filePath.getVirtualFile(), errors );
+        }
+        processedFiles.add( filePath );
       }
     }
   }
@@ -448,36 +488,41 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
 
   public List<VcsException> rollbackMissingFileDeletion( List<FilePath> paths )
   {
-    VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance(project);
     List<VcsException> errors = new ArrayList<VcsException>();
-
     for( FilePath path : paths )
     {
-      String normPath = VcsUtil.getCanonicalPath( path.getIOFile() );
-      if( host.isFolderRemoved( normPath ) )
-      {
-        //  For ClearCase to get back the locally removed folder, it is
-        //  necessary to issue "Update" command. This will revert it to the
-        //  state before the checking out on deletion.
-        updateFile( path.getPath(), errors );
-      }
-      else
-      {
-        //  For ClearCase to get back the locally removed file:
-        //  1. Issue "Undo Checkout" command. This will revert it to the state
-        //     before its checkout on deletion (if it was checked out previously).
-        //  2. Otherwise (we rollback the file which was not previusly checked
-        //     out) perform "Update".
-        List<VcsException> localErrors = new ArrayList<VcsException>();
-        host.undoCheckoutFile( path.getIOFile(), localErrors );
-        if( localErrors.size() > 0 )
-        {
-          updateFile( path.getPath(), errors );
-        }
-      }
-      mgr.fileDirty( path );
+      rollbackMissingFileDeletion( path, errors );
     }
     return errors;
+  }
+
+  private void rollbackMissingFileDeletion( FilePath path, List<VcsException> errors )
+  {
+    VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance( project );
+
+    String normPath = VcsUtil.getCanonicalPath( path.getIOFile() );
+    if( host.isFolderRemoved( normPath ) )
+    {
+      //  For ClearCase to get back the locally removed folder, it is
+      //  necessary to issue "Update" command. This will revert it to the
+      //  state before the checking out on deletion.
+      updateFile( path.getPath(), errors );
+    }
+    else
+    {
+      //  For ClearCase to get back the locally removed file:
+      //  1. Issue "Undo Checkout" command. This will revert it to the state
+      //     before its checkout on deletion (if it was checked out previously).
+      //  2. Otherwise (we rollback the file which was not previusly checked
+      //     out) perform "Update".
+      List<VcsException> localErrors = new ArrayList<VcsException>();
+      host.undoCheckoutFile( path.getIOFile(), localErrors );
+      if( localErrors.size() > 0 )
+      {
+        updateFile( path.getPath(), errors );
+      }
+    }
+    mgr.fileDirty( path );
   }
 
   public List<VcsException> scheduleUnversionedFilesForAddition( List<VirtualFile> files )
