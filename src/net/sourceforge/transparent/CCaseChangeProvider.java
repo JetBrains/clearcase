@@ -599,8 +599,7 @@ public class CCaseChangeProvider implements ChangeProvider
         for( FilePath path : set )
         {
           AbstractVcs fileHost = mgr.getVcsFor( path );
-          if( fileHost != host )
-            throw new IllegalArgumentException( "Not valid scope for current Vcs: " + path.getPath() );
+          LOG.assertTrue( fileHost == host, "Not valid scope for current Vcs: " + path.getPath() ); 
         }
       }
     });
