@@ -249,9 +249,8 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   private void analyzeParent( FilePath file, HashSet<FilePath> folders )
   {
     VirtualFile parent = file.getVirtualFileParent();
-    FileStatusManager mgr = FileStatusManager.getInstance(project);
-    if( mgr.getStatus( parent ) == FileStatus.ADDED ||
-        mgr.getStatus( parent ) == FileStatus.UNKNOWN )
+    FileStatus status = FileStatusManager.getInstance( project ).getStatus( parent );
+    if( status == FileStatus.ADDED || status == FileStatus.UNKNOWN )
     {
       FilePath parentPath = file.getParentPath();
       folders.add( parentPath );
