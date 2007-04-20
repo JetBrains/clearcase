@@ -15,12 +15,14 @@ import com.intellij.openapi.vcs.update.FileGroup;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vcs.update.UpdateSession;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
+import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -34,6 +36,8 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
   @NonNls private final static String KEEP_HIJACKED_SIG = "Keeping hijacked object \"";
   @NonNls private final static String UNLOADED_SIG = "Unloaded \"";
   @NonNls private final static String BASE_DELIM = " - base ";
+  @NonNls private final static String VIEW_BASE_PATH_SIG = "Log has been written to";
+  @NonNls private final static String UPDATE_FILE_PREFIX_SIG = "update.";
   @NonNls private final static String PROGRESS_TEXT = "Synching with repository";
 
   @NonNls private final static String ERROR_MSG_SIG = "valid snapshot view path";
@@ -70,6 +74,10 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
   private static void parseOutput( String contentRoot, String output, UpdatedFiles updatedFiles )
   {
     String sepSymbol = new String( new char[] { File.separatorChar } );
+    HashSet<String> updated = new HashSet<String>();
+    HashSet<String> skipped = new HashSet<String>();
+    HashSet<String> deleted = new HashSet<String>();
+
     String rootPath = contentRoot;
     if( !rootPath.endsWith( sepSymbol ) )
       rootPath += sepSymbol;
@@ -81,25 +89,39 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
       {
         int lastQuote = line.lastIndexOf( "\"" );
         String fileName = line.substring( LOADING_SIG.length(), lastQuote );
-
-        updatedFiles.getGroupById( FileGroup.UPDATED_ID ).add( rootPath + fileName );
+        updated.add( VcsUtil.getCanonicalLocalPath( fileName ) );
       }
       else
       if( line.startsWith( KEEP_HIJACKED_SIG ))
       {
         int lastQuote = line.lastIndexOf( BASE_DELIM );
-        String fileName = line.substring( KEEP_HIJACKED_SIG.length(), lastQuote );
-
-        updatedFiles.getGroupById( FileGroup.SKIPPED_ID ).add( rootPath + fileName );
+        String fileName = line.substring( KEEP_HIJACKED_SIG.length(), lastQuote - 1 );
+        skipped.add( VcsUtil.getCanonicalLocalPath( fileName ) );
       }
       else
       if( line.startsWith( UNLOADED_SIG ) )
       {
         String fileName = line.substring( UNLOADED_SIG.length(), line.length() - 2 );
-
-        updatedFiles.getGroupById( FileGroup.REMOVED_FROM_REPOSITORY_ID ).add( rootPath + fileName );
+        deleted.add( VcsUtil.getCanonicalLocalPath( fileName ) );
+      }
+      else
+      if( line.startsWith( VIEW_BASE_PATH_SIG ) )
+      {
+        int updateFileStart = line.lastIndexOf( UPDATE_FILE_PREFIX_SIG );
+        if( updateFileStart != -1 )
+        {
+          line = line.substring( 0, updateFileStart );
+          rootPath = line.substring( VIEW_BASE_PATH_SIG.length() + 2 );
+        }
       }
     }
+
+    for( String path : updated )
+      updatedFiles.getGroupById( FileGroup.UPDATED_ID ).add( rootPath + path );
+    for( String path : skipped )
+      updatedFiles.getGroupById( FileGroup.SKIPPED_ID ).add( rootPath + path );
+    for( String path : deleted )
+      updatedFiles.getGroupById( FileGroup.REMOVED_FROM_REPOSITORY_ID ).add( rootPath + path );
   }
 
   @Nullable
