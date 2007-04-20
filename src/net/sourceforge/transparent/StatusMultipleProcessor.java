@@ -32,13 +32,7 @@ public class StatusMultipleProcessor
 
   public StatusMultipleProcessor( List<String> paths )
   {
-    files = new String[ paths.size() ];
-    for( int i = 0; i < paths.size(); i++ )
-    {
-//      VirtualFile file = VcsUtil.getVirtualFile( paths.get( i ) );
-//      files[ i ] = file;
-      files[ i ] = paths.get( i );
-    }
+    files = paths.toArray( new String[ paths.size() ] );
   }
 
   public boolean isDeleted( String file ) {
@@ -77,7 +71,6 @@ public class StatusMultipleProcessor
 
       while( currFileIndex < files.length && cmdLineLen < CMDLINE_MAX_LENGTH )
       {
-//        String path = files[ currFileIndex++ ].getPath();
         String path = files[ currFileIndex++ ];
         options.add( path );
         cmdLineLen += path.length() + 1;
@@ -96,16 +89,13 @@ public class StatusMultipleProcessor
     for( int i = 0; i < lines.length; i++ )
     {
       if( lines[ i ].indexOf( VERSIONED_SIG ) == -1 )
-//        nonexistingFiles.add( files[ startIndex + i ].getPath().toLowerCase() );
         nonexistingFiles.add( files[ startIndex + i ].toLowerCase() );
       else
       if( lines[ i ].indexOf( CHECKEDOUT_SIG ) != -1 ||
           lines[ i ].indexOf( CHECKEDOUT_REMOVED_SIG ) != -1 )
-//        checkoutFiles.add( files[ startIndex + i ].getPath().toLowerCase() );
         checkoutFiles.add( files[ startIndex + i ].toLowerCase() );
       else
       if( lines[ i ].indexOf( HIJACKED_SIG ) != -1 )
-//        hijackedFiles.add( files[ startIndex + i ].getPath().toLowerCase() );
         hijackedFiles.add( files[ startIndex + i ].toLowerCase() );
     }
   }

@@ -41,6 +41,7 @@ public class CCaseChangeProvider implements ChangeProvider
   @NonNls private final static String SEARCHNEW_MSG = "Searching New";
   @NonNls private final static String FAIL_2_CONNECT_MSG = "Failed to connect to ClearCase Server: ";
   @NonNls private final static String FAIL_2_CONNECT_TITLE = "Server Connection Problem";
+  @NonNls private final static String FAIL_2_START = "Failed to start Cleartool. Check ClearCase installation.";
 
   private static final Logger LOG = Logger.getInstance("#net.sourceforge.transparent.CCaseChangeProvider");
 
@@ -118,6 +119,10 @@ public class CCaseChangeProvider implements ChangeProvider
       }
       final String msg = message;
       ApplicationManager.getApplication().invokeLater( new Runnable() { public void run() { VcsUtil.showErrorMessage( project, msg, FAIL_2_CONNECT_TITLE ); } });
+    }
+    catch( RuntimeException e )
+    {
+      ApplicationManager.getApplication().invokeLater( new Runnable() { public void run() { VcsUtil.showErrorMessage( project, FAIL_2_START, FAIL_2_CONNECT_TITLE ); } });
     }
     finally
     {
