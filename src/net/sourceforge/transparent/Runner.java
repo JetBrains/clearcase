@@ -92,9 +92,13 @@ public class Runner
       Runtime.getRuntime().exec( command );
    }
 
-   public static void runAsynchronously(String[] command) throws IOException {
-      Runtime.getRuntime().exec( command );
-   }
+  public static void runAsynchronously(String[] command) throws IOException {
+     Runtime.getRuntime().exec( command );
+  }
+
+  public static void runAsynchronouslyOnPath( String path, String[] command) throws IOException {
+     Runtime.getRuntime().exec( command, null, new File( path ) );
+  }
 
    public void run( String   command ) {  run( command, false );   }
    public void run( String[] command ) {  run( command, false );   }

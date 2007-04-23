@@ -1,7 +1,7 @@
-<idea-plugin url="http://www.intellij.org/twiki/bin/view/Main/ClearcasePlugin">
+<idea-plugin>
    <name>ClearcasePlugin</name>
    <description>Allows using ClearCase from within IDEA</description>
-   <version>1.36.0</version>
+   <version>2.0</version>
    <vendor email="bibou644-jetbrains@yahoo.com">Jacques Morel</vendor>
    <idea-version since-build="3431"/>
    <change-notes>
@@ -28,6 +28,7 @@
       <group id="ClearCaseProject" class="net.sourceforge.transparent.ClearCaseGroup">
         <action id="ClearCase.FindProjectCheckouts" class="net.sourceforge.transparent.actions.FindProjectCheckoutsAction" text="_Find Project Checkouts..." description="Find project checkout files"/>
         <action id="ClearCase.MergeProject" class="net.sourceforge.transparent.actions.MergeProjectAction" text="_Merge Project..." description="Merge main changes into project"/>
+        <action id="ClearCase.DeliverActivities" class="net.sourceforge.transparent.actions.DeliveryProjectAction" text="_Merge Project..." description="Deliver activities into project"/>
         <action id="ClearCase.RebaseProject" class="net.sourceforge.transparent.actions.RebaseAction" text="_Rebase project..." description="Rebase project along baselines"/>
         <add-to-group group-id="VcsGlobalGroup" anchor="first" />
       </group>
