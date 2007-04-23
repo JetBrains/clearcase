@@ -10,10 +10,7 @@ import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.*;
-import com.intellij.openapi.vcs.changes.Change;
-import com.intellij.openapi.vcs.changes.ChangeListManager;
-import com.intellij.openapi.vcs.changes.ChangesUtil;
-import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
+import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -156,11 +153,13 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   {
     for( Change change : changes )
     {
-      FilePath filePath = change.getAfterRevision().getFile();
-      if( filePath != null )
+      ContentRevision rev = change.getAfterRevision();
+      if( rev != null )
       {
+        FilePath filePath = rev.getFile();
         VirtualFile file = filePath.getVirtualFile();
-        file.putUserData( TransparentVcs.MERGE_CONFLICT, null );
+        if( file != null ) //  e.g. for deleted files
+          file.putUserData( TransparentVcs.MERGE_CONFLICT, null );
       }
     }
   }
@@ -591,20 +590,28 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     Set<VirtualFile> set = new HashSet<VirtualFile>();
     for( Change change : changes )
     {
-      for( String newFolderName : host.renamedFolders.keySet() )
+      ContentRevision rev = change.getAfterRevision();
+      if( rev != null )
       {
-        if( change.getAfterRevision().getFile().getPath().startsWith( newFolderName ) )
+        for( String newFolderName : host.renamedFolders.keySet() )
         {
-          VirtualFile parent = VcsUtil.getVirtualFile( newFolderName );
-          set.add( parent );
+          if( rev.getFile().getPath().startsWith( newFolderName ) )
+          {
+            VirtualFile parent = VcsUtil.getVirtualFile( newFolderName );
+            set.add( parent );
+          }
         }
       }
     }
     for( Change change : changes )
     {
-      VirtualFile submittedParent = change.getAfterRevision().getFile().getVirtualFile();
-      if( submittedParent != null )
-        set.remove( submittedParent );
+      ContentRevision rev = change.getAfterRevision();
+      if( rev != null )
+      {
+        VirtualFile submittedParent = rev.getFile().getVirtualFile();
+        if( submittedParent != null )
+          set.remove( submittedParent );
+      }
     }
 
     return set;
