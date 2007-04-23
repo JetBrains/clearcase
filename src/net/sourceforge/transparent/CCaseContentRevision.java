@@ -122,7 +122,9 @@ class CCaseContentRevision implements ContentRevision
 
         if( version != null )
         {
-          final String out2 = TransparentVcs.cleartoolWithOutput( "get", "-to", myTmpFile.getPath(), file.getPath() + VERSION_SEPARATOR + version );
+//          final String out2 = TransparentVcs.cleartoolWithOutput( "get", "-to", myTmpFile.getPath(), file.getPath() + VERSION_SEPARATOR + version );
+          String path = VcsUtil.getCanonicalLocalPath( revisionPath.getPath() );
+          final String out2 = TransparentVcs.cleartoolWithOutput( "get", "-to", myTmpFile.getPath(), path + VERSION_SEPARATOR + version );
 
           //  We expect that properly finished command produce no (error or
           //  warning) output.
