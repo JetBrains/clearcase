@@ -428,6 +428,14 @@ public class CCaseChangeProvider implements ChangeProvider
       builder.processChange( new Change( new CCaseContentRevision( host, refPath, project ), new CurrentContentRevision( currPath )));
     }
 
+    for( String fileName : filesHijacked )
+    {
+      String validRefName = discoverOldName( fileName );
+      final FilePath refPath = VcsUtil.getFilePath( validRefName );
+      final FilePath currPath = VcsUtil.getFilePath( fileName ); // == refPath if no rename occured
+      builder.processChange( new Change( new CCaseContentRevision( host, refPath, project ), new CurrentContentRevision( currPath ), FileStatus.HIJACKED ));
+    }
+
     for( String folderName : host.renamedFolders.keySet() )
     {
       String oldFolderName = host.renamedFolders.get( folderName );
