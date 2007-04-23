@@ -410,11 +410,16 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     }
     catch( ClearCaseException e )
     {
+      //  In the case of the conflict upon checking in - remember the
+      //  particular status of this file for our ChangeProvider.
       if( isMergeConflictMessage( e.getMessage() ))
       {
-        //  In the case of the conflict upon checking in - remember the
-        //  particular status of this file for our ChangeProvider.
-        vFile.putUserData( MERGE_CONFLICT, true );
+        //  Sometimes we deal with renamed or moved files. For them we have no
+        //  VirtualFile object.
+        if( vFile != null )
+        {
+          vFile.putUserData( MERGE_CONFLICT, true );
+        }
       }
 
       handleException( e, vFile, errors );
@@ -592,11 +597,11 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     }
   }
 
-  public void moveRenameAndCheckInFile(String filePath, String newParentPath, String newName,
+  public void moveRenameAndCheckInFile( String filePath, String newParentPath, String newName,
                                        String comment, final List<VcsException> errors )
   {
-    final File oldFile = new File(filePath);
-    final File newFile = new File(newParentPath, newName);
+    final File oldFile = new File( filePath );
+    final File newFile = new File( newParentPath, newName );
 
     try
     {
@@ -604,12 +609,34 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
       Runnable action = new Runnable(){
         public void run() {
-          renameFile(newFile, oldFile);
+          renameFile( newFile, oldFile );
           checkinFile( oldFile, modComment, errors );
-          getClearCase().move( oldFile, newFile, modComment );
+
+          //  Continue transaction only if there was no error on the previous
+          //  step.
+          if( errors.size() == 0 )
+          {
+            try
+            {
+              checkoutFile( newFile.getParentFile(), false, false, null );
+              getClearCase().move( oldFile, newFile, modComment );
+              checkinFile( newFile.getParentFile(), null, errors );
+            }
+            catch( VcsException e )
+            {
+              handleException( e, newFile, errors );
+            }
+          }
         }
       };
-      executeAndHandleOtherFileInTheWay(oldFile, action );
+
+      executeAndHandleOtherFileInTheWay( oldFile, action );
+      //  In the case when everything went to the hell, just keep stuff on
+      //  its own place.
+      if( errors.size() > 0 )
+      {
+        renameFile( oldFile, newFile );
+      }
     }
     catch( Throwable e )
     {
