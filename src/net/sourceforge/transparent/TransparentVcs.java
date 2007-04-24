@@ -754,8 +754,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     return !runner.isSuccessfull() || (output.indexOf( NOT_A_VOB_OBJECT_SIG ) != -1)? "" : output;
   }
 
-  public static String  updateFile( String fileName )  {  return cleartoolWithOutput( "update", fileName );  }
-
   public static void cleartool(@NonNls String... subcmd) throws ClearCaseException
   {
     try { Runner.runAsynchronously( Runner.getCommand( CLEARTOOL_CMD, subcmd ) ); }

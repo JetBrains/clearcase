@@ -567,7 +567,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   {
     try
     {
-      String err = TransparentVcs.updateFile( path );
+      String err = TransparentVcs.cleartoolWithOutput( "update", "-overwrite", path );
       if( err != null )
       {
         String[] lines = LineTokenizer.tokenize( err, false );
