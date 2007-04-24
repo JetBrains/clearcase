@@ -608,7 +608,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       @NonNls final String modComment = StringUtil.isEmpty(comment) ? "Moved " + filePath + " to " + newName : comment;
 
       Runnable action = new Runnable(){
-        public void run() {
+        public void run()
+        {
           renameFile( newFile, oldFile );
           checkinFile( oldFile, modComment, errors );
 
@@ -616,11 +617,20 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
           //  step.
           if( errors.size() == 0 )
           {
+            VcsException error;
             try
             {
-              checkoutFile( newFile.getParentFile(), false, false, null );
+              error = tryToCheckout( newFile.getParentFile(), false, modComment );
+              if( error != null )
+                throw error;
+              error = tryToCheckout( oldFile.getParentFile(), false, modComment );
+              if( error != null )
+                throw error;
+
               getClearCase().move( oldFile, newFile, modComment );
+
               checkinFile( newFile.getParentFile(), null, errors );
+              checkinFile( oldFile.getParentFile(), null, errors );
             }
             catch( VcsException e )
             {
