@@ -46,6 +46,7 @@ public class MergeAction extends AsynchronousAction
       if( line.startsWith( VERSION_SIG ))
       {
         version = line.substring( VERSION_SIG.length(), line.length() - 1 );
+        break;
       }
     }
     return version;
