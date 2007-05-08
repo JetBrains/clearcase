@@ -54,7 +54,7 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
 
     for( FilePath root : contentRoots )
     {
-      String out = TransparentVcs.cleartoolWithOutput( "update", root.getPath() );
+      String out = TransparentVcs.cleartoolWithOutput( "update", "-force", root.getPath() );
 
       //  Correctly process the case when "Update Project" is done over the
       //  dynamic view (only snapshot views can handle this operation).
