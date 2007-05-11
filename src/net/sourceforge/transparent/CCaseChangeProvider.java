@@ -23,6 +23,7 @@ import static net.sourceforge.transparent.TransparentVcs.MERGE_CONFLICT;
 import static net.sourceforge.transparent.TransparentVcs.SUCCESSFUL_CHECKOUT;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.*;
@@ -47,6 +48,7 @@ public class CCaseChangeProvider implements ChangeProvider
 
   private Project project;
   private TransparentVcs host;
+  private CCaseConfig config;
   private ProgressIndicator progress;
   private boolean isBatchUpdate;
   private boolean isFirstShow;
@@ -69,17 +71,25 @@ public class CCaseChangeProvider implements ChangeProvider
   public void getChanges( final VcsDirtyScope dirtyScope, final ChangelistBuilder builder,
                           final ProgressIndicator progressIndicator )
   {
+    //-------------------------------------------------------------------------
+    //  Protect ourselves from the calls which come during the unsafe project
+    //  phases like unload or reload.
+    //-------------------------------------------------------------------------
+    if( project.isDisposed() )
+      return;
+
     validateChangesOverTheHost( dirtyScope );
     LOG.info( "-- ChangeProvider -- ");
     LOG.info( "   Dirty files (" + dirtyScope.getDirtyFiles().size() + "): " + extMasks( dirtyScope.getDirtyFiles() ) +
               ", dirty recursive directories: " + dirtyScope.getRecursivelyDirtyDirectories().size() );
 
+    config = host.getConfig();
     progress = progressIndicator;
     isBatchUpdate = isBatchUpdate( dirtyScope );
 
     //  When we start for the very first time - show reminder that user possibly
     //  forgot that last time he set option to "Work offline".
-    if( isBatchUpdate && isFirstShow && CCaseConfig.getInstance( project ).isOffline )
+    if( isBatchUpdate && isFirstShow && config.isOffline )
     {
       ApplicationManager.getApplication().invokeLater( new Runnable() {
          public void run() {  Messages.showWarningDialog( project, REMINDER_TEXT, REMINDER_TITLE );  }
@@ -97,6 +107,13 @@ public class CCaseChangeProvider implements ChangeProvider
       }
       iterateOverDirtyDirectories( dirtyScope );
       iterateOverDirtyFiles( dirtyScope );
+
+      //-----------------------------------------------------------------------
+      //  For an UCM view we must determine the corresponding changes list name
+      //  which is associated with the "activity" of the particular view.
+      //-----------------------------------------------------------------------
+      if( config.useUcmModel )
+        addActivityInfoOnChangedFiles();
 
       //-----------------------------------------------------------------------
       //  Transform data accumulated in the internal data structures (filesNew,
@@ -213,6 +230,11 @@ public class CCaseChangeProvider implements ChangeProvider
     analyzeWritableFiles( writableFiles );
   }
 
+  /**
+   * Iterate over the project structure and collect two types of files:
+   * - writable files, they are the subject for subsequent analysis
+   * - "ignored" files - which will be shown in a separate changes folder.
+   */
   private List<String> collectWritableFiles( final FilePath filePath )
   {
     final ProjectFileIndex fileIndex = ProjectRootManager.getInstance( project ).getFileIndex();
@@ -268,6 +290,7 @@ public class CCaseChangeProvider implements ChangeProvider
     //  single file, then we have no need to use optimized scheme - just call
     //  current implementor once.
     //-------------------------------------------------------------------------
+    /*
     if( !host.isCmdImpl() || writableExplicitFiles.size() == 1 )
     {
       LOG.info( "ChangeProvider - Analyzing writable files on per-file basis:" );
@@ -288,6 +311,7 @@ public class CCaseChangeProvider implements ChangeProvider
       LOG.info( "ChangeProvider - \"cleartool ls\" command finished" );
     }
     else
+    */
     {
       LOG.info( "ChangeProvider - Analyzing writables in batch mode using CLEARTOOL on " + writableFiles.size() + " files." );
 
@@ -398,11 +422,12 @@ public class CCaseChangeProvider implements ChangeProvider
       //  refer to the list of new files by the
       String refName = discoverOldName( fileName );
 
-      //  New file could be added AFTER and BEFORE the package rename.
+      //  New file could be added AFTER and BEFORE e.g. the package rename.
       if( host.containsNew( fileName ) || host.containsNew( refName ))
       {
         FilePath path = VcsUtil.getFilePath( fileName );
-        builder.processChange( new Change( null, new CurrentContentRevision( path ) ));
+        String activity = findActivityForFile( path, path );
+        builder.processChangeInList( new Change( null, new CurrentContentRevision( path ) ), activity );
       }
       else
       {
@@ -412,40 +437,73 @@ public class CCaseChangeProvider implements ChangeProvider
   }
 
   /**
+   * For each changed file which has no known checkout activity find it
+   * by processing "describe" command.
+   */
+  private void addActivityInfoOnChangedFiles()
+  {
+    List<String> filesToCheck = new ArrayList<String>();
+    List<String> refFilesToCheck = new ArrayList<String>();
+    for( String fileName : filesChanged )
+    {
+      if( host.getCheckoutActivityForFile( fileName ) == null )
+      {
+        filesToCheck.add( fileName );
+        refFilesToCheck.add( discoverOldName( fileName ) );
+      }
+    }
+
+    DescribeMultipleProcessor processor = new DescribeMultipleProcessor( refFilesToCheck );
+    processor.execute();
+
+    for( int i = 0; i < refFilesToCheck.size(); i++ )
+    {
+      String activity = processor.getActivity( refFilesToCheck.get( i ) );
+      if( activity != null )
+      {
+        activity = host.getNormalizedActivityName( activity );
+        host.addFile2Changelist( new File( filesToCheck.get( i ) ), activity );
+      }
+    }
+  }
+
+  /**
    * Add all files which were determined to be changed (somehow - modified,
    * renamed, etc) and folders which were renamed.
    * NB: adding folders information actually works only in either batch refresh
-   * of statuses or when some folder is in the list of changes.
+   *     of statuses or when some folder appears in the list of changes.
    */
   private void addChangedFiles( final ChangelistBuilder builder )
   {
     for( String fileName : filesChanged )
     {
       String validRefName = discoverOldName( fileName );
-      final FilePath refPath = VcsUtil.getFilePath( validRefName );
-      final FilePath currPath = VcsUtil.getFilePath( fileName ); // == refPath if no rename occured
-
-      builder.processChange( new Change( new CCaseContentRevision( host, refPath, project ), new CurrentContentRevision( currPath )));
+      add2ChangeList( builder, FileStatus.MODIFIED, fileName, validRefName );
     }
 
     for( String fileName : filesHijacked )
     {
       String validRefName = discoverOldName( fileName );
-      final FilePath refPath = VcsUtil.getFilePath( validRefName );
-      final FilePath currPath = VcsUtil.getFilePath( fileName ); // == refPath if no rename occured
-      builder.processChange( new Change( new CCaseContentRevision( host, refPath, project ), new CurrentContentRevision( currPath ), FileStatus.HIJACKED ));
+      add2ChangeList( builder, FileStatus.HIJACKED, fileName, validRefName );
     }
 
     for( String folderName : host.renamedFolders.keySet() )
     {
       String oldFolderName = host.renamedFolders.get( folderName );
-      final FilePath refPath = VcsUtil.getFilePath( oldFolderName );
-      final FilePath currPath = VcsUtil.getFilePath( folderName );
-
-      builder.processChange( new Change( new CCaseContentRevision( host, refPath, project ), new CurrentContentRevision( currPath )));
+      add2ChangeList( builder, FileStatus.MODIFIED, folderName, oldFolderName );
     }
   }
 
+  private void add2ChangeList( final ChangelistBuilder builder, FileStatus status,
+                               String fileName, String validRefName )
+  {
+    final FilePath refPath = VcsUtil.getFilePath( validRefName );
+    final FilePath currPath = VcsUtil.getFilePath( fileName ); // == refPath if no rename occured
+    String activity = findActivityForFile( refPath, currPath );
+
+    builder.processChangeInList( new Change( new CCaseContentRevision( host, refPath, project ),
+                                             new CurrentContentRevision( currPath ), status ), activity );
+  }
 
   private void addRemovedFiles( final ChangelistBuilder builder )
   {
@@ -604,6 +662,48 @@ public class CCaseChangeProvider implements ChangeProvider
       masksStr += ext + " - " + masks.get( ext ).intValue() + "; ";
     }
     return masksStr;
+  }
+
+  @Nullable
+  private String findActivityForFile( FilePath refPath, FilePath currPath )
+  {
+    String activity = null;
+
+    //  Computing the activity name (to be used as the Changelist name) is defined
+    //  only if the "UCM" mode is checked on. Otherwise IDEA's changelist preserve
+    //  only their local semantics.
+    if( config.useUcmModel )
+    {
+      //  First check whether the file was checked out under IDEA, we've
+      //  parsed the "co" output and extracted the name of the activity under
+      //  which the file is checked out.
+      activity = host.getCheckoutActivityForFile( refPath.getPath() );
+      if( activity == null )
+      {
+        //  Check the changelists which contain this particular file -
+        //  if there is no such, then this file (change) is processed for the
+        //  very first time and we need to find (or create) the appropriate
+        //  change list for it.
+        ChangeListManager mgr = ChangeListManager.getInstance( project );
+        Collection<Change> changes = mgr.getChangesIn( currPath );
+        if( changes.size() == 0 )
+        {
+          //  1. Find the view responsible for this file.
+          //  2. Take it current activity
+          //  3. Find or create a change named after this activity.
+          //  4. Remember that this file was first changed in this activity.
+
+          ProjectLevelVcsManager vcsMgr = ProjectLevelVcsManager.getInstance(project);
+          VirtualFile root = vcsMgr.getVcsRootFor( currPath );
+          TransparentVcs.ViewInfo info = host.viewsMap.get( root.getPath() );
+          activity = info.activityName;
+
+          host.addFile2Changelist( refPath.getIOFile(), activity );
+        }
+      }
+    }
+
+    return activity;
   }
 
   private void validateChangesOverTheHost( final VcsDirtyScope scope )

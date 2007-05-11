@@ -17,6 +17,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -310,6 +311,20 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
         }
         else
         {
+          if( host.getConfig().useUcmModel )
+          {
+            //  If the file was checked out using one view's activity but is then
+            //  moved to another changelist (activity) we must issue "chactivity"
+            //  command for the file element so that subsequent "checkin" command
+            //  behaves as desired.
+            String activity = host.getCheckoutActivityForFile( file.getPath() );
+            String currentActivity = getChangeListName( file.getVirtualFile() );
+            if( activity != null && activity != currentActivity && currentActivity != "Default" ) 
+            {
+                host.changeActivityForFile( file, activity, currentActivity, errors );
+            }
+          }
+
           host.checkinFile( file, comment, errors );
         }
 
@@ -632,5 +647,20 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     return  line.startsWith( UPDATE_SUCC_PREFIX_1 ) || line.startsWith( UPDATE_SUCC_PREFIX_2 ) ||
             line.startsWith( UPDATE_SUCC_PREFIX_3 ) || line.startsWith( UPDATE_SUCC_PREFIX_4 ) ||
             line.startsWith( UPDATE_SUCC_PREFIX_5 );
+  }
+
+  @Nullable
+  private String getChangeListName( VirtualFile file )
+  {
+    String changeListName = null;
+
+    ChangeListManager mgr = ChangeListManager.getInstance( project );
+    Change change = mgr.getChange( file );
+    if( change != null )
+    {
+      changeListName = mgr.getChangeList( change ).getName();
+    }
+
+    return changeListName;
   }
 }

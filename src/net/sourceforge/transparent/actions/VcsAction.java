@@ -18,10 +18,12 @@ import org.jetbrains.annotations.NonNls;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class VcsAction extends AnAction {
+public abstract class VcsAction extends AnAction
+{
   @NonNls private static final String OPERATION_FAILED_TEXT = "One or more errors occured during operation";
 
-  public void update(AnActionEvent e) {
+  public void update(AnActionEvent e)
+  {
     String actionName = getActionName(e);
     if (actionName == null) throw new IllegalStateException("Internal error - Action Name is NULL.");
 

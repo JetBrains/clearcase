@@ -28,6 +28,7 @@
       <group id="ClearCaseProject" class="net.sourceforge.transparent.ClearCaseGroup">
         <action id="ClearCase.FindProjectCheckouts" class="net.sourceforge.transparent.actions.FindProjectCheckoutsAction" text="_Find Project Checkouts..." description="Find project checkout files"/>
         <action id="ClearCase.MergeProject" class="net.sourceforge.transparent.actions.MergeProjectAction" text="_Merge Project..." description="Merge main changes into project"/>
+        <action id="ClearCase.SynchronizeWithActivities" class="net.sourceforge.transparent.actions.SynchActivitiesAction" text="_Synchronize activities" description="Synchronize activities into changelists"/>
         <action id="ClearCase.DeliverActivities" class="net.sourceforge.transparent.actions.DeliveryProjectAction" text="_Merge Project..." description="Deliver activities into project"/>
         <action id="ClearCase.RebaseProject" class="net.sourceforge.transparent.actions.RebaseAction" text="_Rebase project..." description="Rebase project along baselines"/>
         <add-to-group group-id="VcsGlobalGroup" anchor="first" />

@@ -1,6 +1,7 @@
 package net.sourceforge.transparent;
 
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.text.StringUtil;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
@@ -16,14 +17,17 @@ public class CommandLineClearCase implements ClearCase
   @NonNls private final static String HIJACKED_SIG = "[hijacked]";
   @NonNls private final static String CHECKEDOUT_SIG = "Rule: CHECKEDOUT";
   @NonNls private final static String CHECKEDOUT_REMOVED_SIG = "checkedout but removed";
+  @NonNls private final static String ACTIVITY_SIG = "    activity:";
 
   @NonNls private final static String NOT_VOB_ELEMENT = "Pathname is not within";
   @NonNls private final static String UNABLE_TO_ACCESS = "Unable to access";
   @NonNls private final static String NO_SUCH_FILE_OR_DIR = "No such file or directory";
 
-  public String getName() {
-    return (net.sourceforge.transparent.CommandLineClearCase.class).getName();
-  }
+  private TransparentVcs host;
+
+  public String getName() {  return (net.sourceforge.transparent.CommandLineClearCase.class).getName();  }
+
+  public void setHost( TransparentVcs host ) { this.host = host;  }
 
   public void undoCheckOut( File file ) {
     cleartool( new String[] { "unco", "-rm", file.getAbsolutePath() } );
@@ -39,10 +43,15 @@ public class CommandLineClearCase implements ClearCase
 
   public void checkOut( File file, boolean isReserved, String comment )
   {
+    @NonNls String[] params;
     if( StringUtil.isNotEmpty( comment ) )
-      cleartool( new String[] {  "co", "-c", quote(comment), isReserved ? "-reserved" : "-unreserved", "-nq", file.getAbsolutePath() });
+      params = new String[] {  "co", "-c", quote(comment), isReserved ? "-reserved" : "-unreserved", "-nq", file.getAbsolutePath() };
     else
-      cleartool( new String[] {  "co", "-nc", isReserved ? "-reserved" : "-unreserved", "-nq", file.getAbsolutePath()  });
+      params = new String[] {  "co", "-nc", isReserved ? "-reserved" : "-unreserved", "-nq", file.getAbsolutePath() };
+
+    Runner runner = cleartool( params, true );
+    String activity = extractActivity( runner.getOutput() );
+    host.addFile2Changelist( file, activity );
   }
 
   public void delete( File file, String comment)
@@ -184,5 +193,34 @@ public class CommandLineClearCase implements ClearCase
     Runner runner = new Runner();
     runner.run(cmd, canFail);
     return runner;
+  }
+
+  //---------------------------------------------------------------------------
+  //  Parse the output of the following content, extract the name of the
+  //  activity under which the file is checked out.
+  //---------------------------------------------------------------------------
+  // !Checked out "Class2ForPack4.java" from version "\main\Dev2IrinaVOB\2".
+  // !  Attached activities:
+  // !    activity:First_Activity@\IrinaTestVOB  "First Activity"
+  //---------------------------------------------------------------------------
+  private static String extractActivity( String out )
+  {
+    String activity = "";
+    String[] lines = LineTokenizer.tokenize( out, false );
+    for( String line : lines )
+    {
+      if( line.startsWith( ACTIVITY_SIG ) )
+      {
+        activity = line;
+
+        int quoteIndex = line.indexOf( '\"' );
+        if( quoteIndex != -1 )
+        {
+          activity = line.substring( quoteIndex + 1, line.length() - 1 );
+        }
+        break;
+      }
+    }
+    return activity;
   }
 }
