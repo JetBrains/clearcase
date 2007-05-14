@@ -44,7 +44,9 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   @NonNls private static final String UPDATE_SUCC_PREFIX_2 = "Loading ";
   @NonNls private static final String UPDATE_SUCC_PREFIX_3 = "End dir";
   @NonNls private static final String UPDATE_SUCC_PREFIX_4 = "Done loading";
-  @NonNls private static final String UPDATE_SUCC_PREFIX_5 = "Log has been written"; 
+  @NonNls private static final String UPDATE_SUCC_PREFIX_5 = "Log has been written";
+  @NonNls private static final String UPDATE_SUCC_PREFIX_6 = ".";
+  @NonNls private static final String UPDATE_SUCC_PREFIX_7= "Making dir";
 
   private Project project;
   private TransparentVcs host;
@@ -520,6 +522,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
       //  necessary to issue "Update" command. This will revert it to the
       //  state before the checking out on deletion.
       updateFile( path.getPath(), errors );
+      undocheckoutInFolder( path.getPath(), errors );
     }
     else
     {
@@ -536,6 +539,17 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
       }
     }
     mgr.fileDirty( path );
+  }
+
+  private void undocheckoutInFolder( String path, List<VcsException> errors )
+  {
+    String output = TransparentVcs.cleartoolOnLocalPathWithOutput( path, "lsch", "-short", "-r" );
+    String[] lines = LineTokenizer.tokenize( output, false );
+    for( String line : lines )
+    {
+      File file = new File( path, line );
+      host.undoCheckoutFile( file, errors );
+    }
   }
 
   public List<VcsException> scheduleUnversionedFilesForAddition( List<VirtualFile> files )
@@ -646,7 +660,8 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   {
     return  line.startsWith( UPDATE_SUCC_PREFIX_1 ) || line.startsWith( UPDATE_SUCC_PREFIX_2 ) ||
             line.startsWith( UPDATE_SUCC_PREFIX_3 ) || line.startsWith( UPDATE_SUCC_PREFIX_4 ) ||
-            line.startsWith( UPDATE_SUCC_PREFIX_5 );
+            line.startsWith( UPDATE_SUCC_PREFIX_5 ) || line.startsWith( UPDATE_SUCC_PREFIX_6 ) ||
+            line.startsWith( UPDATE_SUCC_PREFIX_7 );                                                                                               
   }
 
   @Nullable
