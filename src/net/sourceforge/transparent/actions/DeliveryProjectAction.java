@@ -26,5 +26,22 @@ public class DeliveryProjectAction extends AsynchronousAction
     }
   }
 
+  protected boolean isEnabled( VirtualFile file, AnActionEvent e )
+  {
+    boolean status = super.isEnabled( file, e );
+    status &= allViewsAreUcm( getHost( e ) );
+    return status;
+  }
+
+  private static boolean allViewsAreUcm( TransparentVcs host )
+  {
+    boolean isUcm = true;
+    for( TransparentVcs.ViewInfo info : host.viewsMap.values() )
+    {
+      isUcm &= info.isUcm;
+    }
+    return isUcm;
+  }
+
   protected String getActionName( AnActionEvent e ) { return ACTION_NAME; }
 }
