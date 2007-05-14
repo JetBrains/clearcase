@@ -501,8 +501,8 @@ public class CCaseChangeProvider implements ChangeProvider
     final FilePath currPath = VcsUtil.getFilePath( fileName ); // == refPath if no rename occured
     String activity = findActivityForFile( refPath, currPath );
 
-    builder.processChangeInList( new Change( new CCaseContentRevision( host, refPath, project ),
-                                             new CurrentContentRevision( currPath ), status ), activity );
+    CCaseContentRevision revision = ContentRevisionFactory.getRevision( refPath, project );
+    builder.processChangeInList( new Change( revision, new CurrentContentRevision( currPath ), status ), activity );
   }
 
   private void addRemovedFiles( final ChangelistBuilder builder )
@@ -532,7 +532,8 @@ public class CCaseChangeProvider implements ChangeProvider
     for( String path : filesMerge )
     {
       final FilePath fp = VcsUtil.getFilePath( path );
-      builder.processChange( new Change( new CCaseContentRevision( host, fp, project ), new CurrentContentRevision( fp ), FileStatus.MERGED_WITH_CONFLICTS ));
+      CCaseContentRevision revision = ContentRevisionFactory.getRevision( fp, project );
+      builder.processChange( new Change( revision, new CurrentContentRevision( fp ), FileStatus.MERGED_WITH_CONFLICTS ));
     }
   }
 

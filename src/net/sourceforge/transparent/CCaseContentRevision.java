@@ -20,10 +20,8 @@ import java.util.Date;
  * Created by IntelliJ IDEA.
 * User: lloix
 * Date: Feb 21, 2007
-* Time: 5:25:56 PM
-* To change this template use File | Settings | File Templates.
 */
-class CCaseContentRevision implements ContentRevision
+public class CCaseContentRevision implements ContentRevision
 {
   @NonNls private static final String TMP_FILE_NAME = "idea_ccase";
   @NonNls private static final String VERSION_SEPARATOR = "@@";
@@ -34,18 +32,19 @@ class CCaseContentRevision implements ContentRevision
   private String        myServerContent;
   private TransparentVcs host;
 
-  public CCaseContentRevision( final TransparentVcs host, FilePath path, Project proj )
+  public CCaseContentRevision( FilePath path, Project proj )
   {
-    this.host = host;
     revisionPath = path;
     project = proj;
 
+    host = TransparentVcs.getInstance( proj );
     file = path.getVirtualFile();
   }
 
   @NotNull
   public VcsRevisionNumber getRevisionNumber()  {  return VcsRevisionNumber.NULL;   }
-  @NotNull public FilePath getFile()                     {  return revisionPath; }
+  @NotNull
+  public FilePath getFile()                     {  return revisionPath; }
 
   public String getContent()
   {
