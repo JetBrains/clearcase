@@ -522,6 +522,10 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
       //  necessary to issue "Update" command. This will revert it to the
       //  state before the checking out on deletion.
       updateFile( path.getPath(), errors );
+
+      //  If that folder contained checked out files, then they are not
+      //  reverted back after the parent folder is updated. For each of
+      //  file we need to issue "undocheckout" command.
       undocheckoutInFolder( path.getPath(), errors );
     }
     else
@@ -544,6 +548,8 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   private void undocheckoutInFolder( String path, List<VcsException> errors )
   {
     String output = TransparentVcs.cleartoolOnLocalPathWithOutput( path, "lsch", "-short", "-r" );
+    TransparentVcs.LOG.info( output );
+    
     String[] lines = LineTokenizer.tokenize( output, false );
     for( String line : lines )
     {
