@@ -321,7 +321,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
             //  behaves as desired.
             String activity = host.getCheckoutActivityForFile( file.getPath() );
             String currentActivity = getChangeListName( file.getVirtualFile() );
-            if( activity != null && activity != currentActivity && currentActivity != "Default" ) 
+            if(( activity != null ) && !activity.equals( currentActivity ) )
             {
                 host.changeActivityForFile( file, activity, currentActivity, errors );
             }
