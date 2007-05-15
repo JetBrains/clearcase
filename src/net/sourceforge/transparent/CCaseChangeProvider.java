@@ -461,8 +461,18 @@ public class CCaseChangeProvider implements ChangeProvider
       String activity = processor.getActivity( refFilesToCheck.get( i ) );
       if( activity != null )
       {
-        activity = host.getNormalizedActivityName( activity );
-        host.addFile2Changelist( new File( filesToCheck.get( i ) ), activity );
+        String activityName = host.getNormalizedActivityName( activity );
+        if( activityName == null )
+        {
+          //  Something has changed outside the IDEA, we need to synchronize
+          //  views and activities all together to properly move the change
+          //  into the changelist.
+          host.extractViewActivities();
+          activityName = host.getNormalizedActivityName( activity );
+        }
+
+        if( activityName != null )
+          host.addFile2Changelist( new File( filesToCheck.get( i ) ), activityName );
       }
     }
   }
