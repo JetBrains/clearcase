@@ -294,7 +294,6 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
         if( oldPath != null )
         {
           FilePath oldFile = change.getBeforeRevision().getFile();
-          String prevPath = oldFile.getPath();
 
           //  If parent folders' names of the revisions coinside, then we
           //  deal with the simle rename, otherwise we process full-scaled
@@ -307,7 +306,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
           else
           {
             String newFolder = file.getVirtualFileParent().getPath();
-            host.moveRenameAndCheckInFile( prevPath, newFolder, file.getName(), comment, errors );
+            host.moveRenameAndCheckInFile( oldPath, newFolder, file.getName(), comment, errors );
           }
           host.renamedFiles.remove( newPath );
         }
