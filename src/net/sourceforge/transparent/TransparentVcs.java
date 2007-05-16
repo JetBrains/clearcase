@@ -113,7 +113,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   //  Resolve the case when parent folder was already checked out by
   //  the presence of this substring in the error message.
   @NonNls private static final String ALREADY_CHECKEDOUT_SIG = "already checked out";
-
   @NonNls private static final String NOT_A_VOB_OBJECT_SIG = "Not a vob object";
 
   public static final Key<Boolean> SUCCESSFUL_CHECKOUT = new Key<Boolean>( "SUCCESSFUL_CHECKOUT" );
@@ -528,6 +527,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public void deleteNewFile( String path )      {  newFiles.remove( path.toLowerCase() );  }
   public boolean containsNew( String path )     {  return newFiles.contains( path.toLowerCase() );   }
   public boolean isFolderRemoved( String path ) {  return removedFolders.contains( path );  }
+  public boolean isFolderRemovedForVcs( String path ) {  return deletedFolders.contains( path );  }
 
   public void addFile2Changelist( File file, @NotNull String changeListName )
   {

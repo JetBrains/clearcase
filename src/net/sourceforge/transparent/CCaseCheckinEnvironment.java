@@ -516,7 +516,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance( project );
 
     String normPath = VcsUtil.getCanonicalPath( path.getIOFile() );
-    if( host.isFolderRemoved( normPath ) )
+    if( host.isFolderRemoved( normPath ) || host.isFolderRemovedForVcs( normPath ) )
     {
       //  For ClearCase to get back the locally removed folder, it is
       //  necessary to issue "Update" command. This will revert it to the
