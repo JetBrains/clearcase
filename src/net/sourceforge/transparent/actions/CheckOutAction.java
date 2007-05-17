@@ -4,12 +4,14 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.TransparentVcs;
+import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -132,13 +134,20 @@ public class CheckOutAction extends SynchronousAction
       keepHijack = (answer == 0);
     }
 
-    getHost( e ).checkoutFile( file, keepHijack, comment );
+    try
+    {
+      getHost( e ).checkoutFile( file, keepHijack, comment );
 
-    //  Assign the special marker to the file indicating that there is no need
-    //  to run <cleartool> command on the file - it is known to be modified
-    //  after the checkout command.
-    file.putUserData( TransparentVcs.SUCCESSFUL_CHECKOUT, true );
-    file.refresh( true, file.isDirectory() );
+      //  Assign the special marker to the file indicating that there is no need
+      //  to run <cleartool> command on the file - it is known to be modified
+      //  after the checkout command.
+      file.putUserData( TransparentVcs.SUCCESSFUL_CHECKOUT, true );
+      file.refresh( true, file.isDirectory() );
+    }
+    catch( ClearCaseException exc )
+    {
+      AbstractVcsHelper.getInstance( getProject( e ) ).showError( new VcsException( exc ), ACTION_NAME );
+    }
   }
 
   private static boolean isIgnorableMessage( String message )
