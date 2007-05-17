@@ -704,14 +704,8 @@ public class CCaseChangeProvider implements ChangeProvider
           //  3. Find or create a change named after this activity.
           //  4. Remember that this file was first changed in this activity.
 
-          final VirtualFile[] roots = new VirtualFile[ 1 ];
-          ApplicationManager.getApplication().runReadAction( new Runnable() {
-            public void run() {
-              ProjectLevelVcsManager vcsMgr = ProjectLevelVcsManager.getInstance(project);
-              roots[ 0 ] = vcsMgr.getVcsRootFor( currPath );
-            }
-          });
-          TransparentVcs.ViewInfo info = host.viewsMap.get( roots[ 0 ].getPath() );
+          VirtualFile root = VcsUtil.getVcsRootFor( project, currPath );
+          TransparentVcs.ViewInfo info = host.viewsMap.get( root.getPath() );
           activity = info.activityName;
 
           host.addFile2Changelist( refPath.getIOFile(), activity );

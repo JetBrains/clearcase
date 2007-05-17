@@ -871,7 +871,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
                                      List<VcsException> errors )
   {
     //  First get the proper version of the checked out element.
-    VirtualFile root = ProjectLevelVcsManager.getInstance(myProject).getVcsRootFor( file );
+    VirtualFile root = VcsUtil.getVcsRootFor( myProject, file );
     String output = cleartoolOnLocalPathWithOutput( root.getPath(), "ls", file.getPath() );
     int    delimIndex = output.indexOf( CHECKEDOUT_VERSION_DELIMITER );
     if( delimIndex != -1 )
