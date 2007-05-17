@@ -676,7 +676,7 @@ public class CCaseChangeProvider implements ChangeProvider
   }
 
   @Nullable
-  private String findActivityForFile( FilePath refPath, FilePath currPath )
+  private String findActivityForFile( FilePath refPath, final FilePath currPath )
   {
     String activity = null;
 
@@ -704,9 +704,14 @@ public class CCaseChangeProvider implements ChangeProvider
           //  3. Find or create a change named after this activity.
           //  4. Remember that this file was first changed in this activity.
 
-          ProjectLevelVcsManager vcsMgr = ProjectLevelVcsManager.getInstance(project);
-          VirtualFile root = vcsMgr.getVcsRootFor( currPath );
-          TransparentVcs.ViewInfo info = host.viewsMap.get( root.getPath() );
+          final VirtualFile[] roots = new VirtualFile[ 1 ];
+          ApplicationManager.getApplication().runReadAction( new Runnable() {
+            public void run() {
+              ProjectLevelVcsManager vcsMgr = ProjectLevelVcsManager.getInstance(project);
+              roots[ 0 ] = vcsMgr.getVcsRootFor( currPath );
+            }
+          });
+          TransparentVcs.ViewInfo info = host.viewsMap.get( roots[ 0 ].getPath() );
           activity = info.activityName;
 
           host.addFile2Changelist( refPath.getIOFile(), activity );
