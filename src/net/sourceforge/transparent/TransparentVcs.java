@@ -6,6 +6,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.startup.StartupManager;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.*;
 import com.intellij.openapi.util.text.LineTokenizer;
@@ -21,6 +22,9 @@ import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileListener;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowId;
+import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.util.containers.HashSet;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
@@ -449,8 +453,15 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       {
         VcsException warn = new VcsException( "View " + view + " has no associated activity. Checkout from this view will be problematic.");
         warn.setIsWarning( true );
+        list.add( warn );
       }
-      AbstractVcsHelper.getInstance( myProject ).showErrors( list, ERRORS_TAB_NAME ); 
+      AbstractVcsHelper.getInstance( myProject ).showErrors( list, ERRORS_TAB_NAME );
+      StartupManager.getInstance( myProject ).registerPostStartupActivity( new Runnable() {
+        public void run() {
+          ToolWindow wnd = ToolWindowManager.getInstance( myProject ).getToolWindow( ToolWindowId.MESSAGES_WINDOW );
+          wnd.activate( null );
+        }
+      });
     }
   }
 
@@ -593,10 +604,12 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     }
   }
 
+  /*
   public boolean checkoutFile( VirtualFile file, boolean keepHijacked ) throws VcsException
   {
     return checkoutFile( file, keepHijacked, "" );
   }
+  */
   public boolean checkoutFile( VirtualFile file, boolean keepHijacked, String comment ) throws VcsException
   {
     File ioFile = new File( file.getPath() );

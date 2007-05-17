@@ -2,6 +2,7 @@ package net.sourceforge.transparent;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.EditFileProvider;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
@@ -11,6 +12,8 @@ import net.sourceforge.transparent.actions.CheckoutDialog;
 import org.jetbrains.annotations.NonNls;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -34,15 +37,20 @@ public class CCaseEditFileProvider implements EditFileProvider
 
   public void editFiles( VirtualFile[] files )
   {
+    List<VcsException> errors = new ArrayList<VcsException>();
     ChangeListManager mgr = ChangeListManager.getInstance( host.getProject() );
     for( VirtualFile file : files )
     {
       if( !mgr.isIgnoredFile( file ) )
-        checkOutOrHijackFile(file);
+        checkOutOrHijackFile( file, errors );
+    }
+    if( errors.size() > 0 )
+    {
+      AbstractVcsHelper.getInstance( host.getProject() ).showErrors( errors, FAIL_DIALOG_TITLE );
     }
   }
 
-  private void checkOutOrHijackFile( VirtualFile file )
+  private void checkOutOrHijackFile( VirtualFile file, List<VcsException> errors )
   {
     boolean toHijack = shouldHijackFile( file );
     try
@@ -66,9 +74,7 @@ public class CCaseEditFileProvider implements EditFileProvider
     }
     catch( Throwable e )
     {
-      String message = "Operation failed while " + ( toHijack ? "hijacking " : "checking out ") +
-                       file.getPresentableUrl() + "\n" + e.getMessage();
-      Messages.showErrorDialog( message, FAIL_DIALOG_TITLE );
+      errors.add( new VcsException( e.getMessage() ));
     }
   }
 

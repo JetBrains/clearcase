@@ -50,6 +50,9 @@ public class CommandLineClearCase implements ClearCase
       params = new String[] {  "co", "-nc", isReserved ? "-reserved" : "-unreserved", "-nq", file.getAbsolutePath() };
 
     Runner runner = cleartool( params, true );
+    if( !runner.isSuccessfull() )
+      throw new ClearCaseException( runner.getOutput() );
+    
     String activity = extractActivity( runner.getOutput() );
     host.addFile2Changelist( file, activity );
   }
