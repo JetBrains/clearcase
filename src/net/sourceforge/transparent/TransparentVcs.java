@@ -174,7 +174,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public String getMenuItemText()   {  return super.getMenuItemText();  }
   public Project getProject()       {  return myProject;   }
 //  public boolean isCmdImpl()        {  return getClearCase().getName().indexOf( COMMAND_LINE_CLASS_SIG ) != -1; }
-  public boolean isCmdImpl()        {  return true; }
+  public static boolean isCmdImpl()        {  return true; }
 
   public VcsShowSettingOption      getCheckoutOptions()   {  return myCheckoutOptions;   }
   public VcsShowConfirmationOption getAddConfirmation()   {  return addConfirmation;     }
@@ -232,12 +232,15 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public void activate()
   {
     config = CCaseConfig.getInstance( myProject );
-    if (!getConfig().isOffline)
+    if( !config.isOffline )
     {
       resetClearCaseFromConfiguration();
       extractViewProperties();
       extractViewActivities();
-      checkViewsWithoutActions();
+      if( config.useUcmModel )
+      {
+        checkViewsWithoutActions();
+      }
     }
     else
       LOG.info( ">>> GetCOnfig().Offline == true" );
