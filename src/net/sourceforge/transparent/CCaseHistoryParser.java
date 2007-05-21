@@ -16,10 +16,11 @@ public class CCaseHistoryParser
   @NonNls public static final String CREATE_ELEM_COMMAND_SIG = "create file element";
 
   @NonNls private static final String DATE_DELIM = "   ";
-  @NonNls private static final String COMMENT_SIG = "  \"";
+  @NonNls private static final String VERSION_DELIM = "@@";
+  @NonNls private static final String COMMENT_SIG1 = "  \"";
+  @NonNls private static final String COMMENT_SIG2 = "   ";
   @NonNls private static final String ERROR_SIG = "History parsing error";
-  @NonNls private static String[] actions = { CREATE_ELEM_COMMAND_SIG, BRANCH_COMMAND_SIG, "create version",
-                                              /*"checkout version", */"checkin version"};
+  @NonNls private static String[] actions = { CREATE_ELEM_COMMAND_SIG, BRANCH_COMMAND_SIG, "create version", "checkin version" };
 
   private CCaseHistoryParser() {}
 
@@ -29,7 +30,6 @@ public class CCaseHistoryParser
     public String version;
     public String submitter;
     public String changeDate;
-//    public String changeTime;
     public String comment;
     public String labels;
     public int    order;
@@ -47,14 +47,14 @@ public class CCaseHistoryParser
 
       //  For every comment line - concatenate it with the comment
       //  of the last recorder change.
-      if( line.startsWith( COMMENT_SIG ) )
+      if( line.startsWith( COMMENT_SIG1 ) || line.startsWith( COMMENT_SIG2 ) )
       {
         if( changes.size() > 0 )
         {
           SubmissionData lastChange = changes.get( changes.size() - 1 );
-          String newComment = line.substring( COMMENT_SIG.length(), line.length() - 1 );
+          String newComment = line.substring( COMMENT_SIG1.length(), line.length() - 1 );
           String comment = lastChange.comment;
-          lastChange.comment = (comment == null) ? newComment : comment.concat( newComment );
+          lastChange.comment = (comment == null) ? newComment : comment.concat(" ").concat( newComment );
         }
       }
       else
@@ -100,7 +100,7 @@ public class CCaseHistoryParser
 
   private static void parseRightSide( SubmissionData data, String str )
   {
-    int index = str.indexOf( "@@" );
+    int index = str.indexOf( VERSION_DELIM );
     int finalIndex = str.indexOf( '"', index + 1 );
     data.version = str.substring( index, finalIndex );
 
@@ -112,18 +112,4 @@ public class CCaseHistoryParser
       data.labels = str.substring( index + 1, finalIndex ); 
     }
   }
-
-  //  CCase's date/time format is given without year fiels, catenated via '.' -
-  //  22-Dec.15:14
-  /*
-  private static void parseDateTime( String str, SubmissionData data )
-  {
-    int index = str.indexOf( '.' );
-    if( index != -1 )
-    {
-      data.changeDate = str.substring( 0, index );
-      data.changeTime = str.substring( index + 1 );
-    }
-  }
-  */
 }
