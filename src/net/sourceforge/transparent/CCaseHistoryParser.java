@@ -92,7 +92,8 @@ public class CCaseHistoryParser
   private static void parseLeftSide( SubmissionData data, String str )
   {
     int index = str.indexOf( DATE_DELIM );
-//    parseDateTime( str.substring( 0, index ), data );
+    //  Put CCase date unchanged as a string since it is given in non-
+    //  usable format (ISO-...) like 22-Dec.15:14
     data.changeDate = str.substring( 0, index );
     data.submitter = str.substring( index + DATE_DELIM.length() ).trim();
   }
