@@ -894,16 +894,16 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     }
   }
 
-  public void changeActivityForFile( FilePath file, String srcActivity, String dstActivity,
-                                     List<VcsException> errors )
+  public void changeActivityForLastVersion( FilePath file, String srcActivity, String dstActivity,
+                                            List<VcsException> errors )
   {
     //  First get the proper version of the checked out element.
     VirtualFile root = VcsUtil.getVcsRootFor( myProject, file );
-    String output = cleartoolOnLocalPathWithOutput( root.getPath(), "ls", file.getPath() );
-    int    delimIndex = output.indexOf( CHECKEDOUT_VERSION_DELIMITER );
-    if( delimIndex != -1 )
+    String output = cleartoolOnLocalPathWithOutput( root.getPath(), "lshistory", "-short", file.getPath() );
+    String[] lines = LineTokenizer.tokenize( output, false );
+    if( lines.length > 0 )
     {
-      String version = output.substring( 0, delimIndex );
+      String version = lines[ 0 ];
       srcActivity = findNormalizedName( srcActivity );
       String dstActivityNorm = findNormalizedName( dstActivity );
 
@@ -914,7 +914,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       {
         runner.run( new String[] { CLEARTOOL_CMD, "mkact", "-nc", "-f", "-headline", "\"" + dstActivity + "\"", dstActivityNorm }, true );
       }
-      
+
       runner.run( new String[] { CLEARTOOL_CMD, CHANGE_ACTIVITY_CMD, "-nc", "-fcset", srcActivity,
                                  "-tcset", dstActivityNorm, CommandLineClearCase.quote( version ) }, true );
       if( !runner.isSuccessfull() )
@@ -927,7 +927,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       errors.add( new VcsException( "Did not manage to retrieve the element version for Activity movement." ));
     }
   }
-  
+
   /**
    * It may appear that parent folder was already checked out - either
    * manually or as the result of the previously failed operation.
@@ -1215,5 +1215,18 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       }
     }
     return activity.replace( ' ', '_' );
+  }
+
+  @Nullable
+  public String getActivityOfViewOfFile( FilePath path )
+  {
+    String activity = null;
+    VirtualFile root = VcsUtil.getVcsRootFor( myProject, path );
+    ViewInfo info = viewsMap.get( root.getPath() );
+    if( info != null )
+    {
+      activity = info.activityName;
+    }
+    return activity;
   }
 }

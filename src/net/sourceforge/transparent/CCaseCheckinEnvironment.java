@@ -238,7 +238,22 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
       host.addFile( folder.getVirtualFile(), comment, errors );
 
     for( FilePath file : files )
+    {
       host.addFile( file.getVirtualFile(), comment, errors );
+      if( host.getConfig().useUcmModel )
+      {
+        //  If the file was checked out using one view's activity but is then
+        //  moved to another changelist (activity) we must issue "chactivity"
+        //  command for the file element so that subsequent "checkin" command
+        //  behaves as desired.
+        String activity = host.getActivityOfViewOfFile( file );
+        String currentActivity = getChangeListName( file.getVirtualFile() );
+        if(( activity != null ) && !activity.equals( currentActivity ) )
+        {
+          host.changeActivityForLastVersion( file, activity, currentActivity, errors );
+        }
+      }
+    }
   }
 
   /**
@@ -312,21 +327,20 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
         }
         else
         {
+          host.checkinFile( file, comment, errors );
           if( host.getConfig().useUcmModel )
           {
-            //  If the file was checked out using one view's activity but is then
-            //  moved to another changelist (activity) we must issue "chactivity"
+            //  If the file was checked out using one view's activity but has then
+            //  been moved to another changelist (activity) we must issue "chactivity"
             //  command for the file element so that subsequent "checkin" command
             //  behaves as desired.
             String activity = host.getCheckoutActivityForFile( file.getPath() );
             String currentActivity = getChangeListName( file.getVirtualFile() );
             if(( activity != null ) && !activity.equals( currentActivity ) )
             {
-              host.changeActivityForFile( file, activity, currentActivity, errors );
+              host.changeActivityForLastVersion( file, activity, currentActivity, errors );
             }
           }
-
-          host.checkinFile( file, comment, errors );
         }
 
         processedFiles.add( file );
