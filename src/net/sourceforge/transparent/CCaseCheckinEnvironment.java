@@ -36,7 +36,7 @@ import java.util.Set;
  */
 public class CCaseCheckinEnvironment implements CheckinEnvironment
 {
-  @NonNls private static final String CHECKIN_TITLE = "Checkin";
+  @NonNls private static final String CHECKIN_TITLE = "Check In";
   @NonNls private static final String SCR_TITLE = "SCR Number";
   @NonNls private static final String FILE_NOT_IN_VOB_SIG = "element name not found";
 
