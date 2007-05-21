@@ -72,6 +72,11 @@ public class VFSListener extends VirtualFileAdapter
       //  If user managed to perform maerge on the file outside the
       //  environment, clear this mark so that we will not confuse ourselves.
       file.putUserData( TransparentVcs.MERGE_CONFLICT, null );
+
+      //  On every change of the "Writable" property clear the cache of the
+      //  content revisions. This will make possible to reread the correct
+      //  version content after series of checkins/checkouts.
+      ContentRevisionFactory.clearCacheForFile( file.getPath() );
     }
     else
     if( event.getPropertyName() == VirtualFile.PROP_NAME )

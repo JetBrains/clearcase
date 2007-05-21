@@ -2,6 +2,7 @@ package net.sourceforge.transparent;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -31,5 +32,11 @@ public class ContentRevisionFactory
       cachedRevisions.put( path, revision );
     }
     return revision;
+  }
+
+  public static void clearCacheForFile( String file )
+  {
+    FilePath path = VcsUtil.getFilePath( file );
+    cachedRevisions.remove( path );
   }
 }
