@@ -22,7 +22,6 @@ import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileListener;
-import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowId;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.util.containers.HashSet;
@@ -232,18 +231,37 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public void activate()
   {
     config = CCaseConfig.getInstance( myProject );
+    LOG.info( ">>> GetCOnfig().Offline == " + config.isOffline );
+
     if( !config.isOffline )
     {
       resetClearCaseFromConfiguration();
       extractViewProperties();
-      extractViewActivities();
+
+      //  If configuration has changed, check that we do not operate with
+      //  activities in the inappropriate environment.
       if( config.useUcmModel )
       {
+        if( !allViewsAreUCM() )
+        {
+          VcsException warn = new VcsException( "Not all views are of UCM type. Activities processing is suspended.");
+          warn.setIsWarning( true );
+          AbstractVcsHelper.getInstance( myProject ).showError( warn, ERRORS_TAB_NAME );
+
+          StartupManager.getInstance( myProject ).registerPostStartupActivity( new Runnable() {
+            public void run() { ToolWindowManager.getInstance( myProject ).getToolWindow( ToolWindowId.MESSAGES_WINDOW ).activate( null ); }
+          });
+          
+          config.useUcmModel = false;
+        }
+      }
+
+      if( config.useUcmModel )
+      {
+        extractViewActivities();
         checkViewsWithoutActions();
       }
     }
-    else
-      LOG.info( ">>> GetCOnfig().Offline == true" );
 
     //  Control the appearance of project items so that we can easily
     //  track down potential changes in the repository.
@@ -301,6 +319,15 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       cc.setHost( this );
       clearcase = new ClearCaseDecorator( cc );
     }
+  }
+
+  public boolean allViewsAreUCM()
+  {
+    boolean ucm = true;
+    for( ViewInfo info : viewsMap.values() )
+      ucm &= info.isUcm;
+
+    return ucm;
   }
 
   /**
@@ -460,10 +487,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       }
       AbstractVcsHelper.getInstance( myProject ).showErrors( list, ERRORS_TAB_NAME );
       StartupManager.getInstance( myProject ).registerPostStartupActivity( new Runnable() {
-        public void run() {
-          ToolWindow wnd = ToolWindowManager.getInstance( myProject ).getToolWindow( ToolWindowId.MESSAGES_WINDOW );
-          wnd.activate( null );
-        }
+        public void run() { ToolWindowManager.getInstance( myProject ).getToolWindow( ToolWindowId.MESSAGES_WINDOW ).activate( null ); }
       });
     }
   }

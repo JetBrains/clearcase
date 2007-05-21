@@ -25,7 +25,6 @@ public class CCaseConfig implements JDOMExternalizable, ProjectComponent
   public boolean checkInUseHijack = true;
   public boolean useUcmModel = true;
   public boolean isOffline = false;
-  public boolean isUcmView = false;
   public boolean synchOutside = false;
   public String lastScr = "";
   public String scrTextFileName = "";
@@ -43,8 +42,6 @@ public class CCaseConfig implements JDOMExternalizable, ProjectComponent
   public void  setViewDynamic()    {  lastViewType = DYNAMIC;   }
   public boolean isViewSnapshot()  {  return lastViewType == SNAPSHOT;  }
   public boolean isViewDynamic()   {  return lastViewType == DYNAMIC;  }
-  public void    setUcmView()      {  isUcmView = true;  }
-  public boolean isUcmView()       {  return isUcmView;  }
 
   public static CCaseConfig getInstance(Project project) {
     return project.getComponent(CCaseConfig.class);
