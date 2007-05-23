@@ -83,6 +83,11 @@ public class CCaseChangeProvider implements ChangeProvider
     LOG.info( "   Dirty files (" + dirtyScope.getDirtyFiles().size() + "): " + extMasks( dirtyScope.getDirtyFiles() ) +
               ", dirty recursive directories: " + dirtyScope.getRecursivelyDirtyDirectories().size() );
 
+    //  Do not perform any actions if we have no VSS-related
+    //  content roots configured.
+    if( ProjectLevelVcsManager.getInstance( project ).getDirectoryMappings( host ).size() == 0 )
+      return;
+    
     config = host.getConfig();
     progress = progressIndicator;
     isBatchUpdate = isBatchUpdate( dirtyScope );
