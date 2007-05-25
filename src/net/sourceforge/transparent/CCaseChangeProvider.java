@@ -608,15 +608,24 @@ public class CCaseChangeProvider implements ChangeProvider
   
   private String discoverOldName( String file )
   {
-    String oldName = host.renamedFiles.get( VcsUtil.getCanonicalLocalPath( file ) );
+    String canonicName = VcsUtil.getCanonicalLocalPath( file );
+    String oldName = host.renamedFiles.get( canonicName );
     if( oldName == null )
     {
-      oldName = host.renamedFolders.get( VcsUtil.getCanonicalLocalPath( file ) );
+      oldName = host.renamedFolders.get( canonicName );
       if( oldName == null )
       {
         oldName = findInRenamedParentFolder( file );
         if( oldName == null )
           oldName = file;
+        else
+        {
+          //  Idiosynchrasic check - whether a RENAMED file is found under the
+          //  renamed folder?
+          String checkRenamed = host.renamedFiles.get( oldName );
+          if( checkRenamed != null )
+            oldName = checkRenamed;
+        }
       }
     }
 
