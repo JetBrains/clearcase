@@ -989,7 +989,10 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public static void cleartool(@NonNls String... subcmd) throws ClearCaseException
   {
-    try { Runner.runAsynchronously( Runner.getCommand( CLEARTOOL_CMD, subcmd ) ); }
+    String[] cmd = Runner.getCommand( CLEARTOOL_CMD, subcmd );
+    LOG.info( "|" + Runner.getCommandLine( cmd ) );
+
+    try { Runner.runAsynchronously( cmd ); }
     catch (IOException e) {  throw new ClearCaseException(e.getMessage());  }
   }
 
@@ -999,7 +1002,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     {
       String[] cmd = Runner.getCommand( CLEARTOOL_CMD, subcmd );
       Runner.runAsynchronouslyOnPath( path, cmd );
-//      Runner.runAsynchronously( cmd );
     }
     catch (IOException e)
     {
