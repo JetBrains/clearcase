@@ -710,8 +710,8 @@ public class CCaseChangeProvider implements ChangeProvider
         //  very first time and we need to find (or create) the appropriate
         //  change list for it.
         ChangeListManager mgr = ChangeListManager.getInstance( project );
-        Collection<Change> changes = mgr.getChangesIn( currPath );
-        if( changes.size() == 0 )
+        Change change = mgr.getChange( currPath );
+        if( change == null )
         {
           //  1. Find the view responsible for this file.
           //  2. Take it current activity

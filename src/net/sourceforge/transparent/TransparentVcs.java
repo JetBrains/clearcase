@@ -569,7 +569,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public void addFile2Changelist( File file, @NotNull String changeListName )
   {
-    String normName = VcsUtil.getCanonicalPath( file );
+    String normName = VcsUtil.getCanonicalLocalPath( file.getPath() );
     activitiesAssociations.put( normName, changeListName );
   }
   @Nullable

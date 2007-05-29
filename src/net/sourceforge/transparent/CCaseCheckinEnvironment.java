@@ -10,7 +10,10 @@ import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.*;
-import com.intellij.openapi.vcs.changes.*;
+import com.intellij.openapi.vcs.changes.Change;
+import com.intellij.openapi.vcs.changes.ChangeListManager;
+import com.intellij.openapi.vcs.changes.ContentRevision;
+import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -498,14 +501,13 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
    */
   public List<VcsException> scheduleMissingFileForDeletion( List<FilePath> paths )
   {
-    List<File> files = ChangesUtil.filePathsToFiles( paths );
     List<VcsException> errors = new ArrayList<VcsException>();
-    for( File file : files )
+    for( FilePath file : paths )
     {
-      String path = VcsUtil.getCanonicalPath( file );
+      String path = VcsUtil.getCanonicalLocalPath( file.getPath() );
       if( host.removedFiles.contains( path ) || host.removedFolders.contains( path ) )
       {
-        host.removeFile( file, null, errors );
+        host.removeFile( file.getIOFile(), null, errors );
       }
 
       host.removedFiles.remove( path );
@@ -528,7 +530,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   {
     VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance( project );
 
-    String normPath = VcsUtil.getCanonicalPath( path.getIOFile() );
+    String normPath = VcsUtil.getCanonicalLocalPath( path.getPath() );
     if( host.isFolderRemoved( normPath ) || host.isFolderRemovedForVcs( normPath ) )
     {
       //  For ClearCase to get back the locally removed folder, it is
