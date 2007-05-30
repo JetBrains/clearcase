@@ -274,6 +274,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public void deactivate()
   {
     LocalFileSystem.getInstance().removeVirtualFileListener( listener );
+    ContentRevisionFactory.detachListeners();
   }
 
 //  public void  setClearCase( ClearCase clearCase ) {  clearcase = clearCase;  }
@@ -286,33 +287,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   private void resetClearCaseFromConfiguration()
   {
-    /*
-    if( clearcase == null || !getConfig().implementation.equals(clearcase.getName()) )
-    {
-      ClearCase cc = null;
-      try
-      {
-        String className = getConfig().implementation;
-        cc = (ClearCase) Class.forName( className ).newInstance();
-        clearcase = new ClearCaseDecorator( cc );
-      }
-      catch( Throwable e )
-      {
-        Messages.showMessageDialog( getProject(), e.getMessage() + "\nSelecting CommandLineImplementation instead",
-                                    "Error while selecting " + getConfig().implementation +
-                                    "implementation", Messages.getErrorIcon());
-
-        getConfig().implementation = CommandLineClearCase.class.getName();
-        cc = new CommandLineClearCase();
-        clearcase = new ClearCaseDecorator( cc );
-      }
-      finally
-      {
-        if( cc instanceof CommandLineClearCase )
-          ((CommandLineClearCase)cc).setHost( this );
-      }
-    }
-    */
     if( clearcase == null )
     {
       CommandLineClearCase cc = new CommandLineClearCase();
