@@ -34,6 +34,9 @@ public class CheckOutAction extends SynchronousAction
   {
     super.update( e );
 
+    if( getHost( e ) == null )
+      e.getPresentation().setVisible( false );
+
     if ( getHost( e ).getConfig().isOffline )
       e.getPresentation().setEnabled( false );
   }
