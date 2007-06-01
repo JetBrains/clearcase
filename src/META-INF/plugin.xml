@@ -17,6 +17,7 @@
    <project-components>
       <component>
          <implementation-class>net.sourceforge.transparent.TransparentVcs</implementation-class>
+         <option name="workspace" value="true"/>
       </component>
       <component>
          <implementation-class>net.sourceforge.transparent.CCaseConfig</implementation-class>
