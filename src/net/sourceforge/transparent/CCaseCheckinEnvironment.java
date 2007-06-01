@@ -5,6 +5,9 @@
 package net.sourceforge.transparent;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.progress.ProcessCanceledException;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.LineTokenizer;
@@ -53,6 +56,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
 
   private Project project;
   private TransparentVcs host;
+  private double fraction;
 
   public CCaseCheckinEnvironment( Project project, TransparentVcs host )
   {
@@ -129,22 +133,31 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
 
     adjustChangesWithRenamedParentFolders( changes );
 
-    //  Committing of renamed folders must be performed first since they
-    //  affect all other checkings under them (except those having status
-    //  "ADDED") since:
-    //  - if modified file is checked in before renamed folder checkin then
-    //    we need to checkin from (yet) nonexisting file into (already) non-
-    //    existing space. It is too tricky to recreate the old folders
-    //    structure and commit from out of there.
-    //  - if modified file is checked AFTER the renamed folder has been
-    //    checked in, we just have to checkin in into the necessary place,
-    //    just get the warning that we checking in file which was checked out
-    //    from another location. Supress it.
-    commitRenamedFolders( changes, comment, errors );
+    try
+    {
+      initProgress( changes.size() );
 
-    commitNew( changes, comment, processedFiles, errors );
-    commitDeleted( changes, comment, errors );
-    commitChanged( changes, comment, processedFiles, errors );
+      //  Committing of renamed folders must be performed first since they
+      //  affect all other checkings under them (except those having status
+      //  "ADDED") since:
+      //  - if modified file is checked in before renamed folder checkin then
+      //    we need to checkin from (yet) nonexisting file into (already) non-
+      //    existing space. It is too tricky to recreate the old folders
+      //    structure and commit from out of there.
+      //  - if modified file is checked AFTER the renamed folder has been
+      //    checked in, we just have to checkin in into the necessary place,
+      //    just get the warning that we checking in file which was checked out
+      //    from another location. Supress it.
+      commitRenamedFolders( changes, comment, errors );
+
+      commitNew( changes, comment, processedFiles, errors );
+      commitDeleted( changes, comment, errors );
+      commitChanged( changes, comment, processedFiles, errors );
+    }
+    catch( ProcessCanceledException e )
+    {
+      //  Nothing to do, just refresh the files which are already committed.
+    }
 
     VcsUtil.refreshFiles( project, processedFiles );
 
@@ -191,6 +204,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
 
         host.renameAndCheckInFile( oldFile.getIOFile(), newFile.getName(), comment, errors );
         host.renamedFolders.remove( newFile.getPath() );
+        incrementProgress( newFile.getPath() );
       }
     }
   }
@@ -256,6 +270,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
           host.changeActivityForLastVersion( file, activity, currentActivity, errors );
         }
       }
+      incrementProgress( file.getPath() );
     }
   }
 
@@ -290,6 +305,8 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
         String path = VcsUtil.getCanonicalLocalPath( fp.getPath() );
         host.deletedFiles.remove( path );
         host.deletedFolders.remove( path );
+
+        incrementProgress( fp.getPath() );
         ApplicationManager.getApplication().invokeLater( new Runnable() {
           public void run() { VcsDirtyScopeManager.getInstance( project ).fileDirty( fp );  }
         });
@@ -347,6 +364,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
         }
 
         processedFiles.add( file );
+        incrementProgress( file.getPath() );
       }
     }
   }
@@ -698,5 +716,31 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     }
 
     return changeListName;
+  }
+  
+  private void initProgress( int total )
+  {
+    final ProgressIndicator progress = ProgressManager.getInstance().getProgressIndicator();
+    if( progress != null )
+    {
+      fraction = 1.0 / (double) total;
+      progress.setIndeterminate( false );
+      progress.setFraction( 0.0 );
+    }
+  }
+
+  private void incrementProgress( String text ) throws ProcessCanceledException
+  {
+    final ProgressIndicator progress = ProgressManager.getInstance().getProgressIndicator();
+    if( progress != null )
+    {
+      double newFraction = progress.getFraction();
+      newFraction += fraction;
+      progress.setFraction( newFraction );
+      progress.setText( text );
+
+      if( progress.isCanceled() )
+        throw new ProcessCanceledException();
+    }
   }
 }
