@@ -563,6 +563,11 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     String normName = VcsUtil.getCanonicalLocalPath( file.getPath() );
     activitiesAssociations.put( normName, changeListName );
   }
+  public void removeFileFromActivity( String fileName )
+  {
+    fileName = VcsUtil.getCanonicalLocalPath( fileName );
+    activitiesAssociations.remove( fileName );
+  }
   @Nullable
   public String getCheckoutActivityForFile( @NotNull String fileName )
   {

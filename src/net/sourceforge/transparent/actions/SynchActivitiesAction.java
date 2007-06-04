@@ -8,10 +8,12 @@ import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vfs.VirtualFile;
+import net.sourceforge.transparent.CCaseChangeProvider;
 import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -42,6 +44,11 @@ public class SynchActivitiesAction extends SynchronousAction
     //  Find out a current activity for each view
     rereadCurrentActivities( e );
 
+    //  For each file with "MODIFIED" status reread its mapped activity
+    //  (via "describe" command), and if its activity differs from the name
+    //  of its current change list, move it to the new change list.
+    relocateChangedFiles( e );
+    
     //  New files (with status "ADDED") should be relocated to the newly
     //  activated activities.
     relocateNewFiles( e );
@@ -56,6 +63,36 @@ public class SynchActivitiesAction extends SynchronousAction
       if( mgr.findChangeList( info.activityName ) == null )
       {
         mgr.addChangeList( info.activityName, null );
+      }
+    }
+  }
+
+  private static void relocateChangedFiles( AnActionEvent e )
+  {
+    TransparentVcs host = getHost( e );
+    ChangeListManager mgr = ChangeListManager.getInstance( getProject(e) );
+    List<VirtualFile> files = mgr.getAffectedFiles();
+    List<String> files2Analyze = new ArrayList<String>();
+
+    for( VirtualFile vfile : files )
+    {
+      if( mgr.getStatus( vfile ) == FileStatus.MODIFIED && host.fileIsUnderVcs( vfile.getPath() ))
+        files2Analyze.add( vfile.getPath() );
+    }
+
+    CCaseChangeProvider.setActivityInfoOnChangedFiles( files2Analyze );
+
+    for( VirtualFile vfile : files )
+    {
+      if( mgr.getStatus( vfile ) == FileStatus.MODIFIED && host.fileIsUnderVcs( vfile.getPath() ))
+      {
+        Change change = mgr.getChange( vfile );
+        LocalChangeList list = mgr.getChangeList( change );
+        String hostedActivity = host.getCheckoutActivityForFile( vfile.getPath() );
+        if( hostedActivity != null && !hostedActivity.equals( list.getName() ) )
+        {
+          mgr.moveChangesTo( mgr.findChangeList( hostedActivity ), new Change[]{ change } );
+        }
       }
     }
   }

@@ -47,7 +47,7 @@ public class CCaseChangeProvider implements ChangeProvider
   private static final Logger LOG = Logger.getInstance("#net.sourceforge.transparent.CCaseChangeProvider");
 
   private Project project;
-  private TransparentVcs host;
+  private static TransparentVcs host;
   private CCaseConfig config;
   private ProgressIndicator progress;
   private boolean isBatchUpdate;
@@ -59,10 +59,10 @@ public class CCaseChangeProvider implements ChangeProvider
   private HashSet<String> filesIgnored = new HashSet<String>();
   private HashSet<String> filesMerge = new HashSet<String>();
 
-  public CCaseChangeProvider( Project project, TransparentVcs host )
+  public CCaseChangeProvider( Project project, TransparentVcs hostVcs )
   {
     this.project = project;
-    this.host = host;
+    host = hostVcs;
     isFirstShow = true;
   }
 
@@ -118,7 +118,7 @@ public class CCaseChangeProvider implements ChangeProvider
       //  which is associated with the "activity" of the particular view.
       //-----------------------------------------------------------------------
       if( config.useUcmModel )
-        addActivityInfoOnChangedFiles();
+        setActivityInfoOnChangedFiles();
 
       //-----------------------------------------------------------------------
       //  Transform data accumulated in the internal data structures (filesNew,
@@ -445,17 +445,28 @@ public class CCaseChangeProvider implements ChangeProvider
    * For each changed file which has no known checkout activity find it
    * by processing "describe" command.
    */
-  private void addActivityInfoOnChangedFiles()
+  private void setActivityInfoOnChangedFiles()
   {
     List<String> filesToCheck = new ArrayList<String>();
-    List<String> refFilesToCheck = new ArrayList<String>();
     for( String fileName : filesChanged )
     {
       if( host.getCheckoutActivityForFile( fileName ) == null )
-      {
         filesToCheck.add( fileName );
-        refFilesToCheck.add( discoverOldName( fileName ) );
-      }
+    }
+
+    setActivityInfoOnChangedFiles( filesToCheck );
+  }
+
+  /**
+   * For each file in list find its activity by processing "describe" command.
+   * @param files
+   */
+  public static void setActivityInfoOnChangedFiles( final List<String> files )
+  {
+    List<String> refFilesToCheck = new ArrayList<String>();
+    for( String fileName : files )
+    {
+      refFilesToCheck.add( discoverOldName( fileName ) );
     }
 
     DescribeMultipleProcessor processor = new DescribeMultipleProcessor( refFilesToCheck );
@@ -477,7 +488,7 @@ public class CCaseChangeProvider implements ChangeProvider
         }
 
         if( activityName != null )
-          host.addFile2Changelist( new File( filesToCheck.get( i ) ), activityName );
+          host.addFile2Changelist( new File( files.get( i ) ), activityName );
       }
     }
   }
@@ -520,7 +531,7 @@ public class CCaseChangeProvider implements ChangeProvider
     builder.processChangeInList( new Change( revision, new CurrentContentRevision( currPath ), status ), activity );
   }
 
-  private void addRemovedFiles( final ChangelistBuilder builder )
+  private static void addRemovedFiles( final ChangelistBuilder builder )
   {
     final HashSet<String> files = new HashSet<String>();
     files.addAll( host.removedFolders );
@@ -606,7 +617,7 @@ public class CCaseChangeProvider implements ChangeProvider
     return isBatch;
   }
   
-  private String discoverOldName( String file )
+  private static String discoverOldName( String file )
   {
     String canonicName = VcsUtil.getCanonicalLocalPath( file );
     String oldName = host.renamedFiles.get( canonicName );
@@ -632,7 +643,7 @@ public class CCaseChangeProvider implements ChangeProvider
     return oldName;
   }
 
-  private String findInRenamedParentFolder( String name )
+  private static String findInRenamedParentFolder( String name )
   {
     String fileInOldFolder = name;
     for( String folder : host.renamedFolders.keySet() )
@@ -647,7 +658,7 @@ public class CCaseChangeProvider implements ChangeProvider
     return fileInOldFolder;
   }
 
-  private boolean isUnderRenamedFolder( String fileName )
+  private static boolean isUnderRenamedFolder( String fileName )
   {
     for( String folder : host.renamedFolders.keySet() )
     {

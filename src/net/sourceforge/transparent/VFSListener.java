@@ -77,6 +77,12 @@ public class VFSListener extends VirtualFileAdapter
       //  content revisions. This will make possible to reread the correct
       //  version content after series of checkins/checkouts.
       ContentRevisionFactory.clearCacheForFile( file.getPath() );
+
+      //  If the file is checked in or reverted (either within IDEA or externally
+      //  in the CCase Explorer) we need to clear its internally kept activity
+      //  name since next time the file can be checked out into the different
+      //  activity.
+      host.removeFileFromActivity( file.getPath() );
     }
     else
     if( event.getPropertyName() == VirtualFile.PROP_NAME )
