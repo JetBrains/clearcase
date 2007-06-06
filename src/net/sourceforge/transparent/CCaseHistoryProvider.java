@@ -24,6 +24,7 @@ import java.util.Date;
 public class CCaseHistoryProvider implements VcsHistoryProvider
 {
   @NonNls private final static String HISTORY_CMD = "lshistory";
+  @NonNls private final static String LIMITED_SWITCH = "-last";
   @NonNls private final static String CCASE_DATE_COLUMN = "ClearCase Date";
   @NonNls private final static String ACTION_COLUMN = "Action";
   @NonNls private final static String LABEL_COLUMN = "Label";
@@ -97,7 +98,16 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
     if( host.renamedFiles.containsKey( path ) )
       path = host.renamedFiles.get( path );
 
-    String log = TransparentVcs.cleartoolWithOutput( HISTORY_CMD, path );
+    String log;
+    if( host.getConfig().isHistoryResticted )
+    {
+      int margin = host.getConfig().getHistoryRevisionsMargin();
+      log = TransparentVcs.cleartoolWithOutput( HISTORY_CMD, LIMITED_SWITCH, String.valueOf( margin ), path );
+    }
+    else
+    {
+      log = TransparentVcs.cleartoolWithOutput( HISTORY_CMD, path );
+    }
     ArrayList<CCaseHistoryParser.SubmissionData> changes = CCaseHistoryParser.parse( log );
     ArrayList<VcsFileRevision> revisions = new ArrayList<VcsFileRevision>();
     for( CCaseHistoryParser.SubmissionData change : changes )

@@ -179,7 +179,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public VcsShowConfirmationOption getAddConfirmation()   {  return addConfirmation;     }
   public VcsShowConfirmationOption getRemoveConfirmation(){  return removeConfirmation;  }
 
-  public Configurable         getConfigurable()       {  return new TransparentConfigurable( myProject );  }
+  public Configurable         getConfigurable()       {  return new CCaseConfigurable( myProject );  }
   public CCaseConfig          getConfig()             {  return config;           }
   public ChangeProvider       getChangeProvider()     {  return changeProvider;   }
   public EditFileProvider     getEditFileProvider()   {  return editProvider;     }
