@@ -26,6 +26,7 @@ import com.intellij.openapi.wm.ToolWindowId;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.util.containers.HashSet;
 import com.intellij.vcsUtil.VcsUtil;
+import net.sourceforge.transparent.ChangeManagement.CCaseChangeProvider;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import net.sourceforge.transparent.exceptions.ClearCaseNoServerException;
 import org.jdom.Element;

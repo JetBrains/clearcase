@@ -2,7 +2,7 @@
  * Copyright (c) 2000-2006 JetBrains s.r.o. All Rights Reserved.
  */
 
-package net.sourceforge.transparent;
+package net.sourceforge.transparent.ChangeManagement;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -19,6 +19,7 @@ import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
+import net.sourceforge.transparent.*;
 import static net.sourceforge.transparent.TransparentVcs.MERGE_CONFLICT;
 import static net.sourceforge.transparent.TransparentVcs.SUCCESSFUL_CHECKOUT;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
@@ -44,7 +45,7 @@ public class CCaseChangeProvider implements ChangeProvider
   @NonNls private final static String FAIL_2_CONNECT_TITLE = "Server Connection Problem";
   @NonNls private final static String FAIL_2_START = "Failed to start Cleartool. Check ClearCase installation.";
 
-  private static final Logger LOG = Logger.getInstance("#net.sourceforge.transparent.CCaseChangeProvider");
+  private static final Logger LOG = Logger.getInstance("#net.sourceforge.transparent.ChangeManagement.CCaseChangeProvider");
 
   private Project project;
   private static TransparentVcs host;
