@@ -128,6 +128,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   {
     List<VcsException> errors = new ArrayList<VcsException>();
     HashSet<FilePath> processedFiles = new HashSet<FilePath>();
+    comment = comment.replace( "\"", "\\\"" );
 
     clearTemporaryStatuses( changes );
 
