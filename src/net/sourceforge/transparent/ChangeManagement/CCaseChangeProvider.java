@@ -744,7 +744,7 @@ public class CCaseChangeProvider implements ChangeProvider
 
   private void validateChangesOverTheHost( final VcsDirtyScope scope )
   {
-    ApplicationManager.getApplication().invokeLater( new Runnable() {
+    ApplicationManager.getApplication().runReadAction( new Runnable() {
       public void run() {
         HashSet<FilePath> set = new HashSet<FilePath>();
         set.addAll( scope.getDirtyFiles() );
