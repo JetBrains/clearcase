@@ -48,7 +48,7 @@ public class CCaseChangeProvider implements ChangeProvider
   private static final Logger LOG = Logger.getInstance("#net.sourceforge.transparent.ChangeManagement.CCaseChangeProvider");
 
   private Project project;
-  private static TransparentVcs host;
+  private TransparentVcs host;
   private CCaseConfig config;
   private ProgressIndicator progress;
   private boolean isBatchUpdate;
@@ -462,7 +462,7 @@ public class CCaseChangeProvider implements ChangeProvider
    * For each file in list find its activity by processing "describe" command.
    * @param files
    */
-  public static void setActivityInfoOnChangedFiles( final List<String> files )
+  public void setActivityInfoOnChangedFiles( final List<String> files )
   {
     List<String> refFilesToCheck = new ArrayList<String>();
     for( String fileName : files )
@@ -532,7 +532,7 @@ public class CCaseChangeProvider implements ChangeProvider
     builder.processChangeInList( new Change( revision, new CurrentContentRevision( currPath ), status ), activity );
   }
 
-  private static void addRemovedFiles( final ChangelistBuilder builder )
+  private void addRemovedFiles( final ChangelistBuilder builder )
   {
     final HashSet<String> files = new HashSet<String>();
     files.addAll( host.removedFolders );
@@ -618,7 +618,7 @@ public class CCaseChangeProvider implements ChangeProvider
     return isBatch;
   }
   
-  private static String discoverOldName( String file )
+  private String discoverOldName( String file )
   {
     String canonicName = VcsUtil.getCanonicalLocalPath( file );
     String oldName = host.renamedFiles.get( canonicName );
@@ -644,7 +644,7 @@ public class CCaseChangeProvider implements ChangeProvider
     return oldName;
   }
 
-  private static String findInRenamedParentFolder( String name )
+  private String findInRenamedParentFolder( String name )
   {
     String fileInOldFolder = name;
     for( String folder : host.renamedFolders.keySet() )
@@ -659,7 +659,7 @@ public class CCaseChangeProvider implements ChangeProvider
     return fileInOldFolder;
   }
 
-  private static boolean isUnderRenamedFolder( String fileName )
+  private boolean isUnderRenamedFolder( String fileName )
   {
     for( String folder : host.renamedFolders.keySet() )
     {

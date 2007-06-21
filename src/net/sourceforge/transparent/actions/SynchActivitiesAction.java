@@ -80,7 +80,10 @@ public class SynchActivitiesAction extends SynchronousAction
         files2Analyze.add( vfile.getPath() );
     }
 
-    CCaseChangeProvider.setActivityInfoOnChangedFiles( files2Analyze );
+    final CCaseChangeProvider changeProvider = (CCaseChangeProvider)host.getChangeProvider();
+    assert changeProvider != null;
+
+    changeProvider.setActivityInfoOnChangedFiles( files2Analyze );
 
     for( VirtualFile vfile : files )
     {
