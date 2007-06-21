@@ -51,13 +51,13 @@ public abstract class VcsAction extends AnAction
     List<VcsException> list = new ArrayList<VcsException>();
 
     AbstractVcsHelper helper = AbstractVcsHelper.getInstance(e.getData(DataKeys.PROJECT));
-    LocalHistoryAction lvcsAction = helper.startVcsAction(e.getPresentation().getText());
+    LocalHistoryAction a = helper.startLocalHistoryAction(e.getPresentation().getText());
 
     try {
       execute(e, list);
     }
     finally {
-      helper.finishVcsAction(lvcsAction);
+      a.finish();
     }
 
     return list;
