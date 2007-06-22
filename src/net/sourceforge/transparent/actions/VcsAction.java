@@ -1,6 +1,6 @@
 package net.sourceforge.transparent.actions;
 
-import com.intellij.localvcs.integration.LocalHistoryAction;
+import com.intellij.history.integration.LocalHistoryAction;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataKeys;
