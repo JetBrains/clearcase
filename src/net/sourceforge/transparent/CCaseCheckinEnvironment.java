@@ -13,6 +13,7 @@ import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.*;
+import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ContentRevision;
@@ -40,7 +41,7 @@ import java.util.Set;
  * User: lloix
  * Date: Dec 6, 2006
  */
-public class CCaseCheckinEnvironment implements CheckinEnvironment
+public class CCaseCheckinEnvironment implements CheckinEnvironment, RollbackEnvironment
 {
   @NonNls private static final String CHECKIN_TITLE = "Check In";
   @NonNls private static final String SCR_TITLE = "SCR Number";
@@ -630,6 +631,9 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
       file.refresh( true, true );
     }
     return errors;
+  }
+
+  public void rollbackIfUnchanged(VirtualFile file) {
   }
 
   private static void updateFile( String path, List<VcsException> errors )

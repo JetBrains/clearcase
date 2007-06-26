@@ -12,6 +12,7 @@ import com.intellij.openapi.util.*;
 import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.*;
+import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
@@ -189,6 +190,11 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   {
     return ((config == null) || !config.isOffline) ? checkinEnvironment : null;
   }
+
+  public RollbackEnvironment getRollbackEnvironment() {
+    return ((config == null) || !config.isOffline) ? checkinEnvironment : null;
+  }
+
   public UpdateEnvironment    getUpdateEnvironment()
   {
     //  For dynamic views "Update project" action makes no sence.
