@@ -768,15 +768,19 @@ public class CCaseChangeProvider implements ChangeProvider
   {
     ApplicationManager.getApplication().runReadAction( new Runnable() {
       public void run() {
-        HashSet<FilePath> set = new HashSet<FilePath>();
-        set.addAll( scope.getDirtyFiles() );
-        set.addAll( scope.getRecursivelyDirtyDirectories() );
-
-        ProjectLevelVcsManager mgr = ProjectLevelVcsManager.getInstance( project );
-        for( FilePath path : set )
+        //  protect over being called in the forbidden phase
+        if( !project.isDisposed() )
         {
-          AbstractVcs fileHost = mgr.getVcsFor( path );
-          LOG.assertTrue( fileHost == host, "Not valid scope for current Vcs: " + path.getPath() ); 
+          HashSet<FilePath> set = new HashSet<FilePath>();
+          set.addAll( scope.getDirtyFiles() );
+          set.addAll( scope.getRecursivelyDirtyDirectories() );
+
+          ProjectLevelVcsManager mgr = ProjectLevelVcsManager.getInstance( project );
+          for( FilePath path : set )
+          {
+            AbstractVcs fileHost = mgr.getVcsFor( path );
+            LOG.assertTrue( fileHost == host, "Not valid scope for current Vcs: " + path.getPath() );
+          }
         }
       }
     });
