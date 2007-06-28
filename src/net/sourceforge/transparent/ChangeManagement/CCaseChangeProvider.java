@@ -12,10 +12,8 @@ import com.intellij.openapi.roots.ContentIterator;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.vcs.AbstractVcs;
-import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.FileStatus;
-import com.intellij.openapi.vcs.ProjectLevelVcsManager;
+import com.intellij.openapi.util.text.LineTokenizer;
+import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
@@ -27,7 +25,10 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.util.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -59,6 +60,7 @@ public class CCaseChangeProvider implements ChangeProvider
   private HashSet<String> filesHijacked = new HashSet<String>();
   private HashSet<String> filesIgnored = new HashSet<String>();
   private HashSet<String> filesMerge = new HashSet<String>();
+  private HashSet<String> checkouts = new HashSet<String>();
 
   public CCaseChangeProvider( Project project, TransparentVcs hostVcs )
   {
@@ -80,9 +82,7 @@ public class CCaseChangeProvider implements ChangeProvider
       return;
 
     validateChangesOverTheHost( dirtyScope );
-    LOG.info( "-- ChangeProvider -- ");
-    LOG.info( "   Dirty files (" + dirtyScope.getDirtyFiles().size() + "): " + extMasks( dirtyScope.getDirtyFiles() ) +
-              ", dirty recursive directories: " + dirtyScope.getRecursivelyDirtyDirectories().size() );
+    logChangesContent( dirtyScope );
 
     //  Do not perform any actions if we have no VSS-related
     //  content roots configured.
@@ -109,6 +109,7 @@ public class CCaseChangeProvider implements ChangeProvider
     {
       if( isBatchUpdate )
       {
+        collectCheckouts();
         iterateOverProjectStructure( dirtyScope );
       }
       iterateOverDirtyDirectories( dirtyScope );
@@ -149,8 +150,30 @@ public class CCaseChangeProvider implements ChangeProvider
     }
     finally
     {
-      TransparentVcs.LOG.info( "-- EndChangeProvider| New(+renamed): " + filesNew.size() + ", modified: " + filesChanged.size() +
+      TransparentVcs.LOG.info( "-- EndChangeProvider| New: " + filesNew.size() + ", modified: " + filesChanged.size() +
                                ", hijacked:" + filesHijacked.size() + ", ignored: " + filesIgnored.size() );
+    }
+  }
+
+  private void collectCheckouts()
+  {
+    VirtualFile[] roots = ProjectLevelVcsManager.getInstance( project ).getRootsUnderVcs( host );
+    for( VirtualFile root : roots )
+    {
+      String out = TransparentVcs.cleartoolOnLocalPathWithOutput( root.getPath(), "lsco", "-me", "-short", "-recurse" );
+      String[] lines = LineTokenizer.tokenize( out, false );
+      for( String line : lines )
+      {
+        String fileName = root.getPath() + "/" + VcsUtil.getCanonicalLocalPath( line );
+        File file = new File( fileName );
+        try
+        {
+          checkouts.add( file.getCanonicalPath() );
+        }
+        catch( IOException e ){
+          //  Nothing to do - we have no idea on what shit cleartool decided to return.
+        }
+      }
     }
   }
 
@@ -274,6 +297,7 @@ public class CCaseChangeProvider implements ChangeProvider
       return;
 
     ArrayList<String> writableExplicitFiles = new ArrayList<String>();
+    ArrayList<String> newWritableExplicitFiles = new ArrayList<String>();
     final List<String> newFiles = new ArrayList<String>();
 
     //-------------------------------------------------------------------------
@@ -284,6 +308,12 @@ public class CCaseChangeProvider implements ChangeProvider
     //-------------------------------------------------------------------------
     selectExplicitWritableFiles( writableFiles, writableExplicitFiles );
 
+    //-------------------------------------------------------------------------
+    //  Guess on files
+    //-------------------------------------------------------------------------
+    guessOnFiles( writableExplicitFiles, newWritableExplicitFiles );
+
+    //-------------------------------------------------------------------------
     List<String> refNames = new ArrayList<String>();
     for( String file : writableExplicitFiles )
     {
@@ -291,51 +321,22 @@ public class CCaseChangeProvider implements ChangeProvider
       refNames.add( legalName );
     }
 
-    //-------------------------------------------------------------------------
-    //  If we deal with Native implementation OR we analyze the status of a
-    //  single file, then we have no need to use optimized scheme - just call
-    //  current implementor once.
-    //-------------------------------------------------------------------------
-    /*
-    if( !host.isCmdImpl() || writableExplicitFiles.size() == 1 )
+    LOG.info( "ChangeProvider - Analyzing writables in batch mode using CLEARTOOL on " + writableFiles.size() + " files." );
+
+    StatusMultipleProcessor processor = new StatusMultipleProcessor( refNames );
+    processor.execute();
+    LOG.info( "ChangeProvider - \"CLEARTOOL LS\" batch command finished." );
+
+    for( int i = 0; i < writableExplicitFiles.size(); i++ )
     {
-      LOG.info( "ChangeProvider - Analyzing writable files on per-file basis:" );
-      for( int i = 0; i < writableExplicitFiles.size(); i++ )
-      {
-        LOG.info( "\t\t\t" + writableExplicitFiles.get( i ) );
-
-        Status _status = host.getStatus( new File( refNames.get( i ) ) );
-        if( _status == Status.NOT_AN_ELEMENT )
-          newFiles.add( writableExplicitFiles.get( i ) );
-        else
-        if( _status == Status.CHECKED_OUT )
-          filesChanged.add( writableExplicitFiles.get( i ) );
-        else
-        if( _status == Status.HIJACKED )
-          filesHijacked.add( writableExplicitFiles.get( i ) );
-      }
-      LOG.info( "ChangeProvider - \"cleartool ls\" command finished" );
-    }
-    else
-    */
-    {
-      LOG.info( "ChangeProvider - Analyzing writables in batch mode using CLEARTOOL on " + writableFiles.size() + " files." );
-
-      StatusMultipleProcessor processor = new StatusMultipleProcessor( refNames );
-      processor.execute();
-      LOG.info( "ChangeProvider - \"CLEARTOOL LS\" batch command finished." );
-
-      for( int i = 0; i < writableExplicitFiles.size(); i++ )
-      {
-        if( processor.isNonexist( refNames.get( i ) ))
-          newFiles.add( writableExplicitFiles.get( i ) );
-        else
-        if( processor.isCheckedout( refNames.get( i ) ))
-          filesChanged.add( writableExplicitFiles.get( i ) );
-        else
-        if( processor.isHijacked( refNames.get( i ) ))
-          filesHijacked.add( writableExplicitFiles.get( i ) );
-      }
+      if( processor.isNonexist( refNames.get( i ) ))
+        newFiles.add( writableExplicitFiles.get( i ) );
+      else
+      if( processor.isCheckedout( refNames.get( i ) ))
+        filesChanged.add( writableExplicitFiles.get( i ) );
+      else
+      if( processor.isHijacked( refNames.get( i ) ))
+        filesHijacked.add( writableExplicitFiles.get( i ) );
     }
 
     if( isBatchUpdate )
@@ -383,6 +384,48 @@ public class CCaseChangeProvider implements ChangeProvider
       else
       {
         newWritables.add( path );
+      }
+    }
+  }
+
+  /**
+   * Trying to guess the new file status out of its previous one. During
+   * these simple steps use the following heuristics:
+   * - if the file has previously the status "MODIFIED: since it passed the
+   *   "isProperNotification" predicate then it is not a deleted file; thus
+   *   the only possible current status is again "MODIFIED".
+   * - if the file has previously the status "ADDED" or "UNVERSIONED": it can
+   *   keep the same status, or follow "ADDED"->"UNVERTIONED" or
+   *   "UNVERSIONED"->"ADDED" pathway; since we do not support "keep checked out
+   *   after checkin" then it cannot get status "MODIFIED". Since the distinction
+   *   between "ADDED" or "UNVERSIONED" is done later, we can save this file in
+   *   "new files" list.
+   */
+  private void guessOnFiles( List<String> list, List<String> newList )
+  {
+    for( String file : list )
+    {
+      boolean guessed = false;
+      VirtualFile vfile = VcsUtil.getVirtualFile( file );
+      if( vfile != null )
+      {
+        FileStatus status = FileStatusManager.getInstance( project).getStatus( vfile );
+        if( status == FileStatus.MODIFIED )
+        {
+          filesChanged.add( file );
+          guessed = true;
+        }
+        else
+        if( status == FileStatus.ADDED || status == FileStatus.UNKNOWN )
+        {
+          filesNew.add( file );
+          guessed = true;
+        }
+      }
+      
+      if( !guessed )
+      {
+        newList.add( file );
       }
     }
   }
@@ -601,6 +644,7 @@ public class CCaseChangeProvider implements ChangeProvider
     filesHijacked.clear();
     filesIgnored.clear();
     filesMerge.clear();
+    checkouts.clear();
   }
 
   private boolean isBatchUpdate( VcsDirtyScope scope )
@@ -679,28 +723,6 @@ public class CCaseChangeProvider implements ChangeProvider
     return (file != null) && file.isWritable() && !file.isDirectory();
   }
 
-  private static String extMasks( Set<FilePath> scope )
-  {
-    HashMap<String, Integer> masks = new HashMap<String, Integer>();
-    for( FilePath path : scope )
-    {
-      int index = path.getName().lastIndexOf( '.' );
-      if( index != -1 )
-      {
-        String ext = path.getName().substring( index );
-        Integer count = masks.get( ext );
-        masks.put( ext, (count == null) ? 1 : (count.intValue() + 1 ) );
-      }
-    }
-
-    String masksStr = "";
-    for( String ext : masks.keySet() )
-    {
-      masksStr += ext + " - " + masks.get( ext ).intValue() + "; ";
-    }
-    return masksStr;
-  }
-
   @Nullable
   private String findActivityForFile( FilePath refPath, final FilePath currPath )
   {
@@ -758,5 +780,16 @@ public class CCaseChangeProvider implements ChangeProvider
         }
       }
     });
+  }
+
+  private static void logChangesContent( final VcsDirtyScope scope )
+  {
+    LOG.info( "-- ChangeProvider: Dirty files: " + scope.getDirtyFiles().size() +
+              ", dirty recursive directories: " + scope.getRecursivelyDirtyDirectories().size() );
+    for( FilePath path : scope.getDirtyFiles() )
+      LOG.info( "                                " + path.getPath() );
+    LOG.info( "                                ---" );
+    for( FilePath path : scope.getRecursivelyDirtyDirectories() )
+      LOG.info( "                                " + path.getPath() );
   }
 }

@@ -12,13 +12,13 @@ import com.intellij.openapi.util.*;
 import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.*;
-import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vcs.checkin.CheckinHandlerFactory;
 import com.intellij.openapi.vcs.history.VcsHistoryProvider;
+import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -28,6 +28,9 @@ import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.util.containers.HashSet;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.ChangeManagement.CCaseChangeProvider;
+import net.sourceforge.transparent.Checkin.CCaseCheckinEnvironment;
+import net.sourceforge.transparent.Checkin.CCaseCheckinHandler;
+import net.sourceforge.transparent.Checkin.CCaseRollbackEnvironment;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import net.sourceforge.transparent.exceptions.ClearCaseNoServerException;
 import org.jdom.Element;
@@ -141,6 +144,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   private CCaseConfig config;
 
   private CCaseCheckinEnvironment checkinEnvironment;
+  private CCaseRollbackEnvironment rollbackEnvironment;
   private CCaseUpdateEnvironment updateEnvironment;
   private ChangeProvider changeProvider;
   private EditFileProvider editProvider;
@@ -186,16 +190,15 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public ChangeProvider       getChangeProvider()     {  return changeProvider;   }
   public EditFileProvider     getEditFileProvider()   {  return editProvider;     }
   public VcsHistoryProvider   getVcsHistoryProvider() {  return historyProvider;  }
-  public CheckinEnvironment   getCheckinEnvironment()
-  {
+  public CheckinEnvironment   getCheckinEnvironment() {
     return ((config == null) || !config.isOffline) ? checkinEnvironment : null;
   }
 
   public RollbackEnvironment getRollbackEnvironment() {
-    return ((config == null) || !config.isOffline) ? checkinEnvironment : null;
+    return ((config == null) || !config.isOffline) ? rollbackEnvironment : null;
   }
 
-  public UpdateEnvironment    getUpdateEnvironment()
+  public UpdateEnvironment  getUpdateEnvironment()
   {
     //  For dynamic views "Update project" action makes no sence.
     return (config == null) || config.isViewDynamic() ? null : updateEnvironment;
@@ -213,6 +216,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     changeProvider = new CCaseChangeProvider( myProject, this );
     updateEnvironment = new CCaseUpdateEnvironment();
     checkinEnvironment = new CCaseCheckinEnvironment( myProject, this );
+    rollbackEnvironment = new CCaseRollbackEnvironment( myProject, this );
     editProvider = new CCaseEditFileProvider( this );
     historyProvider = new CCaseHistoryProvider( myProject );
 

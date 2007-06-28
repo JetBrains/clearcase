@@ -1,10 +1,11 @@
-package net.sourceforge.transparent;
+package net.sourceforge.transparent.Checkin;
 
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
+import net.sourceforge.transparent.TransparentVcs;
 
 import java.util.Collection;
 import java.util.HashSet;

@@ -7,6 +7,7 @@ import com.intellij.openapi.vfs.VirtualFileAdapter;
 import com.intellij.openapi.vfs.VirtualFileMoveEvent;
 import com.intellij.openapi.vfs.VirtualFilePropertyEvent;
 import com.intellij.vcsUtil.VcsUtil;
+import net.sourceforge.transparent.ChangeManagement.CCaseContentRevision;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;

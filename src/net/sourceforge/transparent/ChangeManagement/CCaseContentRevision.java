@@ -1,4 +1,4 @@
-package net.sourceforge.transparent;
+package net.sourceforge.transparent.ChangeManagement;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -9,8 +9,11 @@ import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
+import net.sourceforge.transparent.CCaseHistoryParser;
+import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -167,6 +170,7 @@ public class CCaseContentRevision implements ContentRevision
   //  string "predecessor version:" in this log and extract the version string
   //  in the CCase format.
   //-------------------------------------------------------------------------
+  @Nullable
   private static String parseLastRepositoryVersion( String text )
   {
     @NonNls final String SIG = "predecessor version:";
