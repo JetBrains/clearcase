@@ -143,10 +143,13 @@ public class CCaseChangeProvider implements ChangeProvider
       }
       final String msg = message;
       ApplicationManager.getApplication().invokeLater( new Runnable() { public void run() { VcsUtil.showErrorMessage( project, msg, FAIL_2_CONNECT_TITLE ); } });
+      LOG.info( message );
     }
     catch( RuntimeException e )
     {
-      ApplicationManager.getApplication().invokeLater( new Runnable() { public void run() { VcsUtil.showErrorMessage( project, FAIL_2_START, FAIL_2_CONNECT_TITLE ); } });
+      @NonNls final String message = FAIL_2_START + ": " + e.getMessage();
+      ApplicationManager.getApplication().invokeLater( new Runnable() { public void run() { VcsUtil.showErrorMessage( project, message, FAIL_2_CONNECT_TITLE ); } });
+      LOG.info( message );
     }
     finally
     {
