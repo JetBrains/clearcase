@@ -22,12 +22,15 @@ public abstract class VcsAction extends AnAction
 {
   @NonNls private static final String OPERATION_FAILED_TEXT = "One or more errors occured during operation";
 
+  protected Project _actionProjectInstance;
+
   public void update(AnActionEvent e)
   {
     String actionName = getActionName(e);
     if (actionName == null) throw new IllegalStateException("Internal error - Action Name is NULL.");
 
     e.getPresentation().setText(actionName);
+    _actionProjectInstance = getProject( e );
   }
 
   protected abstract String getActionName(AnActionEvent e);
@@ -35,19 +38,21 @@ public abstract class VcsAction extends AnAction
   protected void execute(AnActionEvent e, List<VcsException> errors) {
   }
 
-  public void actionPerformed(AnActionEvent e) {
-    Project project = e.getData(DataKeys.PROJECT);
+  public void actionPerformed(AnActionEvent e)
+  {
+    _actionProjectInstance = e.getData(DataKeys.PROJECT);
     FileDocumentManager.getInstance().saveAllDocuments();
     List<VcsException> errors = runAction(e);
 
     if (errors.size() > 0) {
       @NonNls final String title = getActionName(e) + " failed";
-      AbstractVcsHelper.getInstance(project).showErrors(errors, title);
-      Messages.showErrorDialog(project, OPERATION_FAILED_TEXT, title);
+      AbstractVcsHelper.getInstance( _actionProjectInstance ).showErrors(errors, title);
+      Messages.showErrorDialog( _actionProjectInstance, OPERATION_FAILED_TEXT, title );
     }
   }
 
-  protected List<VcsException> runAction(AnActionEvent e) {
+  protected List<VcsException> runAction(AnActionEvent e)
+  {
     List<VcsException> list = new ArrayList<VcsException>();
 
     AbstractVcsHelper helper = AbstractVcsHelper.getInstance(e.getData(DataKeys.PROJECT));

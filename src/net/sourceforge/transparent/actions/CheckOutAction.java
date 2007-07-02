@@ -1,8 +1,6 @@
 package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.DataKeys;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FileStatus;
@@ -43,12 +41,11 @@ public class CheckOutAction extends SynchronousAction
 
   protected boolean isEnabled( VirtualFile file, AnActionEvent e )
   {
-    Project project = getProject( e );
-    if( !VcsUtil.isPathUnderProject( project, file ))
+    if( !VcsUtil.isPathUnderProject( _actionProjectInstance, file ))
       return false;
 
     //  NB: if invoked for a folder, the status is most often "NOT_CHANGED"
-    FileStatus status = getFileStatus( e.getData( DataKeys.PROJECT ), file );
+    FileStatus status = getFileStatus( _actionProjectInstance, file );
     return status == FileStatus.NOT_CHANGED || status == FileStatus.HIJACKED;
   }
 
@@ -60,8 +57,8 @@ public class CheckOutAction extends SynchronousAction
     if( getHost( e ).getCheckoutOptions().getValue() )
     {
       CheckoutDialog dialog = ( files.length == 1 ) ?
-                                new CheckoutDialog( getProject( e ), files[ 0 ] ) :
-                                new CheckoutDialog( getProject( e ), files );
+                                new CheckoutDialog( _actionProjectInstance, files[ 0 ] ) :
+                                new CheckoutDialog( _actionProjectInstance, files );
       dialog.show();
       if( dialog.getExitCode() == CheckoutDialog.CANCEL_EXIT_CODE )
         return;
@@ -80,9 +77,7 @@ public class CheckOutAction extends SynchronousAction
   {
     if( isEnabled( file, e ) )
     {
-      Project project = e.getData( DataKeys.PROJECT );
-      VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance( project );
-
+      VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance( _actionProjectInstance );
       try
       {
         perform( file, comment, e );

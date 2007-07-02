@@ -37,7 +37,7 @@ public class MergeAction extends AsynchronousAction
     }
     else
     {
-      Messages.showErrorDialog( getProject( e ), ERROR_TEXT, ERROR_TITLE );
+      Messages.showErrorDialog( _actionProjectInstance, ERROR_TEXT, ERROR_TITLE );
     }
   }
 
