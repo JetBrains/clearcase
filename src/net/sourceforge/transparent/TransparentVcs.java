@@ -432,6 +432,19 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
         info.activityName = acts.getSecond();
       }
     }
+
+    LOG.info( ">>> Extracted Activities:" );
+    try
+    {
+      for( ViewInfo info : viewsMap.values() )
+      {
+        LOG.info( ">>>\t" + info.activity + "->" + info.activityName );
+      }
+    }
+    catch( Exception e)
+    {
+      LOG.info( ">>> INTERNAL FAULT DURING ACTIVITES DUMPING. THUS ACTIVITIES PARSING FAILED." );
+    }
   }
 
   private static Pair<String,String> parseActivities( String str )
