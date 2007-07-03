@@ -413,6 +413,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       String output = cleartoolWithOutput( LIST_ACTIVITY_CMD, "-view", info.tag );
       if( !isServerDownMessage( output ) )
       {
+        LOG.info( output );
+        
         String[] lines = LineTokenizer.tokenize( output, false );
         for( String line : lines )
         {
@@ -427,6 +429,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       String output = cleartoolWithOutput( LIST_ACTIVITY_CMD, CURRENT_ACTIVITY_SWITCH, "-view", info.tag );
       if( !isServerDownMessage( output ) )
       {
+        LOG.info( output );
+        
         Pair<String,String> acts = parseActivities( output );
         info.activity = acts.getFirst();
         info.activityName = acts.getSecond();
