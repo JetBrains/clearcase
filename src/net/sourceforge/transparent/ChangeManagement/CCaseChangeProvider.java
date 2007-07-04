@@ -367,6 +367,7 @@ public class CCaseChangeProvider implements ChangeProvider
       //  next iteration to "getChanges()".
       final List<String> newFolders = new ArrayList<String>();
       final HashSet<String> processedFolders = new HashSet<String>();
+      newFiles.addAll( filesNew ); //  in order to analyze all of them.
       for( String file : newFiles )
       {
         if( !isPathUnderProcessedFolders( processedFolders, file ))
