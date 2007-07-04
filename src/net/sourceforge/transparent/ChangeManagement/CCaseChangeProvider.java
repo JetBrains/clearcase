@@ -300,6 +300,8 @@ public class CCaseChangeProvider implements ChangeProvider
 
   private void computeStatuses()
   {
+    LOG.info( "---ChangeProvider - " + filesIgnored.size() + " ignored files accumulated so far.");
+
     if( filesWritable.size() < MAX_FILES_FOR_ITERATIVE_STATUS )
     {
       analyzeWritableFiles( filesWritable );
