@@ -21,7 +21,7 @@ public class StatusMultipleProcessor
   @NonNls private static final String CHECKEDOUT_SIG = "Rule: CHECKEDOUT";
   @NonNls private final static String CHECKEDOUT_REMOVED_SIG = "checkedout but removed";
 
-  private static final int  CMDLINE_MAX_LENGTH = 500;
+  private static final int  CMDLINE_MAX_LENGTH = 1024;
 
   private String[] files;
 
@@ -35,21 +35,10 @@ public class StatusMultipleProcessor
     files = paths.toArray( new String[ paths.size() ] );
   }
 
-  public boolean isDeleted( String file ) {
-    return deletedFiles.contains( file.toLowerCase() );
-  }
-
-  public boolean isNonexist( String file ) {
-    return nonexistingFiles.contains( file.toLowerCase() );
-  }
-
-  public boolean isCheckedout( String file ) {
-    return checkoutFiles.contains( file.toLowerCase() );
-  }
-
-  public boolean isHijacked( String file ) {
-    return hijackedFiles.contains( file.toLowerCase() );
-  }
+  public boolean isDeleted  ( String file )  {  return deletedFiles.contains( file.toLowerCase() );  }
+  public boolean isNonexist ( String file )  {  return nonexistingFiles.contains( file.toLowerCase() );  }
+  public boolean isCheckedout( String file ) {  return checkoutFiles.contains( file.toLowerCase() );  }
+  public boolean isHijacked ( String file )  {  return hijackedFiles.contains( file.toLowerCase() );  }
 
   public void execute()
   {
