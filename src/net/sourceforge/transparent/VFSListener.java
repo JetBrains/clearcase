@@ -174,7 +174,8 @@ public class VFSListener extends VirtualFileAdapter
 
     FileStatus status = FileStatusManager.getInstance( project ).getStatus( file );
     if( host.fileIsUnderVcs( file.getPath() ) &&
-        ( status != FileStatus.ADDED ) && ( status != FileStatus.UNKNOWN ))
+        ( status != FileStatus.ADDED ) && ( status != FileStatus.UNKNOWN ) &&
+        ( status != FileStatus.IGNORED ))
     {
       VcsShowConfirmationOption confirmOption = host.getRemoveConfirmation();
 
