@@ -116,12 +116,16 @@ public class CCaseChangeProvider implements ChangeProvider
       iterateOverDirtyFiles( dirtyScope );
       computeStatuses();
 
+      LOG.info( "-- ChangeProvider - passed analysis phase" );
+      
       //-----------------------------------------------------------------------
       //  For an UCM view we must determine the corresponding changes list name
       //  which is associated with the "activity" of the particular view.
       //-----------------------------------------------------------------------
       if( config.useUcmModel )
         setActivityInfoOnChangedFiles();
+
+      LOG.info( "-- ChangeProvider - passed activity description phase" );
 
       addAddedFiles( builder );
       addChangedFiles( builder );
