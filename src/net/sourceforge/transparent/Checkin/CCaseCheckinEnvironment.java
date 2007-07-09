@@ -301,20 +301,6 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
       host.addFileToCheckedoutFolder( file.getIOFile(), comment, errors );
       host.deleteNewFile( file.getPath() );
 
-      if( host.getConfig().useUcmModel )
-      {
-        //  If the file was checked out using one view's activity but is then
-        //  moved to another changelist (activity) we must issue "chactivity"
-        //  command for the file element so that subsequent "checkin" command
-        //  behaves as desired.
-        String activity = host.getActivityOfViewOfFile( file );
-        String currentActivity = getChangeListName( file.getVirtualFile() );
-        if(( activity != null ) && !activity.equals( currentActivity ) )
-        {
-          host.changeActivityForLastVersion( file, activity, currentActivity, errors );
-        }
-      }
-
       //-----------------------------------------------------------------------
       String showString = file.getName();
       if( file.getVirtualFileParent() != null )
@@ -338,7 +324,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
           {
             host.changeActivityForLastVersion( file, activity, currentActivity, errors );
           }
-          incrementProgress( CHANGE_ACTIVITY + file.getPath() );
+          incrementProgress( CHANGE_ACTIVITY + file.getName() );
       }
     }
   }
