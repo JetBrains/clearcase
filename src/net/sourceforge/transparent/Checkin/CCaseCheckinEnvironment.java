@@ -44,6 +44,11 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   @NonNls private static final String CHECKIN_TITLE = "Check In";
   @NonNls private static final String SCR_TITLE = "SCR Number";
 
+  @NonNls private static final String CHECKOUT_FOLDER = "Checking out folder: ";
+  @NonNls private static final String ADDING_FILES = "Adding file: ";
+  @NonNls private static final String CHECKIN_FOLDER = "Checking in folder: ";
+  @NonNls private static final String CHANGE_ACTIVITY = "Changing activity for file: ";
+
   private Project project;
   private TransparentVcs host;
   private double fraction;
@@ -88,9 +93,14 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     HashSet<String> commentsPerFile = new HashSet<String>();
     for( FilePath path : filesToCheckin )
     {
-      String fileComment = cc.getCheckoutComment( new File( path.getPresentableUrl() ) );
-      if( StringUtil.isNotEmpty( fileComment ) )
-        commentsPerFile.add( fileComment );
+      //  For ADDED files checkout comment has no sence.
+      FileStatus status = FileStatusManager.getInstance(project).getStatus( path.getVirtualFile() );
+      if( status != FileStatus.ADDED )
+      {
+        String fileComment = cc.getCheckoutComment( new File( path.getPresentableUrl() ) );
+        if( StringUtil.isNotEmpty( fileComment ) )
+          commentsPerFile.add( fileComment );
+      }
     }
 
     StringBuilder overallComment = new StringBuilder();
@@ -137,9 +147,10 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
       //    from another location. Supress it.
       commitRenamedFolders( changes, comment, errors );
 
-      commitNew( changes, comment, processedFiles, errors );
       commitDeleted( changes, comment, errors );
       commitChanged( changes, comment, processedFiles, errors );
+      
+      commitNew( changes, comment, processedFiles, errors );
     }
     catch( ProcessCanceledException e )
     {
@@ -199,11 +210,24 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   private void commitNew( List<Change> changes, String comment,
                           HashSet<FilePath> processedFiles, List<VcsException> errors )
   {
-    HashSet<FilePath> folders = new HashSet<FilePath>();
     HashSet<FilePath> files = new HashSet<FilePath>();
+    HashSet<FilePath> folders = new HashSet<FilePath>();
+    HashSet<FilePath> checkedOutFolders = new HashSet<FilePath>();
 
     collectNewFilesAndFolders( changes, processedFiles, folders, files );
-    commitFoldersAndFiles( folders, files, comment, errors );
+
+    //  Add all folders first, then add all files into these folders:
+    //  - Checkout parent folders for all folders which are to be added.
+    //  - Checkout parent folders for all files which are to be added.
+    //  - Add new folders.
+    //  - Add files into these folders in a batch mode - several files
+    //    per command.
+    //  - Checkin all parent folders for files and folders.
+
+    addFoldersAndCheckoutParents( folders, checkedOutFolders, comment, errors );
+    checkoutParentFoldersForFiles( files, checkedOutFolders, comment, errors );
+    addFiles( files, comment, errors );
+    checkinParentFolders( checkedOutFolders, comment, errors );
   }
 
   private void collectNewFilesAndFolders( List<Change> changes, HashSet<FilePath> processedFiles,
@@ -227,23 +251,56 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     processedFiles.addAll( files );
   }
 
-  /**
-   *  Add all folders first, then add all files into these folders.
-   *  Difference between added and modified files is that added file
-   *  has no "before" revision.
-   */
-  private void commitFoldersAndFiles( HashSet<FilePath> folders, HashSet<FilePath> files,
-                                      String comment, List<VcsException> errors )
+  private void addFoldersAndCheckoutParents( HashSet<FilePath> folders, HashSet<FilePath> checkedOutFolders,
+                                             String comment, List<VcsException> errors )
   {
     FilePath[] foldersSorted = folders.toArray( new FilePath[ folders.size() ] );
     foldersSorted = VcsUtil.sortPathsFromOutermost( foldersSorted );
+    initProgress( foldersSorted.length );
 
     for( FilePath folder : foldersSorted )
-      host.addFile( folder.getVirtualFile(), comment, errors );
+    {
+      FilePath parentFolder = folder.getParentPath();
+      try
+      {
+        host.checkoutFile( parentFolder.getIOFile(), false, comment, true );
+        checkedOutFolders.add( parentFolder );
+        incrementProgress( CHECKOUT_FOLDER + parentFolder.getName() );
+      }
+      catch( VcsException e ) {  errors.add( e );  }
 
+      host.addFileToCheckedoutFolder( folder.getIOFile(), comment, errors );
+      host.deleteNewFile( folder.getPath() );
+    }
+  }
+
+  private void checkoutParentFoldersForFiles( HashSet<FilePath> files, HashSet<FilePath> checkedOutFolders,
+                                              String comment, List<VcsException> errors )
+  {
+    //  Collect and checkout parent folders for all files to be added
     for( FilePath file : files )
     {
-      host.addFile( file.getVirtualFile(), comment, errors );
+      FilePath folder = file.getParentPath();
+      if( !checkedOutFolders.contains( folder ) )
+      {
+        try
+        {
+          host.checkoutFile( folder.getIOFile(), false, comment, true );
+          checkedOutFolders.add( folder );
+        }
+        catch( VcsException e ) {  errors.add( e );  }
+      }
+    }
+  }
+
+  private void addFiles( HashSet<FilePath> files, String comment, List<VcsException> errors )
+  {
+    initProgress( files.size() );
+    for( FilePath file : files )
+    {
+      host.addFileToCheckedoutFolder( file.getIOFile(), comment, errors );
+      host.deleteNewFile( file.getPath() );
+
       if( host.getConfig().useUcmModel )
       {
         //  If the file was checked out using one view's activity but is then
@@ -257,7 +314,42 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
           host.changeActivityForLastVersion( file, activity, currentActivity, errors );
         }
       }
-      incrementProgress( file.getPath() );
+
+      //-----------------------------------------------------------------------
+      String showString = file.getName();
+      if( file.getVirtualFileParent() != null )
+        showString = file.getVirtualFileParent().getName() + "/" + file.getName();
+
+      incrementProgress( ADDING_FILES + showString );
+    }
+
+    //  If the file was checked out using one view's activity but is then
+    //  moved to another changelist (activity) we must issue "chactivity"
+    //  command for the file element so that subsequent "checkin" command
+    //  behaves as desired.
+    if( host.getConfig().useUcmModel )
+    {
+      initProgress( files.size() );
+      for( FilePath file : files )
+      {
+          String activity = host.getActivityOfViewOfFile( file );
+          String currentActivity = getChangeListName( file.getVirtualFile() );
+          if(( activity != null ) && !activity.equals( currentActivity ) )
+          {
+            host.changeActivityForLastVersion( file, activity, currentActivity, errors );
+          }
+          incrementProgress( CHANGE_ACTIVITY + file.getPath() );
+      }
+    }
+  }
+
+  private void checkinParentFolders( HashSet<FilePath> folders, String comment, List<VcsException> errors )
+  {
+    initProgress( folders.size() );
+    for( FilePath folder : folders )
+    {
+      host.checkinFile( folder, comment, errors );
+      incrementProgress( CHECKIN_FOLDER + folder.getName() );
     }
   }
 

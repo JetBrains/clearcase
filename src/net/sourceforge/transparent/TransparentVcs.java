@@ -655,17 +655,26 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     }
   }
 
-  /*
-  public boolean checkoutFile( VirtualFile file, boolean keepHijacked ) throws VcsException
-  {
-    return checkoutFile( file, keepHijacked, "" );
-  }
-  */
   public boolean checkoutFile( VirtualFile file, boolean keepHijacked, String comment ) throws VcsException
   {
     File ioFile = new File( file.getPath() );
     return checkoutFile( ioFile, keepHijacked, config.checkoutReserved, comment );
   }
+
+  public void checkoutFile( File file, boolean keepHijacked, String comment, boolean allowCheckedOut ) throws VcsException
+  {
+    if( allowCheckedOut )
+    {
+      VcsException error = tryToCheckout( file, config.checkoutReserved, comment );
+      if( error != null )
+        throw error;
+    }
+    else
+    {
+      checkoutFile( file, keepHijacked, false, comment );
+    }
+  }
+
   private boolean checkoutFile( File ioFile, boolean keepHijacked, boolean isReserved, String comment ) throws VcsException
   {
     File newFile = null;
@@ -726,20 +735,31 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
         return;
       }
 
+      addFileToCheckedoutFolder( ioFile, comment, errors );
+
       //  All other exceptions are currently non-workaroundable and
       //  cause the complete operation failure.
       try
       {
-        getClearCase().add( ioFile, comment);
-        getClearCase().checkIn( ioFile, comment);
         getClearCase().checkIn( ioParent, parentComment );
       }
       catch( ClearCaseException ccExc )
       {
-        VcsException e = new VcsException( ccExc.getMessage() );
-        e.setVirtualFile( file );
-        errors.add( e );
+        handleException( ccExc, file, errors );
       }
+    }
+  }
+
+  public void addFileToCheckedoutFolder( File ioFile, String comment, List<VcsException> errors )
+  {
+    try
+    {
+      getClearCase().add( ioFile, comment);
+      getClearCase().checkIn( ioFile, comment);
+    }
+    catch( ClearCaseException ccExc )
+    {
+      handleException( ccExc, ioFile, errors );
     }
   }
 
