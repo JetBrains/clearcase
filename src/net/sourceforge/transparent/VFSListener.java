@@ -214,7 +214,11 @@ public class VFSListener extends VirtualFileAdapter
       folders.add( path );
     }
     else
+    if( !isUnderDeletedFolder( host.removedFolders, path ) &&
+        !isUnderDeletedFolder( host.deletedFolders, path ) )
+    {
       files.add( path );
+    }
   }
 
   /**
@@ -224,18 +228,30 @@ public class VFSListener extends VirtualFileAdapter
    */
   private void  markSubfolderStructure( String path )
   {
-    for( Iterator<String> it = host.removedFiles.iterator(); it.hasNext(); )
+    removeRecordFrom( host.removedFiles, path );
+    removeRecordFrom( host.removedFolders, path );
+    removeRecordFrom( host.deletedFiles, path );
+    removeRecordFrom( host.deletedFolders, path );
+  }
+
+  private static void removeRecordFrom( HashSet<String> set, String path )
+  {
+    for( Iterator<String> it = set.iterator(); it.hasNext(); )
     {
       String strFile = it.next();
       if( strFile.startsWith( path ) )
        it.remove();
     }
-    for( Iterator<String> it = host.removedFolders.iterator(); it.hasNext(); )
+  }
+
+  private static boolean isUnderDeletedFolder( HashSet<String> folders, String path )
+  {
+    for( String folder : folders )
     {
-      String strFile = it.next();
-      if( strFile.startsWith( path ) )
-       it.remove();
+      if( path.toLowerCase().startsWith( folder.toLowerCase() ))
+        return true;
     }
+    return false;
   }
 
   /**
