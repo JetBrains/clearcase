@@ -93,13 +93,19 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     HashSet<String> commentsPerFile = new HashSet<String>();
     for( FilePath path : filesToCheckin )
     {
-      //  For ADDED files checkout comment has no sence.
-      FileStatus status = FileStatusManager.getInstance(project).getStatus( path.getVirtualFile() );
-      if( status != FileStatus.ADDED )
+      //  For ADDED or DELETED files checkout comment has no sence.
+      //  While DELETED status is determined indirectly (its VirtualFile is null),
+      //  for ADDED we need to ask.
+      VirtualFile vfile = path.getVirtualFile();
+      if( vfile != null )
       {
-        String fileComment = cc.getCheckoutComment( new File( path.getPresentableUrl() ) );
-        if( StringUtil.isNotEmpty( fileComment ) )
-          commentsPerFile.add( fileComment );
+        FileStatus status = FileStatusManager.getInstance(project).getStatus( vfile );
+        if( status != FileStatus.ADDED )
+        {
+          String fileComment = cc.getCheckoutComment( new File( path.getPresentableUrl() ) );
+          if( StringUtil.isNotEmpty( fileComment ) )
+            commentsPerFile.add( fileComment );
+        }
       }
     }
 
@@ -227,6 +233,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     addFoldersAndCheckoutParents( folders, checkedOutFolders, comment, errors );
     checkoutParentFoldersForFiles( files, checkedOutFolders, comment, errors );
     addFiles( files, comment, errors );
+    setActivitiesForFiles( files, errors );
     checkinParentFolders( checkedOutFolders, comment, errors );
   }
 
@@ -308,11 +315,16 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
 
       incrementProgress( ADDING_FILES + showString );
     }
+  }
 
-    //  If the file was checked out using one view's activity but is then
-    //  moved to another changelist (activity) we must issue "chactivity"
-    //  command for the file element so that subsequent "checkin" command
-    //  behaves as desired.
+  /**
+    If the file was checked out using one view's activity but is then
+    moved to another changelist (activity) we must issue "chactivity"
+    command for the file element so that subsequent "checkin" command
+    behaves as desired.
+   */
+  private void setActivitiesForFiles( HashSet<FilePath> files, List<VcsException> errors )
+  {
     if( host.getConfig().useUcmModel )
     {
       initProgress( files.size() );
