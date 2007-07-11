@@ -585,6 +585,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public boolean containsNew( String path )     {  return newFiles.contains( path.toLowerCase() );   }
   public boolean isFolderRemoved( String path ) {  return removedFolders.contains( path );  }
   public boolean isFolderRemovedForVcs( String path ) {  return deletedFolders.contains( path );  }
+  public boolean isWasRenamed( String path )    {  return renamedFiles.containsValue( path );  }
+  public boolean isNewOverRenamed( String path ){  return containsNew( path ) && isWasRenamed( path );  }
 
   public void addFile2Changelist( File file, @NotNull String changeListName )
   {

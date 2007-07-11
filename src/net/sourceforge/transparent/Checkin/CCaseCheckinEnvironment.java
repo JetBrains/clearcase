@@ -154,8 +154,11 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
       commitRenamedFolders( changes, comment, errors );
 
       commitDeleted( changes, comment, errors );
+
+      //  IMPORTANT!
+      //  Committment of the changed files must be performed first because of
+      //  specially processed exceptions described in the ChangeProvider.
       commitChanged( changes, comment, processedFiles, errors );
-      
       commitNew( changes, comment, processedFiles, errors );
     }
     catch( ProcessCanceledException e )

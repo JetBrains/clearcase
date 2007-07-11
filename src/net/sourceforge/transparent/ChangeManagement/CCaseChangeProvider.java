@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -40,7 +41,7 @@ public class CCaseChangeProvider implements ChangeProvider
   @NonNls private final static String REMINDER_TITLE = "Reminder";
   @NonNls private final static String REMINDER_TEXT = "Project started with ClearCase configured to be in the Offline mode.";
 
-  @NonNls private final static String COLLECT_MSG = "Collecting Writables";
+  @NonNls private final static String COLLECT_MSG = "Collecting writable files";
   @NonNls private final static String SEARCHNEW_MSG = "Searching New";
   @NonNls private final static String FAIL_2_CONNECT_MSG = "Failed to connect to ClearCase Server: ";
   @NonNls private final static String FAIL_2_CONNECT_TITLE = "Server Connection Problem";
@@ -114,7 +115,9 @@ public class CCaseChangeProvider implements ChangeProvider
       }
       iterateOverDirtyDirectories( dirtyScope );
       iterateOverDirtyFiles( dirtyScope );
+
       computeStatuses();
+      processStatusExceptions();
 
       LOG.info( "-- ChangeProvider - passed analysis phase" );
       
@@ -458,6 +461,31 @@ public class CCaseChangeProvider implements ChangeProvider
       }
     }
     return files;
+  }
+
+  /**
+   * Process exceptions of different kind when normal computation of file
+   * statuses is cheated by the IDEA:
+   * 1. "Extract Superclass" refactoring with "Rename original class" option set.
+   *    Refactoring renamed the original class (right) but writes new content to
+   *    the file with the olf name (fuck!).
+   *    Remedy: Find such file in the list of "Changed" files, check whether its
+   *            name is in the list of New files (from VFSListener), and check
+   *            whether its name is in the record for renamed files, then move
+   *            it into "New" files list.
+   */
+  private void processStatusExceptions()
+  {
+    // 1.
+    for( Iterator<String> it = filesChanged.iterator(); it.hasNext(); )
+    {
+      String fileName = it.next();
+      if( host.isNewOverRenamed( fileName ) )
+      {
+        it.remove();
+        filesNew.add( fileName );
+      }
+    }
   }
 
   /**
