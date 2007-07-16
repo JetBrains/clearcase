@@ -732,7 +732,10 @@ public class CCaseChangeProvider implements ChangeProvider
     {
       for( VirtualFile root : roots )
       {
-        isBatch = isBatch || (path.getVirtualFile().getPath().equals( root.getPath() ) );
+        VirtualFile vfScopePath = path.getVirtualFile();
+        //  VFile may be null in the case of deleted folders (IDEADEV-18855)
+        isBatch = isBatch || (vfScopePath != null &&
+                              vfScopePath.getPath().equalsIgnoreCase( root.getPath() ) );
       }
     }
     return isBatch;
