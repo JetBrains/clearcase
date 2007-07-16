@@ -174,33 +174,39 @@ public class VFSListener extends VirtualFileAdapter
 
     FileStatus status = FileStatusManager.getInstance( project ).getStatus( file );
     if( host.fileIsUnderVcs( file.getPath() ) &&
-        ( status != FileStatus.ADDED ) && ( status != FileStatus.UNKNOWN ) &&
-        ( status != FileStatus.IGNORED ))
+      ( status != FileStatus.UNKNOWN ) && ( status != FileStatus.IGNORED ))
     {
-      VcsShowConfirmationOption confirmOption = host.getRemoveConfirmation();
+      if( status == FileStatus.ADDED )
+      {
+        host.deleteNewFile( file );
+      }
+      else
+      {
+        VcsShowConfirmationOption confirmOption = host.getRemoveConfirmation();
 
-      //  In the case when we need to perform "Delete" vcs action right upon
-      //  the file's deletion, put the file into the host's cache until it
-      //  will be analyzed by the ChangeProvider.
-      if( confirmOption.getValue() == VcsShowConfirmationOption.Value.DO_ACTION_SILENTLY )
-      {
-        markFileRemoval( file, host.deletedFolders, host.deletedFiles );
-      }
-      else
-      if( confirmOption.getValue() == VcsShowConfirmationOption.Value.DO_NOTHING_SILENTLY )
-      {
-        markFileRemoval( file, host.removedFolders, host.removedFiles );
-      }
-      else
-      {
-        List<VirtualFile> files = new ArrayList<VirtualFile>();
-        files.add( event.getFile() );
-        Collection<VirtualFile> filesToProcess = AbstractVcsHelper.getInstance( project ).selectFilesToProcess( files, TITLE, null, TITLE,
-                                                                                                                MESSAGE, confirmOption );
-        if( filesToProcess != null )
+        //  In the case when we need to perform "Delete" vcs action right upon
+        //  the file's deletion, put the file into the host's cache until it
+        //  will be analyzed by the ChangeProvider.
+        if( confirmOption.getValue() == VcsShowConfirmationOption.Value.DO_ACTION_SILENTLY )
+        {
           markFileRemoval( file, host.deletedFolders, host.deletedFiles );
+        }
         else
+        if( confirmOption.getValue() == VcsShowConfirmationOption.Value.DO_NOTHING_SILENTLY )
+        {
           markFileRemoval( file, host.removedFolders, host.removedFiles );
+        }
+        else
+        {
+          List<VirtualFile> files = new ArrayList<VirtualFile>();
+          files.add( event.getFile() );
+          Collection<VirtualFile> filesToProcess = AbstractVcsHelper.getInstance( project ).selectFilesToProcess( files, TITLE, null, TITLE,
+                                                                                                                  MESSAGE, confirmOption );
+          if( filesToProcess != null )
+            markFileRemoval( file, host.deletedFolders, host.deletedFiles );
+          else
+            markFileRemoval( file, host.removedFolders, host.removedFiles );
+        }
       }
     }
   }
