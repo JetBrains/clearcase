@@ -163,7 +163,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     }
     catch( ProcessCanceledException e )
     {
-      //  Nothing to do, just refresh the files which are already committed.
+      //  Nothing to do, just refresh the files which have been already committed.
     }
 
     VcsUtil.refreshFiles( project, processedFiles );
@@ -410,8 +410,14 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
         {
           FilePath oldFile = change.getBeforeRevision().getFile();
 
+          //  Safety Checks (debug only)
+          if( oldFile.getVirtualFileParent() == null )
+            throw new NullPointerException( "VF Parent for BeforeRevision FilePath is null ");
+          if( file.getVirtualFileParent() == null )
+            throw new NullPointerException( "VF Parent for AfterRevision FilePath is null ");
+
           //  If parent folders' names of the revisions coinside, then we
-          //  deal with the simle rename, otherwise we process full-scaled
+          //  deal with the simple rename, otherwise we process full-scaled
           //  file movement across folders (packages).
 
           if( oldFile.getVirtualFileParent().getPath().equals( file.getVirtualFileParent().getPath() ))
