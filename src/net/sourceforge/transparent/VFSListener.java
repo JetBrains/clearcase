@@ -54,6 +54,11 @@ public class VFSListener extends VirtualFileAdapter
           host.renamedFiles.put( newName, prevName );
 
         host.renamedFiles.remove( oldName );
+
+        //  Clear the cache of the content revisions for this file.
+        //  This will make possible to reread the correct version content
+        //  after the referred FilePath/VirtualFile is changed
+        ContentRevisionFactory.clearCacheForFile( file.getPath() );
       }
     }
   }
