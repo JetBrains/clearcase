@@ -835,6 +835,8 @@ public class CCaseChangeProvider implements ChangeProvider
           TransparentVcs.ViewInfo info = host.viewsMap.get( root.getPath() );
           activity = info.activityName;
 
+          if( activity == null )
+            throw new NullPointerException( "Illegal (NULL) activity name from ViewInfo for a view " + info.tag );
           host.addFile2Changelist( refPath.getIOFile(), activity );
         }
       }

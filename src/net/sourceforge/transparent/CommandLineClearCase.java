@@ -54,7 +54,13 @@ public class CommandLineClearCase implements ClearCase
       throw new ClearCaseException( runner.getOutput() );
     
     String activity = extractActivity( runner.getOutput() );
-    host.addFile2Changelist( file, activity );
+
+    //  In the case we did not manage to parse out the activity or we deal with
+    //  non-UCM views, do not disturb host.
+    if( activity != null )
+    {
+      host.addFile2Changelist( file, activity );
+    }
   }
 
   public void delete( File file, String comment)
@@ -198,17 +204,18 @@ public class CommandLineClearCase implements ClearCase
     return runner;
   }
 
-  //---------------------------------------------------------------------------
-  //  Parse the output of the following content, extract the name of the
-  //  activity under which the file is checked out.
-  //---------------------------------------------------------------------------
-  // !Checked out "Class2ForPack4.java" from version "\main\Dev2IrinaVOB\2".
-  // !  Attached activities:
-  // !    activity:First_Activity@\IrinaTestVOB  "First Activity"
-  //---------------------------------------------------------------------------
+  /**---------------------------------------------------------------------------
+   *  Parse the output of the following content, extract the name of the
+   *  activity under which the file is checked out.
+   *---------------------------------------------------------------------------
+   * !Checked out "Class2ForPack4.java" from version "\main\Dev2IrinaVOB\2".
+   * !  Attached activities:
+   * !    activity:First_Activity@\IrinaTestVOB  "First Activity"
+   */
+  @Nullable
   private static String extractActivity( String out )
   {
-    String activity = "";
+    String activity = null;
     String[] lines = LineTokenizer.tokenize( out, false );
     for( String line : lines )
     {
