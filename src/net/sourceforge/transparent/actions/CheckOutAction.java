@@ -1,6 +1,7 @@
 package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FileStatus;
@@ -53,6 +54,7 @@ public class CheckOutAction extends SynchronousAction
   {
     String comment = "";
     VirtualFile[] files = VcsUtil.getVirtualFiles( e );
+    Project project = getProject( e );
 
     if( getHost( e ).getCheckoutOptions().getValue() )
     {
@@ -102,8 +104,7 @@ public class CheckOutAction extends SynchronousAction
     }
   }
 
-  private void executeRecursively( AnActionEvent e, VirtualFile file,
-                                   String comment, List<VcsException> errors )
+  private void executeRecursively( AnActionEvent e, VirtualFile file, String comment, List<VcsException> errors )
   {
     if( file.isDirectory() )
     {
@@ -112,14 +113,14 @@ public class CheckOutAction extends SynchronousAction
     }
   }
 
-  protected static void perform( VirtualFile file, String comment, AnActionEvent e ) throws VcsException
+  protected void perform( VirtualFile file, String comment, AnActionEvent e ) throws VcsException
   {
     //  Checkout command can be issued for a folder - we do not support this as
     //  the separate operation.
     if( file.isDirectory() )
       return;
 
-    FileStatus status = getFileStatus( getProject( e ), file );
+    FileStatus status = getFileStatus( _actionProjectInstance, file );
     if( status == FileStatus.UNKNOWN || status == FileStatus.MODIFIED )
       return;
 
@@ -144,7 +145,7 @@ public class CheckOutAction extends SynchronousAction
     }
     catch( ClearCaseException exc )
     {
-      AbstractVcsHelper.getInstance( getProject( e ) ).showError( new VcsException( exc ), ACTION_NAME );
+      AbstractVcsHelper.getInstance( _actionProjectInstance ).showError( new VcsException( exc ), ACTION_NAME );
     }
   }
 
