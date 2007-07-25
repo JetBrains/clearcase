@@ -1178,7 +1178,12 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       {
         ViewInfo info = new ViewInfo();
         info.tag = ((Element)cclObj).getChild( TAG_TAG ).getValue();
-        info.uuid = ((Element)cclObj).getChild( UUID_TAG ).getValue();
+
+        //  IDEADEV-19094. Can it be so that View may NOT have an UUID tag?
+        //  Or we were fucked by the parsing output?
+        if( ((Element)cclObj).getChild( UUID_TAG ) != null )
+          info.uuid = ((Element)cclObj).getChild( UUID_TAG ).getValue();
+        
         info.isUcm = Boolean.valueOf(((Element)cclObj).getChild( UCM_TAG ).getValue()).booleanValue();
         info.isDynamic = Boolean.valueOf(((Element)cclObj).getChild(DYNAMIC_TAG).getValue()).booleanValue();
         info.isSnapshot = Boolean.valueOf(((Element)cclObj).getChild(SNAPSHOT_TAG).getValue()).booleanValue();
