@@ -2,10 +2,7 @@ package net.sourceforge.transparent;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vfs.LocalFileSystem;
-import com.intellij.openapi.vfs.VirtualFileAdapter;
-import com.intellij.openapi.vfs.VirtualFileMoveEvent;
-import com.intellij.openapi.vfs.VirtualFilePropertyEvent;
+import com.intellij.openapi.vfs.*;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.ChangeManagement.CCaseContentRevision;
 import org.jetbrains.annotations.NotNull;
@@ -65,8 +62,19 @@ public class ContentRevisionFactory
 
     public void beforePropertyChange( VirtualFilePropertyEvent e )
     {
-      String oldName = e.getFile().getParent().getPath() + "/" + e.getOldValue();
-      analyzeEvent( oldName );
+      final VirtualFile file = e.getFile();
+      if( e.getPropertyName() == VirtualFile.PROP_NAME )
+      {
+        try
+        {
+          String oldName = file.getParent().getPath() + "/" + e.getOldValue();
+          analyzeEvent( oldName );
+        }
+        catch( NullPointerException exc )
+        {
+          //  Nothing to do - file is not suitable (no parent)
+        }
+      }
     }
 
     private static void analyzeEvent( String filePath )
