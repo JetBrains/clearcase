@@ -22,6 +22,7 @@ import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.ClearCase;
 import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -537,7 +538,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   }
 
   @Nullable
-  private String getChangeListName( VirtualFile file )
+  private String getChangeListName( @NotNull VirtualFile file )
   {
     String changeListName = null;
 
