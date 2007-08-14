@@ -32,9 +32,10 @@ public class CheckOutAction extends SynchronousAction
   {
     super.update( e );
 
-    boolean isVisible = (getHost( e ) != null && getHost( e ).getConfig() != null);
+    TransparentVcs host = getHost( e );
+    boolean isVisible = (host != null && host.getConfig() != null);
     e.getPresentation().setVisible( isVisible );
-    e.getPresentation().setEnabled( isVisible && !getHost( e ).getConfig().isOffline );  
+    e.getPresentation().setEnabled( isVisible && !host.getConfig().isOffline );  
   }
 
   protected boolean isEnabled( VirtualFile file, AnActionEvent e )

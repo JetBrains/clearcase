@@ -6,6 +6,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.sourceforge.transparent.CCaseConfig;
 import net.sourceforge.transparent.CCaseEditFileProvider;
+import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
 
 public class HijackAction extends SynchronousAction
@@ -18,9 +19,10 @@ public class HijackAction extends SynchronousAction
   {
     super.update( e );
 
-    boolean isVisible = (getHost( e ) != null && getHost( e ).getConfig() != null);
+    TransparentVcs host = getHost( e );
+    boolean isVisible = (host != null && host.getConfig() != null);
     e.getPresentation().setVisible( isVisible );
-    e.getPresentation().setEnabled( isVisible && getHost( e ).getConfig().isOffline );
+    e.getPresentation().setEnabled( isVisible && host.getConfig().isOffline );
   }
 
   protected boolean isEnabled( VirtualFile file, AnActionEvent e )
