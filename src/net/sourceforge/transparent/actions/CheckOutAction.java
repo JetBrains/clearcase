@@ -1,7 +1,6 @@
 package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FileStatus;
@@ -54,7 +53,6 @@ public class CheckOutAction extends SynchronousAction
   {
     String comment = "";
     VirtualFile[] files = VcsUtil.getVirtualFiles( e );
-    Project project = getProject( e );
 
     if( getHost( e ).getCheckoutOptions().getValue() )
     {
