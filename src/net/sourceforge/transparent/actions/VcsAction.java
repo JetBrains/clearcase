@@ -23,6 +23,7 @@ public abstract class VcsAction extends AnAction
   @NonNls private static final String OPERATION_FAILED_TEXT = "One or more errors occured during operation";
 
   protected Project _actionProjectInstance;
+  protected TransparentVcs _hostInstance;
 
   public void update(AnActionEvent e)
   {
@@ -41,6 +42,8 @@ public abstract class VcsAction extends AnAction
   public void actionPerformed(AnActionEvent e)
   {
     _actionProjectInstance = e.getData(DataKeys.PROJECT);
+    _hostInstance = getHost( e );
+    
     FileDocumentManager.getInstance().saveAllDocuments();
     List<VcsException> errors = runAction(e);
 

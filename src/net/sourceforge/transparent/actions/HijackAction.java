@@ -1,8 +1,6 @@
 package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.DataKeys;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -20,15 +18,15 @@ public class HijackAction extends SynchronousAction
   {
     super.update( e );
 
-    if ( !getHost( e ).getConfig().isOffline)
-      e.getPresentation().setEnabled( false );
+    boolean isVisible = (getHost( e ) != null && getHost( e ).getConfig() != null);
+    e.getPresentation().setVisible( isVisible );
+    e.getPresentation().setEnabled( isVisible && getHost( e ).getConfig().isOffline );
   }
 
   protected boolean isEnabled( VirtualFile file, AnActionEvent e )
   {
-    Project project = e.getData( DataKeys.PROJECT );
-    CCaseConfig vcsConfig = CCaseConfig.getInstance( project );
-    FileStatus status = getFileStatus( project, file );
+    CCaseConfig vcsConfig = CCaseConfig.getInstance( _actionProjectInstance );
+    FileStatus status = getFileStatus( _actionProjectInstance, file );
     return !file.isWritable() && (status != FileStatus.UNKNOWN) && !vcsConfig.isViewDynamic(); 
   }
 

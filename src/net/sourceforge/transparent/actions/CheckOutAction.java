@@ -32,11 +32,9 @@ public class CheckOutAction extends SynchronousAction
   {
     super.update( e );
 
-    if( getHost( e ) == null || getHost( e ).getConfig() == null ) 
-      e.getPresentation().setVisible( false );
-
-    if ( getHost( e ).getConfig().isOffline )
-      e.getPresentation().setEnabled( false );
+    boolean isVisible = (getHost( e ) != null && getHost( e ).getConfig() != null);
+    e.getPresentation().setVisible( isVisible );
+    e.getPresentation().setEnabled( isVisible && !getHost( e ).getConfig().isOffline );  
   }
 
   protected boolean isEnabled( VirtualFile file, AnActionEvent e )
@@ -54,7 +52,7 @@ public class CheckOutAction extends SynchronousAction
     String comment = "";
     VirtualFile[] files = VcsUtil.getVirtualFiles( e );
 
-    if( getHost( e ).getCheckoutOptions().getValue() )
+    if( _hostInstance.getCheckoutOptions().getValue() )
     {
       CheckoutDialog dialog = ( files.length == 1 ) ?
                                 new CheckoutDialog( _actionProjectInstance, files[ 0 ] ) :
@@ -80,7 +78,7 @@ public class CheckOutAction extends SynchronousAction
       VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance( _actionProjectInstance );
       try
       {
-        perform( file, comment, e );
+        perform( file, comment );
         mgr.fileDirty( file );
       }
       catch( VcsException ex ) {
@@ -111,7 +109,7 @@ public class CheckOutAction extends SynchronousAction
     }
   }
 
-  protected void perform( VirtualFile file, String comment, AnActionEvent e ) throws VcsException
+  protected void perform( VirtualFile file, String comment ) throws VcsException
   {
     //  Checkout command can be issued for a folder - we do not support this as
     //  the separate operation.
@@ -133,7 +131,7 @@ public class CheckOutAction extends SynchronousAction
 
     try
     {
-      getHost( e ).checkoutFile( file, keepHijack, comment );
+      _hostInstance.checkoutFile( file, keepHijack, comment );
 
       //  Assign the special marker to the file indicating that there is no need
       //  to run <cleartool> command on the file - it is known to be modified
