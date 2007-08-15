@@ -128,7 +128,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public  HashSet<String> removedFiles;
   public  HashSet<String> removedFolders;
-  private HashSet<String> newFiles;
+  private HashSet<VirtualFile> newFiles;
   public  HashMap<String, String> renamedFiles;
   public  HashMap<String, String> renamedFolders;
   public  HashSet<String> deletedFiles;
@@ -161,7 +161,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
     removedFiles = new HashSet<String>();
     removedFolders = new HashSet<String>();
-    newFiles = new HashSet<String>();
+    newFiles = new HashSet<VirtualFile>();
     deletedFiles = new HashSet<String>();
     deletedFolders = new HashSet<String>();
     renamedFiles = new HashMap<String, String>();
@@ -578,15 +578,20 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     return (file != null) && mgr.isIgnoredFile( file );
   }
 
-  public void add2NewFile( VirtualFile file )   {  add2NewFile( file.getPath() );       }
-  public void add2NewFile( String path )        {  newFiles.add( path.toLowerCase() );  }
-  public void deleteNewFile( VirtualFile file ) {  deleteNewFile( file.getPath() );     }
-  public void deleteNewFile( String path )      {  newFiles.remove( path.toLowerCase() );  }
-  public boolean containsNew( String path )     {  return newFiles.contains( path.toLowerCase() );   }
   public boolean isFolderRemoved( String path ) {  return removedFolders.contains( path );  }
   public boolean isFolderRemovedForVcs( String path ) {  return deletedFolders.contains( path );  }
   public boolean isWasRenamed( String path )    {  return renamedFiles.containsValue( path );  }
   public boolean isNewOverRenamed( String path ){  return containsNew( path ) && isWasRenamed( path );  }
+  public void add2NewFile( VirtualFile file )   {  newFiles.add( file );       }
+//  public void add2NewFile( String path )        {  newFiles.add( path.toLowerCase() );  }
+  public void deleteNewFile( VirtualFile file ) {  newFiles.remove( file );     }
+//  public void deleteNewFile( String path )      {  newFiles.remove( path.toLowerCase() );  }
+  public boolean containsNew( VirtualFile file )     {  return newFiles.contains( file );   }
+  public boolean containsNew( String path )
+  {
+    VirtualFile file = VcsUtil.getVirtualFile( path );
+    return file != null && newFiles.contains( file );   
+  }
 
   public void addFile2Changelist( File file, @NotNull String changeListName )
   {
@@ -1111,11 +1116,12 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public void readExternal(final Element element) throws InvalidDataException
   {
+    HashSet<String> tmp = new HashSet<String>();
     readElements( element, removedFiles, PERSISTENCY_REMOVED_FILE_TAG, false );
     readElements( element, removedFolders, PERSISTENCY_REMOVED_FOLDER_TAG, false );
-    readElements( element, newFiles, PERSISTENCY_NEW_FILE_TAG, true );
     readElements( element, deletedFiles, PERSISTENCY_DELETED_FILE_TAG, false );
     readElements( element, deletedFolders, PERSISTENCY_DELETED_FOLDER_TAG, false );
+    readElements( element, tmp, PERSISTENCY_NEW_FILE_TAG, true );
 
     readRenamedElements( element, renamedFiles, PERSISTENCY_RENAMED_FILE_TAG, true );
     readRenamedElements( element, renamedFolders, PERSISTENCY_RENAMED_FOLDER_TAG, true );
@@ -1123,9 +1129,13 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
     readViewInfo( element );
 
-    HashSet<String> tmp = new HashSet<String>( newFiles );
     newFiles.clear();
-    for( String value : tmp )  newFiles.add( value.toLowerCase() );
+    for( String path : tmp )
+    {
+      VirtualFile file = VcsUtil.getVirtualFile( path );
+      if( file != null )
+        newFiles.add( file );
+    }
   }
 
   private static void readElements( final Element element, HashSet<String> list, String tag, boolean isExist )
@@ -1200,9 +1210,12 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   {
     writeElement( element, removedFiles, PERSISTENCY_REMOVED_FILE_TAG );
     writeElement( element, removedFolders, PERSISTENCY_REMOVED_FOLDER_TAG );
-    writeElement( element, newFiles, PERSISTENCY_NEW_FILE_TAG );
     writeElement( element, deletedFiles, PERSISTENCY_DELETED_FILE_TAG );
     writeElement( element, deletedFolders, PERSISTENCY_DELETED_FOLDER_TAG );
+
+    HashSet<String> tmp = new HashSet<String>();
+    for( VirtualFile file : newFiles )  tmp.add( file.getPath() );
+    writeElement( element, tmp, PERSISTENCY_NEW_FILE_TAG );
 
     writePairedElement( element, renamedFiles, PERSISTENCY_RENAMED_FILE_TAG );
     writePairedElement( element, renamedFolders, PERSISTENCY_RENAMED_FOLDER_TAG );

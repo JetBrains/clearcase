@@ -92,11 +92,15 @@ public class VFSListener extends VirtualFileAdapter
     else
     if( event.getPropertyName() == VirtualFile.PROP_NAME )
     {
-      String parentDir = file.getParent().getPath() + "/";
-      String oldName = parentDir + event.getOldValue();
-      String newName = parentDir + event.getNewValue();
+      FileStatus status = FileStatusManager.getInstance( project ).getStatus( file );
+      if( status != FileStatus.ADDED && status != FileStatus.UNKNOWN && status != FileStatus.IGNORED )
+      {
+        String parentDir = file.getParent().getPath() + "/";
+        String oldName = parentDir + event.getOldValue();
+        String newName = parentDir + event.getNewValue();
 
-      performRename( file.isDirectory() ? host.renamedFolders : host.renamedFiles, oldName, newName );
+        performRename( file.isDirectory() ? host.renamedFolders : host.renamedFiles, oldName, newName );
+      }
     }
   }
 
@@ -150,7 +154,7 @@ public class VFSListener extends VirtualFileAdapter
       //  the file's creation, put the file into the host's cache until it
       //  will be analyzed by the ChangeProvider.
       if( confirmOption.getValue() == VcsShowConfirmationOption.Value.DO_ACTION_SILENTLY )
-        host.add2NewFile( path );
+        host.add2NewFile( file );
       else
       if( confirmOption.getValue() == VcsShowConfirmationOption.Value.SHOW_CONFIRMATION )
       {
@@ -159,7 +163,7 @@ public class VFSListener extends VirtualFileAdapter
         Collection<VirtualFile> filesToProcess = AbstractVcsHelper.getInstance( project ).selectFilesToProcess( files, TITLE, null, TITLE,
                                                                                                                 MESSAGE, confirmOption );
         if( filesToProcess != null )
-          host.add2NewFile( path );
+          host.add2NewFile( file );
       }
     }
   }

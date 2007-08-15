@@ -281,7 +281,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
       catch( VcsException e ) {  errors.add( e );  }
 
       host.addFileToCheckedoutFolder( folder.getIOFile(), comment, errors );
-      host.deleteNewFile( folder.getPath() );
+      host.deleteNewFile( folder.getVirtualFile() );
     }
   }
 
@@ -310,7 +310,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     for( FilePath file : files )
     {
       host.addFileToCheckedoutFolder( file.getIOFile(), comment, errors );
-      host.deleteNewFile( file.getPath() );
+      host.deleteNewFile( file.getVirtualFile() );
 
       //-----------------------------------------------------------------------
       String showString = file.getName();
@@ -480,7 +480,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   {
     for( VirtualFile file : files )
     {
-      host.add2NewFile( file.getPath() );
+      host.add2NewFile( file );
       VcsUtil.markFileAsDirty( project, file );
 
       //  Extend status change to all parent folders if they are not

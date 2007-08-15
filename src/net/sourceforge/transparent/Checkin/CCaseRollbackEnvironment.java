@@ -92,7 +92,7 @@ public class CCaseRollbackEnvironment implements RollbackEnvironment
     VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance(project);
     for( FilePath file : filesAndFolder )
     {
-      host.deleteNewFile( file.getPath() );
+      host.deleteNewFile( file.getVirtualFile() );
       mgr.fileDirty( file );
     }
   }
