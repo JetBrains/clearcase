@@ -2,9 +2,13 @@ package net.sourceforge.transparent;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.FileStatus;
+import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.*;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.ColumnInfo;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NonNls;
@@ -28,6 +32,9 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
   @NonNls private final static String CCASE_DATE_COLUMN = "ClearCase Date";
   @NonNls private final static String ACTION_COLUMN = "Action";
   @NonNls private final static String LABEL_COLUMN = "Label";
+
+  @NonNls private final static String HISTORY_FAILED_MSG = "Can not extract history records for a hijacked file.";
+  @NonNls private final static String HISTORY_FAILED_TITLE = "Getting History Failed";
 
   private Project project;
   private TransparentVcs host;
@@ -97,6 +104,17 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
     String path = filePath.getPath();
     if( host.renamedFiles.containsKey( path ) )
       path = host.renamedFiles.get( path );
+
+    //  Cleartool can not handle history for hijacked files.
+    FileStatus status = FileStatus.UNKNOWN;
+    VirtualFile vfile = filePath.getVirtualFile();
+    if( vfile != null )
+      status = FileStatusManager.getInstance( project ).getStatus( vfile );
+    if( status == FileStatus.HIJACKED )
+    {
+      Messages.showErrorDialog( project, HISTORY_FAILED_MSG, HISTORY_FAILED_TITLE );
+      return null;
+    }
 
     String log;
     if( host.getConfig().isHistoryResticted )
