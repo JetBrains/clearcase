@@ -442,12 +442,14 @@ public class CCaseChangeProvider implements ChangeProvider
       if( vfile != null )
       {
         FileStatus status = FileStatusManager.getInstance( project).getStatus( vfile );
+        /*
         if( status == FileStatus.MODIFIED )
         {
           filesChanged.add( file );
           guessed = true;
         }
         else
+        */
         if( status == FileStatus.ADDED || status == FileStatus.UNKNOWN )
         {
           filesNew.add( file );
