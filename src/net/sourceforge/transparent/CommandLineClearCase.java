@@ -22,6 +22,7 @@ public class CommandLineClearCase implements ClearCase
   @NonNls private final static String NOT_VOB_ELEMENT = "Pathname is not within";
   @NonNls private final static String UNABLE_TO_ACCESS = "Unable to access";
   @NonNls private final static String NO_SUCH_FILE_OR_DIR = "No such file or directory";
+  @NonNls private final static String IDENTICAL_CONTENT_SIG = "version with data identical to";
 
   private TransparentVcs host;
 
@@ -35,10 +36,34 @@ public class CommandLineClearCase implements ClearCase
 
   public void checkIn( File file, String comment )
   {
-    if( StringUtil.isNotEmpty( comment ) )
-      cleartool( new String[] { "ci", "-c", quote( comment ), "-identical", file.getAbsolutePath() } );
+    if( host.getConfig().useIdenticalSwitch )
+    {
+      if( StringUtil.isNotEmpty( comment ) )
+        cleartool( new String[] { "ci", "-c", quote( comment ), "-identical", file.getAbsolutePath() } );
+      else
+        cleartool( new String[] { "ci", "-nc", "-identical", file.getAbsolutePath() } );
+    }
     else
-      cleartool( new String[] { "ci", "-nc", "-identical", file.getAbsolutePath() } );
+    {
+      try
+      {
+        if( StringUtil.isNotEmpty( comment ) )
+          cleartool( new String[] { "ci", "-c", quote( comment ), file.getAbsolutePath() } );
+        else
+          cleartool( new String[] { "ci", "-nc", file.getAbsolutePath() } );
+      }
+      catch( ClearCaseException e )
+      {
+        if( e.getMessage().indexOf( IDENTICAL_CONTENT_SIG ) != -1 )
+        {
+          undoCheckOut( file );
+        }
+        else
+        {
+          throw e;
+        }
+      }
+    }
   }
 
   public void checkOut( File file, boolean isReserved, String comment )

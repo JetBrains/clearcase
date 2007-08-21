@@ -30,6 +30,7 @@ public class CCaseConfigurable implements ProjectComponent, Configurable
   private JFormattedTextField historyText;
   private JTextField scrText;
   private JPanel myConfigPanel;
+  private JCheckBox useIdenticalSwitch;
 
   private Project project;
   private CCaseConfig vcsConfig;
@@ -80,7 +81,8 @@ public class CCaseConfigurable implements ProjectComponent, Configurable
            || vcsConfig.useUcmModel != myUseUCMModel.isSelected()
            || vcsConfig.isOffline != myWorkOffline.isSelected()
            || vcsConfig.isHistoryResticted != myRestrictHistory.isSelected()
-           || vcsConfig.getHistoryRevisionsMargin() != getMargin();
+           || vcsConfig.getHistoryRevisionsMargin() != getMargin()
+           || vcsConfig.useIdenticalSwitch != useIdenticalSwitch.isSelected();
   }
 
   private boolean hasScrTextChanged() {
@@ -97,6 +99,7 @@ public class CCaseConfigurable implements ProjectComponent, Configurable
     vcsConfig.isOffline = myWorkOffline.isSelected();
     vcsConfig.isHistoryResticted = myRestrictHistory.isSelected();
     vcsConfig.setHistoryRevisionsMargin( getMargin() );
+    vcsConfig.useIdenticalSwitch = useIdenticalSwitch.isSelected();
 
     if( need2ReloadActivities )
     {
@@ -117,6 +120,7 @@ public class CCaseConfigurable implements ProjectComponent, Configurable
 //    synchOutside.setSelected( vcsConfig.synchOutside );
     myUseUCMModel.setSelected( vcsConfig.useUcmModel );
     myRestrictHistory.setSelected( vcsConfig.isHistoryResticted );
+    useIdenticalSwitch.setSelected( vcsConfig.useIdenticalSwitch );
     historyText.setValue( vcsConfig.getHistoryRevisionsMargin() );
     historyText.setEnabled( vcsConfig.isHistoryResticted );
 
@@ -127,8 +131,6 @@ public class CCaseConfigurable implements ProjectComponent, Configurable
     {
       myUseUCMModel.setSelected( false );
       myUseUCMModel.setEnabled( false );
-      //synchOutside.setSelected( false );
-      //synchOutside.setEnabled( false );
     }
 
     myWorkOffline.setSelected( !vcsConfig.isViewDynamic() && vcsConfig.isOffline );
