@@ -2,7 +2,6 @@ package net.sourceforge.transparent;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
@@ -29,6 +28,7 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
 {
   @NonNls private final static String HISTORY_CMD = "lshistory";
   @NonNls private final static String LIMITED_SWITCH = "-last";
+  @NonNls private final static String HIJACKED_SIG = "[hijacked]";
   @NonNls private final static String CCASE_DATE_COLUMN = "ClearCase Date";
   @NonNls private final static String ACTION_COLUMN = "Action";
   @NonNls private final static String LABEL_COLUMN = "Label";
@@ -101,22 +101,29 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
 
   public VcsHistorySession createSessionFor( FilePath filePath ) throws VcsException
   {
+    String log;
     String path = filePath.getPath();
     if( host.renamedFiles.containsKey( path ) )
       path = host.renamedFiles.get( path );
 
-    //  Cleartool can not handle history for hijacked files.
-    FileStatus status = FileStatus.UNKNOWN;
+    //  Cleartool can not handle history for hijacked files. Thus we have to
+    //  extract the version id corresponding to the VOB object and retrieve
+    //  the history for that version.
     VirtualFile vfile = filePath.getVirtualFile();
     if( vfile != null )
-      status = FileStatusManager.getInstance( project ).getStatus( vfile );
-    if( status == FileStatus.HIJACKED )
     {
-      Messages.showErrorDialog( project, HISTORY_FAILED_MSG, HISTORY_FAILED_TITLE );
-      return null;
+      FileStatus status = FileStatusManager.getInstance( project ).getStatus( vfile );
+      if( status == FileStatus.HIJACKED )
+      {
+        log = TransparentVcs.cleartoolWithOutput( "ls", path );
+        int index = log.indexOf( HIJACKED_SIG );
+        if( index != -1 )
+        {
+          path = log.substring( 0, index - 1 ).trim();
+        }
+      }
     }
 
-    String log;
     if( host.getConfig().isHistoryResticted )
     {
       int margin = host.getConfig().getHistoryRevisionsMargin();
