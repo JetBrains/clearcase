@@ -21,7 +21,7 @@ public class StatusMultipleProcessor
   @NonNls private static final String CHECKEDOUT_SIG = "Rule: CHECKEDOUT";
   @NonNls private final static String CHECKEDOUT_REMOVED_SIG = "checkedout but removed";
 
-  private static final int  CMDLINE_MAX_LENGTH = 1024;
+  private static final int  CMDLINE_MAX_LENGTH = 512;
 
   private String[] files;
 

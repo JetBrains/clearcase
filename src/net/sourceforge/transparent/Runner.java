@@ -112,20 +112,23 @@ public class Runner
    {
      LOG.info( "|" + getCommandLine( command ) );
      
-      try {
+      try
+      {
          Process process = startProcess(command);
 
-         successfull = endProcess(process);
-         if (successfull) {
+         successfull = endProcess( process );
+         if( successfull ){
             return true;
          } else {
             if (!canFail) throw new ClearCaseException("Error executing " + getCommandLine(command) + " : " + _buffer);
             return false;
          }
       } catch (RuntimeException e) {
-         throw e;
+        LOG.info( "CCAse runtime exception: " + e.getMessage(), e );
+        throw e;
       } catch (Exception e) {
-         throw new RuntimeException(e.getMessage());
+        LOG.info( "CCAse runtime exception: " + e.getMessage(), e );
+        throw new RuntimeException(e.getMessage());
       }
    }
 

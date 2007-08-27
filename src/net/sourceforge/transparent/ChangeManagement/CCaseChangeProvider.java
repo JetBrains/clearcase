@@ -178,6 +178,8 @@ public class CCaseChangeProvider implements ChangeProvider
 
   private void collectCheckouts( HashSet<String> files )
   {
+    LOG.info( "---ChangeProvider - Checking status by analyzing the set of checked out files via LSCO.");
+
     VirtualFile[] roots = ProjectLevelVcsManager.getInstance( project ).getRootsUnderVcs( host );
     for( VirtualFile root : roots )
     {
