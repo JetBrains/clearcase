@@ -115,6 +115,7 @@ public class CCaseChangeProvider implements ChangeProvider
       }
       iterateOverDirtyDirectories( dirtyScope );
       iterateOverDirtyFiles( dirtyScope );
+      LOG.info( "-- ChangeProvider - passed collection phase" );
 
       computeStatuses();
       processStatusExceptions();
