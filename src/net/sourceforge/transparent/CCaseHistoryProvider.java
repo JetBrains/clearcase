@@ -107,20 +107,14 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
       path = host.renamedFiles.get( path );
 
     //  Cleartool can not handle history for hijacked files. Thus we have to
-    //  extract the version id corresponding to the VOB object and retrieve
-    //  the history for that version.
+    //  construct "versioned" path, which directly points to the vob-object.
     VirtualFile vfile = filePath.getVirtualFile();
     if( vfile != null )
     {
       FileStatus status = FileStatusManager.getInstance( project ).getStatus( vfile );
       if( status == FileStatus.HIJACKED )
       {
-        log = TransparentVcs.cleartoolWithOutput( "ls", path );
-        int index = log.indexOf( HIJACKED_SIG );
-        if( index != -1 )
-        {
-          path = log.substring( 0, index - 1 ).trim();
-        }
+        path += "@@";
       }
     }
 
