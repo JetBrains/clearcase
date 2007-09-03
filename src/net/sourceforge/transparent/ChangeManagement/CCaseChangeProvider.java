@@ -629,7 +629,15 @@ public class CCaseChangeProvider implements ChangeProvider
     for( String folderName : host.renamedFolders.keySet() )
     {
       String oldFolderName = host.renamedFolders.get( folderName );
-      add2ChangeList( builder, FileStatus.MODIFIED, folderName, oldFolderName );
+
+//      add2ChangeList( builder, FileStatus.MODIFIED, folderName, oldFolderName );
+//      final FilePath refPath = VcsUtil.getFilePath( oldFolderName );
+      final FilePath refPath = VcsUtil.getFilePathForDeletedFile( oldFolderName, true );
+      final FilePath currPath = VcsUtil.getFilePath( folderName ); // == refPath if no rename occured
+      String activity = findActivityForFile( refPath, currPath );
+
+      CCaseContentRevision revision = ContentRevisionFactory.getRevision( refPath, project );
+      builder.processChangeInList( new Change( revision, new CurrentContentRevision( currPath ), FileStatus.MODIFIED ), activity );
     }
   }
 
