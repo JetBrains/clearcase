@@ -124,8 +124,8 @@ public class CheckOutAction extends SynchronousAction
     boolean keepHijack = false;
     if( status == FileStatus.HIJACKED )
     {
-      String message = "The file " + file.getPresentableUrl() + " has been hijacked. \n" +
-                       "Would you like to use it as the checked-out file?\nIf not it will be lost.";
+      @NonNls String message = "The file " + file.getPresentableUrl() + " has been hijacked. \n" +
+                               "Would you like to use it as the checked-out file?\nIf not it will be lost.";
       int answer = Messages.showYesNoDialog( message, CHECKOUT_HIJACKED_TITLE, Messages.getQuestionIcon() );
       keepHijack = (answer == 0);
     }
@@ -142,7 +142,8 @@ public class CheckOutAction extends SynchronousAction
     }
     catch( ClearCaseException exc )
     {
-      AbstractVcsHelper.getInstance( _actionProjectInstance ).showError( new VcsException( exc ), ACTION_NAME );
+      VcsException vcsExc = new VcsException( exc );
+      AbstractVcsHelper.getInstance( _actionProjectInstance ).showError( vcsExc, ACTION_NAME );
     }
   }
 
