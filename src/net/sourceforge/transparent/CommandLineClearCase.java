@@ -69,15 +69,22 @@ public class CommandLineClearCase implements ClearCase
   public void checkOut( File file, boolean isReserved, String comment )
   {
     @NonNls String[] params;
+    String canonName;
+
+    try {  canonName = file.getCanonicalPath();  }
+    catch (IOException e) {
+      canonName = file.getAbsolutePath();
+    }
+    
     if( StringUtil.isNotEmpty( comment ) )
-      params = new String[] {  "co", "-c", quote(comment), isReserved ? "-reserved" : "-unreserved", "-nq", file.getAbsolutePath() };
+      params = new String[] {  "co", "-c", quote(comment), isReserved ? "-reserved" : "-unreserved", "-nq", canonName };
     else
-      params = new String[] {  "co", "-nc", isReserved ? "-reserved" : "-unreserved", "-nq", file.getAbsolutePath() };
+      params = new String[] {  "co", "-nc", isReserved ? "-reserved" : "-unreserved", "-nq", canonName };
 
     Runner runner = cleartool( params, true );
     if( !runner.isSuccessfull() )
       throw new ClearCaseException( runner.getOutput() );
-    
+
     String activity = extractActivity( runner.getOutput() );
 
     //  In the case we did not manage to parse out the activity or we deal with
@@ -90,10 +97,16 @@ public class CommandLineClearCase implements ClearCase
 
   public void delete( File file, String comment)
   {
+    String canonName;
+    try {  canonName = file.getCanonicalPath();  }
+    catch (IOException e) {
+      canonName = file.getAbsolutePath();
+    }
+
     if( StringUtil.isNotEmpty( comment ) )
-      cleartool( new String[] { "rmname", "-force", "-c", quote(comment), file.getAbsolutePath() } );
+      cleartool( new String[] { "rmname", "-force", "-c", quote(comment), canonName } );
     else
-      cleartool( new String[] { "rmname", "-force", file.getAbsolutePath() } );
+      cleartool( new String[] { "rmname", "-force", canonName } );
   }
 
   public void add( File file, String comment )
@@ -163,7 +176,12 @@ public class CommandLineClearCase implements ClearCase
 
   public Status getStatus( File file )
   {
-    String fileName = quote( file.getAbsolutePath() );
+    String fileName;
+    try {  fileName = file.getCanonicalPath();  }
+    catch (IOException e) {
+      fileName = file.getAbsolutePath();
+    }
+
     Runner runner = cleartool( new String[] { "ls", "-directory", fileName }, true );
     String output = runner.getOutput();
     if( output == null )
@@ -171,7 +189,7 @@ public class CommandLineClearCase implements ClearCase
 
     //  Check message "Pathname is not withing a VOB:..." first because it comes
     //  along with Failure exit code for cleartool command, and we may return
-    //  with ClearCaseException without giving useful information. 
+    //  with ClearCaseException without giving useful information.
     if( output.indexOf( NOT_VOB_ELEMENT ) != -1 )
       return Status.NOT_AN_ELEMENT;
 
