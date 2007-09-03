@@ -6,6 +6,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.*;
+import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.*;
 import com.intellij.peer.PeerFactory;
 import com.intellij.vcsUtil.VcsUtil;
@@ -54,7 +55,18 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener
     if( event.isFromRefresh() ) return;
 
     if( isFileProcessable( file ) )
-      filesAdded.add( file );
+    {
+      //  Add file into the list for further confirmation only if the folder
+      //  is not marked as UNKNOWN. In this case the file under that folder
+      //  will be marked as unknown automatically.
+      VirtualFile parent = file.getParent();
+      if( parent != null )
+      {
+        FileStatus status = ChangeListManager.getInstance( project ).getStatus( parent );
+        if( status != FileStatus.UNKNOWN )
+          filesAdded.add( file );
+      }
+    }
   }
 
   public void beforeFileDeletion( VirtualFileEvent event )
