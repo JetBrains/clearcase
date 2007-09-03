@@ -1,6 +1,8 @@
 package net.sourceforge.transparent;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.command.CommandListener;
+import com.intellij.openapi.command.CommandProcessor;
 import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileTypes.FileTypeManager;
@@ -278,6 +280,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     //  track down potential changes in the repository.
     listener = new VFSListener( getProject() );
     LocalFileSystem.getInstance().addVirtualFileListener( listener );
+    CommandProcessor.getInstance().addCommandListener( (CommandListener)listener );
 
     addIgnoredFiles();
   }
@@ -285,6 +288,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public void deactivate()
   {
     LocalFileSystem.getInstance().removeVirtualFileListener( listener );
+    CommandProcessor.getInstance().removeCommandListener( (CommandListener)listener );
     ContentRevisionFactory.detachListeners();
   }
 
