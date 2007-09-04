@@ -673,7 +673,11 @@ public class CCaseChangeProvider implements ChangeProvider
     files.clear();
     files.addAll( host.deletedFiles );
     for( String path : files )
-      builder.processChange( new Change( new CurrentContentRevision( VcsUtil.getFilePathForDeletedFile( path, false )), null, FileStatus.DELETED ));
+    {
+      FilePath refPath = VcsUtil.getFilePathForDeletedFile( path, false );
+      CCaseContentRevision revision = ContentRevisionFactory.getRevision( refPath, project );
+      builder.processChange( new Change( revision, null, FileStatus.DELETED ));
+    }
   }
 
   private void addIgnoredFiles( final ChangelistBuilder builder )
