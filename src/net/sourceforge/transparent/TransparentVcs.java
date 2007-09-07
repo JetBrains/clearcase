@@ -14,6 +14,7 @@ import com.intellij.openapi.util.*;
 import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.*;
+import com.intellij.openapi.vcs.annotate.AnnotationProvider;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
@@ -29,6 +30,7 @@ import com.intellij.openapi.wm.ToolWindowId;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.util.containers.HashSet;
 import com.intellij.vcsUtil.VcsUtil;
+import net.sourceforge.transparent.Annotations.CCaseAnnotationProvider;
 import net.sourceforge.transparent.ChangeManagement.CCaseChangeProvider;
 import net.sourceforge.transparent.Checkin.CCaseCheckinEnvironment;
 import net.sourceforge.transparent.Checkin.CCaseCheckinHandler;
@@ -151,6 +153,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   private ChangeProvider changeProvider;
   private EditFileProvider editProvider;
   private CCaseHistoryProvider historyProvider;
+  private CCaseAnnotationProvider annotationProvider;
 
   private VcsShowSettingOption myCheckoutOptions;
   private VcsShowConfirmationOption addConfirmation;
@@ -192,6 +195,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public ChangeProvider       getChangeProvider()     {  return changeProvider;   }
   public EditFileProvider     getEditFileProvider()   {  return editProvider;     }
   public VcsHistoryProvider   getVcsHistoryProvider() {  return historyProvider;  }
+  public AnnotationProvider   getAnnotationProvider() {  return annotationProvider;  }
   public CheckinEnvironment   getCheckinEnvironment() {
     return ((config == null) || !config.isOffline) ? checkinEnvironment : null;
   }
@@ -221,6 +225,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     rollbackEnvironment = new CCaseRollbackEnvironment( myProject, this );
     editProvider = new CCaseEditFileProvider( this );
     historyProvider = new CCaseHistoryProvider( myProject );
+    annotationProvider = new CCaseAnnotationProvider( myProject, this );
+
 
     final ProjectLevelVcsManager vcsManager = ProjectLevelVcsManager.getInstance( myProject );
     myCheckoutOptions = vcsManager.getStandardOption( VcsConfiguration.StandardOption.CHECKOUT, this );
@@ -248,32 +254,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
     if( !config.isOffline )
     {
-      resetClearCaseFromConfiguration();
-      extractViewProperties();
-
-      //  If configuration has changed, check that we do not operate with
-      //  activities in the inappropriate environment.
-      if( config.useUcmModel )
-      {
-        if( !allViewsAreUCM() )
-        {
-          VcsException warn = new VcsException( "Not all views are of UCM type. Activities processing is suspended.");
-          warn.setIsWarning( true );
-          AbstractVcsHelper.getInstance( myProject ).showError( warn, ERRORS_TAB_NAME );
-
-          StartupManager.getInstance( myProject ).registerPostStartupActivity( new Runnable() {
-            public void run() { ToolWindowManager.getInstance( myProject ).getToolWindow( ToolWindowId.MESSAGES_WINDOW ).activate( null ); }
-          });
-          
-          config.useUcmModel = false;
-        }
-      }
-
-      if( config.useUcmModel )
-      {
-        extractViewActivities();
-        checkViewsWithoutActions();
-      }
+      resetViewsInformation();
     }
 
     //  Control the appearance of project items so that we can easily
@@ -281,6 +262,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     listener = new VFSListener( getProject() );
     LocalFileSystem.getInstance().addVirtualFileListener( listener );
     CommandProcessor.getInstance().addCommandListener( (CommandListener)listener );
+//    ProjectLevelVcsManager.getInstance( myProject ).addVcsListener( this );
 
     addIgnoredFiles();
   }
@@ -289,7 +271,43 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   {
     LocalFileSystem.getInstance().removeVirtualFileListener( listener );
     CommandProcessor.getInstance().removeCommandListener( (CommandListener)listener );
+//    ProjectLevelVcsManager.getInstance( myProject ).removeVcsListener( this );
     ContentRevisionFactory.detachListeners();
+  }
+
+  public void directoryMappingChanged()
+  {
+    resetViewsInformation();
+  }
+
+  private void resetViewsInformation()
+  {
+    resetClearCaseFromConfiguration();
+    extractViewProperties();
+
+    //  If configuration has changed, check that we do not operate with
+    //  activities in the inappropriate environment.
+    if( config.useUcmModel )
+    {
+      if( !allViewsAreUCM() )
+      {
+        VcsException warn = new VcsException( "Not all views are of UCM type. Activities processing is suspended.");
+        warn.setIsWarning( true );
+        AbstractVcsHelper.getInstance( myProject ).showError( warn, ERRORS_TAB_NAME );
+
+        StartupManager.getInstance( myProject ).registerPostStartupActivity( new Runnable() {
+          public void run() { ToolWindowManager.getInstance( myProject ).getToolWindow( ToolWindowId.MESSAGES_WINDOW ).activate( null ); }
+        });
+
+        config.useUcmModel = false;
+      }
+    }
+
+    if( config.useUcmModel )
+    {
+      extractViewActivities();
+      checkViewsWithoutActions();
+    }
   }
 
 //  public void  setClearCase( ClearCase clearCase ) {  clearcase = clearCase;  }
@@ -587,9 +605,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public boolean isWasRenamed( String path )    {  return renamedFiles.containsValue( path );  }
   public boolean isNewOverRenamed( String path ){  return containsNew( path ) && isWasRenamed( path );  }
   public void add2NewFile( VirtualFile file )   {  newFiles.add( file );       }
-//  public void add2NewFile( String path )        {  newFiles.add( path.toLowerCase() );  }
   public void deleteNewFile( VirtualFile file ) {  newFiles.remove( file );     }
-//  public void deleteNewFile( String path )      {  newFiles.remove( path.toLowerCase() );  }
   public boolean containsNew( VirtualFile file )     {  return newFiles.contains( file );   }
   public boolean containsNew( String path )
   {
