@@ -71,15 +71,19 @@ public class CCaseRollbackEnvironment implements RollbackEnvironment
       if( VcsUtil.isRenameChange( change ) && VcsUtil.isChangeForFolder( change ) )
       {
         //  The only thing which we can perform on this step is physical
-        //  rename of the folder back to its former name, since we can't
+        //  rename of the newFolderPath back to its former name, since we can't
         //  keep track of what consequent changes were done (due to Java
         //  semantics of the package rename).
-        FilePath folder = change.getAfterRevision().getFile();
-        File folderNew = folder.getIOFile();
-        File folderOld = change.getBeforeRevision().getFile().getIOFile();
+        FilePath newFolderPath = change.getAfterRevision().getFile();
+        File folderNew = newFolderPath.getIOFile();
+        FilePath oldFolderPath = change.getBeforeRevision().getFile();
+        File folderOld = oldFolderPath.getIOFile();
+        
         folderNew.renameTo( folderOld );
         host.renamedFolders.remove( VcsUtil.getCanonicalLocalPath( folderNew.getPath() ) );
-        processedFiles.add( folder );
+
+        processedFiles.add( oldFolderPath );
+        VcsUtil.waitForTheFile( folderOld.getPath() );
       }
     }
   }
