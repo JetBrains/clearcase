@@ -37,7 +37,7 @@ public class CCaseAnnotationProvider implements AnnotationProvider
       canonicalName = file.getPath(); 
     }
 
-    String output = TransparentVcs.cleartoolWithOutput( "annotate", "-out", "-", "-nhe", "-fmt", "\"%Sd | %-8.8u | %-16.16Vn | \"", canonicalName );
+    String output = TransparentVcs.cleartoolWithOutput( "annotate", "-out", "-", "-nhe", "-fmt", "\"%Sd | %-8.8u | %-40.40Vn | \"", canonicalName );
     CCaseFileAnnotation annotation = new CCaseFileAnnotation();
     String[] lines = LineTokenizer.tokenize( output, false );
 

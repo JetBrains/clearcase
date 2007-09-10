@@ -1,7 +1,6 @@
 package net.sourceforge.transparent.Annotations;
 
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.util.text.StringTokenizer;
 
 /**
  * Created by IntelliJ IDEA.
@@ -10,7 +9,8 @@ import com.intellij.util.text.StringTokenizer;
  */
 public class AnnotationLineParser
 {
-  private final static String FIELDS_DELIMITER = " | ";
+  private final static String FIELDS_DELIMITER = " \\| ";
+  private static AnnotationLineInfo _cachedValues = new AnnotationLineInfo(); 
 
   private AnnotationLineParser() {}
 
@@ -26,17 +26,30 @@ public class AnnotationLineParser
   public static AnnotationLineInfo parse( final String line ) throws VcsException
   {
     AnnotationLineInfo info = new AnnotationLineInfo();
-    StringTokenizer tokenizer = new StringTokenizer( line + " ", FIELDS_DELIMITER, false );
+    String[] tokens = line.split( FIELDS_DELIMITER );
 
-    //  We rely on the formatter string: "%Sd | %-8.8u | %-16.16Vn | " which
+    //  We rely on the formatter string: "%Sd | %-8.8u | %-40.40Vn | " which
     //  exlicitely delimits date, user and revision number.
 
     try
     {
-      info.date = tokenizer.nextToken();
-      info.committer = tokenizer.nextToken();
-      info.revision = tokenizer.nextToken();
-      info.source = tokenizer.nextToken();
+      if( isValueableToken( tokens[ 0 ] ) )
+        _cachedValues.date = info.date = tokens[ 0 ].trim();
+      else
+        info.date = _cachedValues.date;
+
+      if( isValueableToken( tokens[ 1 ] ) )
+        _cachedValues.committer = info.committer = tokens[ 1 ].trim();
+      else
+        info.committer = _cachedValues.committer;
+
+      if( isValueableToken( tokens[ 2 ] ) )
+        _cachedValues.revision = info.revision = tokens[ 2 ].trim();
+      else
+        info.revision = _cachedValues.revision;
+
+      //  Source line may be empty.
+      info.source = (tokens.length > 3) ? tokens[ 3 ].trim() : "";
     }
     catch( Exception e )
     {
@@ -44,5 +57,11 @@ public class AnnotationLineParser
     }
 
     return info;
+  }
+
+  private static boolean isValueableToken( final String token )
+  {
+    String trimmed = token.trim();
+    return (trimmed.length() > 0) && !trimmed.equals( "." );
   }
 }
