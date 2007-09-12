@@ -2,6 +2,8 @@ package net.sourceforge.transparent.Annotations;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.LineTokenizer;
+import com.intellij.openapi.vcs.FileStatus;
+import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.annotate.AnnotationProvider;
 import com.intellij.openapi.vcs.annotate.FileAnnotation;
@@ -36,8 +38,16 @@ public class CCaseAnnotationProvider implements AnnotationProvider
     {
       canonicalName = file.getPath(); 
     }
+    FileStatus status = FileStatusManager.getInstance(project).getStatus( file );
+    if( status == FileStatus.HIJACKED )
+      canonicalName += "@@";
+    else
+    if( status == FileStatus.MODIFIED )
+    {
+      
+    }
 
-    String output = TransparentVcs.cleartoolWithOutput( "annotate", "-out", "-", "-nhe", "-fmt", "\"%Sd | %-8.8u | %-40.40Vn | \"", canonicalName );
+    String output = TransparentVcs.cleartoolWithOutput( "annotate", "-out", "-", "-nco", "-nhe", "-fmt", "\"%Sd | %-16.16u | %-40.40Vn | \"", canonicalName );
     CCaseFileAnnotation annotation = new CCaseFileAnnotation();
     String[] lines = LineTokenizer.tokenize( output, false );
 

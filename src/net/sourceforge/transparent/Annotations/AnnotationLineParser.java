@@ -28,7 +28,7 @@ public class AnnotationLineParser
     AnnotationLineInfo info = new AnnotationLineInfo();
     String[] tokens = line.split( FIELDS_DELIMITER );
 
-    //  We rely on the formatter string: "%Sd | %-8.8u | %-40.40Vn | " which
+    //  We rely on the formatter string: "%Sd | %-16.16u | %-40.40Vn | " which
     //  exlicitely delimits date, user and revision number.
 
     try
@@ -53,7 +53,7 @@ public class AnnotationLineParser
     }
     catch( Exception e )
     {
-      throw new VcsException( "Can not parse annotation log" );
+      throw new VcsException( "Can not parse annotation log: " + line );
     }
 
     return info;
