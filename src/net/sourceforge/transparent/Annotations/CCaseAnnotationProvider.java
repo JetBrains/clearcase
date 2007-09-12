@@ -32,22 +32,37 @@ public class CCaseAnnotationProvider implements AnnotationProvider
 
   public FileAnnotation annotate(VirtualFile file) throws VcsException
   {
-    String canonicalName;
-    try {  canonicalName = new File( file.getPath() ).getCanonicalPath();  }
-    catch( IOException e )
-    {
-      canonicalName = file.getPath(); 
-    }
+    String canonicalName = getCanonicalPath( file.getPath() );
+    
     FileStatus status = FileStatusManager.getInstance(project).getStatus( file );
     if( status == FileStatus.HIJACKED )
       canonicalName += "@@";
-    else
-    if( status == FileStatus.MODIFIED )
-    {
-      
-    }
 
-    String output = TransparentVcs.cleartoolWithOutput( "annotate", "-out", "-", "-nco", "-nhe", "-fmt", "\"%Sd | %-16.16u | %-40.40Vn | \"", canonicalName );
+    return runAnnotation( canonicalName );
+  }
+
+  public FileAnnotation annotate( VirtualFile file, VcsFileRevision vcsRev ) throws VcsException
+  {
+    String canonicalName = getCanonicalPath( file.getPath() );
+    canonicalName += vcsRev.getRevisionNumber().asString();
+
+    return runAnnotation( canonicalName );
+  }
+
+  private static String getCanonicalPath( final String path )
+  {
+    String canonicalName;
+    try {  canonicalName = new File( path ).getCanonicalPath();  }
+    catch( IOException e )
+    {
+      canonicalName = path;
+    }
+    return canonicalName;
+  }
+
+  private static FileAnnotation runAnnotation( final String path ) throws VcsException
+  {
+    String output = TransparentVcs.cleartoolWithOutput( "annotate", "-out", "-", "-nco", "-nhe", "-fmt", "\"%Sd | %-16.16u | %-40.40Vn | \"", path );
     CCaseFileAnnotation annotation = new CCaseFileAnnotation();
     String[] lines = LineTokenizer.tokenize( output, false );
 
@@ -57,11 +72,5 @@ public class CCaseAnnotationProvider implements AnnotationProvider
       annotation.addLineInfo( info.date, info.revision, info.committer, info.source );
     }
     return annotation;
-  }
-
-  public FileAnnotation annotate(VirtualFile file, VcsFileRevision vcsRev) throws VcsException
-  {
-//    CCaseFileRevision rev = (CCaseFileRevision)vcsRev;
-    throw new VcsException( "not implemented" );
   }
 }

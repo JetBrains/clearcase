@@ -33,9 +33,6 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
   @NonNls private final static String ACTION_COLUMN = "Action";
   @NonNls private final static String LABEL_COLUMN = "Label";
 
-  @NonNls private final static String HISTORY_FAILED_MSG = "Can not extract history records for a hijacked file.";
-  @NonNls private final static String HISTORY_FAILED_TITLE = "Getting History Failed";
-
   private Project project;
   private TransparentVcs host;
 
