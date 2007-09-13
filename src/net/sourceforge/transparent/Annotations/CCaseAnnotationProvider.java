@@ -9,7 +9,9 @@ import com.intellij.openapi.vcs.annotate.AnnotationProvider;
 import com.intellij.openapi.vcs.annotate.FileAnnotation;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vfs.VirtualFile;
+import net.sourceforge.transparent.CCaseHistoryProvider;
 import net.sourceforge.transparent.TransparentVcs;
+import org.jetbrains.annotations.NonNls;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,6 +23,8 @@ import java.io.IOException;
  */
 public class CCaseAnnotationProvider implements AnnotationProvider
 {
+  @NonNls private final static String BRANCH_SIG = "branch";
+
   Project project;
   TransparentVcs host;
 
@@ -72,5 +76,11 @@ public class CCaseAnnotationProvider implements AnnotationProvider
       annotation.addLineInfo( info.date, info.revision, info.committer, info.source );
     }
     return annotation;
+  }
+
+  public boolean isAnnotationValid( VcsFileRevision rev )
+  {
+    CCaseHistoryProvider.CCaseFileRevision ccRev = (CCaseHistoryProvider.CCaseFileRevision) rev;
+    return (ccRev.getAction().indexOf( BRANCH_SIG ) == -1);
   }
 }

@@ -146,7 +146,7 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
     return new CCaseHistorySession( revisions );
   }
 
-  private class CCaseFileRevision implements VcsFileRevision
+  public class CCaseFileRevision implements VcsFileRevision
   {
     private String version;
     private String submitter;
