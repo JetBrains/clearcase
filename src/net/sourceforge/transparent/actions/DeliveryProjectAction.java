@@ -3,6 +3,7 @@ package net.sourceforge.transparent.actions;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
 
@@ -22,7 +23,8 @@ public class DeliveryProjectAction extends AsynchronousAction
     VirtualFile firstRoot = mgr.getRootsUnderVcs(host)[ 0 ];
     if( firstRoot != null )
     {
-      TransparentVcs.cleartoolOnLocalPath( firstRoot.getPath(), "deliver", "-g" );
+      String path = VcsUtil.getCanonicalPath( firstRoot.getPath() );
+      TransparentVcs.cleartoolOnLocalPath( path, "deliver", "-g" );
     }
   }
 
