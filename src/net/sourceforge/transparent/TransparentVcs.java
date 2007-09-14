@@ -302,6 +302,9 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
         config.useUcmModel = false;
       }
     }
+    else{
+      LOG.info( "+++ Session does not use UCM model +++" );
+    }
 
     if( config.useUcmModel )
     {
