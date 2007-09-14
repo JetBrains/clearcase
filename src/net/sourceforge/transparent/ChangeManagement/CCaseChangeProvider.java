@@ -202,6 +202,7 @@ public class CCaseChangeProvider implements ChangeProvider
         }
       }
     }
+    LOG.info( "---ChangeProvider - Total " + files.size() + " non-folder checkouts found by LSCO.");
   }
 
   /**
