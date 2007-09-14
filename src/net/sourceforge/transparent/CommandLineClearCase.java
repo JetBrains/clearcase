@@ -3,6 +3,7 @@ package net.sourceforge.transparent;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
@@ -176,11 +177,7 @@ public class CommandLineClearCase implements ClearCase
 
   public Status getStatus( File file )
   {
-    String fileName;
-    try {  fileName = file.getCanonicalPath();  }
-    catch (IOException e) {
-      fileName = file.getAbsolutePath();
-    }
+    String fileName = VcsUtil.getCanonicalPath( file );
 
     Runner runner = cleartool( new String[] { "ls", "-directory", fileName }, true );
     String output = runner.getOutput();

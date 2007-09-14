@@ -1,13 +1,13 @@
 package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.Status;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,9 +43,10 @@ public abstract class AsynchronousAction extends FileAction
     return exceptions;
   }
 
-  public static String getVersionExtendedPathName( VirtualFile file, AnActionEvent e )
+  public String getVersionExtendedPathName( VirtualFile file, AnActionEvent e )
   {
-    Status status = getHost( e ).getStatus( new File( file.getPath() ) );
-    return (status == Status.HIJACKED) ? file.getPath() + "@@" : file.getPath();
+    String path = VcsUtil.getCanonicalPath( file.getPath() );
+    FileStatus status = getFileStatus( _actionProjectInstance, file );
+    return (status == Status.HIJACKED) ? path + "@@" : path;
   }
 }
