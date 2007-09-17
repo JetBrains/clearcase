@@ -262,7 +262,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     listener = new VFSListener( getProject() );
     LocalFileSystem.getInstance().addVirtualFileListener( listener );
     CommandProcessor.getInstance().addCommandListener( (CommandListener)listener );
-//    ProjectLevelVcsManager.getInstance( myProject ).addVcsListener( this );
 
     addIgnoredFiles();
   }
@@ -280,6 +279,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     resetViewsInformation();
   }
 
+  @SuppressWarnings({"ThrowableInstanceNeverThrown"})
   private void resetViewsInformation()
   {
     resetClearCaseFromConfiguration();

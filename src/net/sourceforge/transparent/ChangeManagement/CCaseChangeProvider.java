@@ -26,10 +26,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -888,11 +885,34 @@ public class CCaseChangeProvider implements ChangeProvider
   private static void logChangesContent( final VcsDirtyScope scope )
   {
     LOG.info( "-- ChangeProvider: Dirty files: " + scope.getDirtyFiles().size() +
-              ", dirty recursive directories: " + scope.getRecursivelyDirtyDirectories().size() );
+              " == " + extMasks( scope.getDirtyFiles() ) +
+              ",\n\t\t\t\t\tdirty recursive directories: " + scope.getRecursivelyDirtyDirectories().size() );
     for( FilePath path : scope.getDirtyFiles() )
       LOG.info( "                                " + path.getPath() );
     LOG.info( "                                ---" );
     for( FilePath path : scope.getRecursivelyDirtyDirectories() )
       LOG.info( "                                " + path.getPath() );
+  }
+
+  private static String extMasks( Set<FilePath> scope )
+  {
+    HashMap<String, Integer> masks = new HashMap<String, Integer>();
+    for( FilePath path : scope )
+    {
+      int index = path.getName().lastIndexOf( '.' );
+      if( index != -1 )
+      {
+        String ext = path.getName().substring( index );
+        Integer count = masks.get( ext );
+        masks.put( ext, (count == null) ? 1 : (count.intValue() + 1 ) );
+      }
+    }
+
+    String masksStr = "";
+    for( String ext : masks.keySet() )
+    {
+      masksStr += ext + " - " + masks.get( ext ).intValue() + "; ";
+    }
+    return masksStr;
   }
 }
