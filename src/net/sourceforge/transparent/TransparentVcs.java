@@ -968,6 +968,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     }
   }
 
+  @SuppressWarnings({"ThrowableInstanceNeverThrown"})
   public void changeActivityForLastVersion( FilePath file, String srcActivity, String dstActivity,
                                             List<VcsException> errors )
   {
@@ -1237,7 +1238,12 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     writeElement( element, deletedFolders, PERSISTENCY_DELETED_FOLDER_TAG );
 
     HashSet<String> tmp = new HashSet<String>();
-    for( VirtualFile file : newFiles )  tmp.add( file.getPath() );
+    for( VirtualFile file : newFiles )
+    {
+      FileStatus status = FileStatusManager.getInstance( myProject ).getStatus( file );
+      if( status == FileStatus.ADDED )
+        tmp.add( file.getPath() );
+    }
     writeElement( element, tmp, PERSISTENCY_NEW_FILE_TAG );
 
     writePairedElement( element, renamedFiles, PERSISTENCY_RENAMED_FILE_TAG );
