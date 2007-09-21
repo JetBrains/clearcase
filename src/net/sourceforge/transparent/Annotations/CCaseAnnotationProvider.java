@@ -9,12 +9,10 @@ import com.intellij.openapi.vcs.annotate.AnnotationProvider;
 import com.intellij.openapi.vcs.annotate.FileAnnotation;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.CCaseHistoryProvider;
 import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
-
-import java.io.File;
-import java.io.IOException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -24,6 +22,8 @@ import java.io.IOException;
 public class CCaseAnnotationProvider implements AnnotationProvider
 {
   @NonNls private final static String BRANCH_SIG = "branch";
+  @NonNls private final static String ERROR_SIG = "Invalid manager operation";
+  @NonNls private final static String ERROR_TEXT = "Probably type manager does not contain Annotate method for this file type";
 
   Project project;
   TransparentVcs host;
@@ -34,9 +34,9 @@ public class CCaseAnnotationProvider implements AnnotationProvider
     this.host = host;
   }
 
-  public FileAnnotation annotate(VirtualFile file) throws VcsException
+  public FileAnnotation annotate( VirtualFile file ) throws VcsException
   {
-    String canonicalName = getCanonicalPath( file.getPath() );
+    String canonicalName = VcsUtil.getCanonicalPath( file.getPath() );
     
     FileStatus status = FileStatusManager.getInstance(project).getStatus( file );
     if( status == FileStatus.HIJACKED )
@@ -47,26 +47,20 @@ public class CCaseAnnotationProvider implements AnnotationProvider
 
   public FileAnnotation annotate( VirtualFile file, VcsFileRevision vcsRev ) throws VcsException
   {
-    String canonicalName = getCanonicalPath( file.getPath() );
+    String canonicalName = VcsUtil.getCanonicalPath( file.getPath() );
     canonicalName += vcsRev.getRevisionNumber().asString();
 
     return runAnnotation( canonicalName );
   }
 
-  private static String getCanonicalPath( final String path )
-  {
-    String canonicalName;
-    try {  canonicalName = new File( path ).getCanonicalPath();  }
-    catch( IOException e )
-    {
-      canonicalName = path;
-    }
-    return canonicalName;
-  }
-
   private static FileAnnotation runAnnotation( final String path ) throws VcsException
   {
     String output = TransparentVcs.cleartoolWithOutput( "annotate", "-out", "-", "-nco", "-nhe", "-fmt", "\"%Sd | %-16.16u | %-40.40Vn | \"", path );
+
+    //  Show more or less descriptive message for this CCase error. 
+    if( output.contains( ERROR_SIG ) )
+      throw new VcsException( ERROR_TEXT );
+    
     CCaseFileAnnotation annotation = new CCaseFileAnnotation();
     String[] lines = LineTokenizer.tokenize( output, false );
 
