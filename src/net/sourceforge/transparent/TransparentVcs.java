@@ -658,7 +658,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       {
         //  Run checkout in the "non-verbose" mode, that is do not display any
         //  dialogs since we are aready in the Dialoging mode.
-        checkoutFile( ioFile, true, false, comment );
+        checkoutFile( ioFile, true, config.checkoutReserved, comment );
       }
       getClearCase().checkIn( ioFile, comment );
 
