@@ -658,7 +658,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       {
         //  Run checkout in the "non-verbose" mode, that is do not display any
         //  dialogs since we are aready in the Dialoging mode.
-        checkoutFile( ioFile, true, config.checkoutReserved, comment );
+        checkoutFile( ioFile, true, comment );
       }
       getClearCase().checkIn( ioFile, comment );
 
@@ -688,24 +688,24 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public boolean checkoutFile( VirtualFile file, boolean keepHijacked, String comment ) throws VcsException
   {
     File ioFile = new File( file.getPath() );
-    return checkoutFile( ioFile, keepHijacked, config.checkoutReserved, comment );
+    return checkoutFile( ioFile, keepHijacked, comment );
   }
 
   public void checkoutFile( File file, boolean keepHijacked, String comment, boolean allowCheckedOut ) throws VcsException
   {
     if( allowCheckedOut )
     {
-      VcsException error = tryToCheckout( file, config.checkoutReserved, comment );
+      VcsException error = tryToCheckout( file, comment );
       if( error != null )
         throw error;
     }
     else
     {
-      checkoutFile( file, keepHijacked, false, comment );
+      checkoutFile( file, keepHijacked, comment );
     }
   }
 
-  private boolean checkoutFile( File ioFile, boolean keepHijacked, boolean isReserved, String comment ) throws VcsException
+  private boolean checkoutFile( File ioFile, boolean keepHijacked, String comment ) throws VcsException
   {
     File newFile = null;
     if( keepHijacked )
@@ -713,7 +713,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       newFile = new File( ioFile.getParentFile().getAbsolutePath(), ioFile.getName() + HIJACKED_EXT );
       ioFile.renameTo( newFile );
     }
-    getClearCase().checkOut( ioFile, isReserved, comment );
+    getClearCase().checkOut( ioFile, config.checkoutReserved, comment );
     if( newFile != null )
     {
       ioFile.delete();
@@ -757,7 +757,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       if( StringUtil.isEmpty( comment ) )
         comment = "Initial Checkin";
 
-      VcsException error = tryToCheckout( ioParent, false, parentComment );
+      VcsException error = tryToCheckout( ioParent, parentComment );
       if( error != null )
       {
         error.setVirtualFile( file );
@@ -809,11 +809,11 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
           File ioParent = file.getParentFile();
           if( ioParent.exists() )
           {
-            String deleteComment = "Deleting " + file.getName();
+            @NonNls String deleteComment = "Deleting " + file.getName();
             String parentComment = addToComment( comment, deleteComment );
 
 
-            VcsException error = tryToCheckout( ioParent, false, parentComment );
+            VcsException error = tryToCheckout( ioParent, parentComment );
             if( error != null )
             {
               errors.add( error );
@@ -897,10 +897,10 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
             VcsException error;
             try
             {
-              error = tryToCheckout( newFile.getParentFile(), false, modComment );
+              error = tryToCheckout( newFile.getParentFile(), modComment );
               if( error != null )
                 throw error;
-              error = tryToCheckout( oldFile.getParentFile(), false, modComment );
+              error = tryToCheckout( oldFile.getParentFile(), modComment );
               if( error != null )
                 throw error;
 
@@ -1008,12 +1008,12 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
    * manually or as the result of the previously failed operation.
    * Ignore the error "... is already checked out..." and store all others. 
    */
-  private VcsException tryToCheckout( File file, boolean isReserved, String comment )
+  private VcsException tryToCheckout( File file, String comment )
   {
     VcsException error = null;
     try
     {
-      getClearCase().checkOut( file, isReserved, comment );
+      getClearCase().checkOut( file, config.checkoutReserved, comment );
     }
     catch( ClearCaseException ccExc )
     {
