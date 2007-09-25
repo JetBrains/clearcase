@@ -49,7 +49,7 @@ public class AnnotationLineParser
         info.revision = _cachedValues.revision;
 
       //  Source line may be empty.
-      info.source = (tokens.length > 3) ? tokens[ 3 ].trim() : "";
+      info.source = (tokens.length > 3) ? tokens[ 3 ] : "";
     }
     catch( Exception e )
     {
