@@ -114,7 +114,13 @@ public class CCaseChangeProvider implements ChangeProvider
       iterateOverDirtyFiles( dirtyScope );
       LOG.info( "-- ChangeProvider - passed collection phase" );
 
-      computeStatuses();
+      //  Perform status computation only if we operate in the online mode.
+      //  For offline mode just display the last valid state (for new and
+      //  modified files, others are hijacked).
+      if( !config.isOffline )
+      {
+        computeStatuses();
+      }
       processStatusExceptions();
 
       LOG.info( "-- ChangeProvider - passed analysis phase" );
