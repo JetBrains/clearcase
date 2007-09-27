@@ -121,6 +121,10 @@ public class CCaseChangeProvider implements ChangeProvider
       {
         computeStatuses();
       }
+      else
+      {
+        restoreStatusesFromCached();
+      }
       processStatusExceptions();
 
       LOG.info( "-- ChangeProvider - passed analysis phase" );
@@ -519,6 +523,26 @@ public class CCaseChangeProvider implements ChangeProvider
         LOG.info( "                 Folder [" + fileParent + "] is not in the repository" );
         newFolders.add( fileParent );
         analyzeParentFoldersForPresence( fileParent, newFolders, processed );
+      }
+    }
+  }
+
+  private void restoreStatusesFromCached()
+  {
+    for( String fileName : filesWritable )
+    {
+      if( host.containsModified( fileName ))
+      {
+        filesChanged.add( fileName );
+      }
+      else
+      if( host.containsNew( fileName ) )
+      {
+        filesNew.add( fileName );
+      }
+      else
+      {
+        filesHijacked.add( fileName );
       }
     }
   }

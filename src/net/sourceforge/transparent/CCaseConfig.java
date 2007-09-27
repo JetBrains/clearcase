@@ -19,7 +19,6 @@ public class CCaseConfig implements JDOMExternalizable, ProjectComponent
   @NonNls private final static String DYNAMIC = "Dynamic";
   @NonNls private final static String SNAPSHOT = "Snapshot";
 
-//  public String implementation = CommandLineClearCase.class.getName();
   public boolean checkoutReserved = false;
   public boolean markExternalChangeAsUpToDate = true;
   public boolean checkInUseHijack = true;
@@ -33,6 +32,8 @@ public class CCaseConfig implements JDOMExternalizable, ProjectComponent
   public String lastViewType = null;
   public int    historyRevisionsNumber = 4;
 
+  private TransparentVcs host;
+
   public void projectOpened() {}
   public void projectClosed() {}
   public void initComponent() {}
@@ -40,6 +41,12 @@ public class CCaseConfig implements JDOMExternalizable, ProjectComponent
 
   @NotNull
   public String getComponentName() {  return "CCaseConfig";  }
+  public static CCaseConfig getInstance(Project project) {
+    return project.getComponent(CCaseConfig.class);
+  }
+  public void setHost( TransparentVcs host ){
+    this.host = host;
+  }
 
   public void  setViewSnapshot()   {  lastViewType = SNAPSHOT;  }
   public void  setViewDynamic()    {  lastViewType = DYNAMIC;   }
@@ -47,18 +54,20 @@ public class CCaseConfig implements JDOMExternalizable, ProjectComponent
   public boolean isViewDynamic()   {  return lastViewType == DYNAMIC;  }
 
   public int  getHistoryRevisionsMargin() {  return historyRevisionsNumber;  }
-  public void   setHistoryRevisionsMargin( int v) {  historyRevisionsNumber = v;  }
+  public void setHistoryRevisionsMargin( int v) {  historyRevisionsNumber = v;  }
 
-  public static CCaseConfig getInstance(Project project) {
-    return project.getComponent(CCaseConfig.class);
+  public void setOfflineMode( boolean isOfflineMode )
+  {
+    if( isOffline != isOfflineMode ) {
+      isOffline = isOfflineMode;
+      host.offlineModeChanged();
+    }
   }
-
+  
   public void readExternal(Element element) throws InvalidDataException {
     DefaultJDOMExternalizer.readExternal(this, element);
   }
-
-  public void writeExternal(Element parentNode) throws WriteExternalException
-  {
+  public void writeExternal(Element parentNode) throws WriteExternalException {
     DefaultJDOMExternalizer.writeExternal(this, parentNode);
   }
 }

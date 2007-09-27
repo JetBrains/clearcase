@@ -114,14 +114,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     public String activityName;
   }
 
-/*
-  //  Sometimes we need to explicitely distinguish between different
-  //  ClearCase implementations since for one of them we use optimized
-  //  scheme for file statuses determination. Part of class name is the
-  //  best way for that.
-//  @NonNls private final static String COMMAND_LINE_CLASS_SIG = "Line";
-*/
-
   //  Resolve the case when parent folder was already checked out by
   //  the presence of this substring in the error message.
   @NonNls private static final String ALREADY_CHECKEDOUT_SIG = "already checked out";
@@ -137,6 +129,10 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public  HashMap<String, String> renamedFolders;
   public  HashSet<String> deletedFiles;
   public  HashSet<String> deletedFolders;
+
+  //  Used to keep a set of modified files when user switches to the
+  //  offline mode. Empty and unused in online mode.
+  private HashSet<VirtualFile> modifiedFiles;
 
   //  Keeps for any checked out file the activity which it was checked out with
   private HashMap<String, String> activitiesAssociations;
@@ -171,6 +167,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     deletedFolders = new HashSet<String>();
     renamedFiles = new HashMap<String, String>();
     renamedFolders = new HashMap<String, String>();
+    modifiedFiles = new HashSet<VirtualFile>();
 
     activitiesAssociations = new HashMap<String, String>();
     activitiesNames = new HashMap<String, String>();
@@ -250,6 +247,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public void activate()
   {
     config = CCaseConfig.getInstance( myProject );
+    config.setHost( this );
     LOG.info( ">>> GetCOnfig().Offline == " + config.isOffline );
 
     if( !config.isOffline )
@@ -270,8 +268,28 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   {
     LocalFileSystem.getInstance().removeVirtualFileListener( listener );
     CommandProcessor.getInstance().removeCommandListener( (CommandListener)listener );
-//    ProjectLevelVcsManager.getInstance( myProject ).removeVcsListener( this );
     ContentRevisionFactory.detachListeners();
+  }
+
+  public void offlineModeChanged()
+  {
+    if( !config.isOffline )
+    {
+      modifiedFiles.clear();
+    }
+    else
+    {
+      ChangeListManager mgr = ChangeListManager.getInstance( myProject );
+      List<VirtualFile> list = mgr.getAffectedFiles();
+      for( VirtualFile file : list )
+      {
+        if( mgr.getStatus( file ) == FileStatus.MODIFIED )
+        {
+          modifiedFiles.add( file );
+        }
+      }
+      mgr.scheduleUpdate();
+    }
   }
 
   public void directoryMappingChanged()
@@ -607,13 +625,23 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public boolean isFolderRemovedForVcs( String path ) {  return deletedFolders.contains( path );  }
   public boolean isWasRenamed( String path )    {  return renamedFiles.containsValue( path );  }
   public boolean isNewOverRenamed( String path ){  return containsNew( path ) && isWasRenamed( path );  }
+
   public void add2NewFile( VirtualFile file )   {  newFiles.add( file );       }
-  public void deleteNewFile( VirtualFile file ) {  newFiles.remove( file );     }
-  public boolean containsNew( VirtualFile file )     {  return newFiles.contains( file );   }
+  public void deleteNewFile( VirtualFile file ) {  newFiles.remove( file );    }
+  public boolean containsNew( VirtualFile file ){  return newFiles.contains( file );   }
   public boolean containsNew( String path )
   {
     VirtualFile file = VcsUtil.getVirtualFile( path );
     return file != null && newFiles.contains( file );   
+  }
+
+  public boolean containsModified( VirtualFile file ) {  return modifiedFiles.contains( file ); }
+  public void    add2ModifiedFile( VirtualFile file ) {  modifiedFiles.add( file ); }
+  public void    clearModifiedList()                  {  modifiedFiles.clear();     }
+  public boolean containsModified( String path )
+  {
+    VirtualFile file = VcsUtil.getVirtualFile( path );
+    return file != null && modifiedFiles.contains( file );
   }
 
   public void addFile2Changelist( File file, @NotNull String changeListName )

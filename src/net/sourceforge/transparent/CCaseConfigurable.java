@@ -96,7 +96,8 @@ public class CCaseConfigurable implements ProjectComponent, Configurable
     vcsConfig.checkoutReserved = myReservedCheckoutsCheckBox.isSelected();
     vcsConfig.checkInUseHijack = myCheckOutForHijacked.isSelected();
     vcsConfig.useUcmModel = myUseUCMModel.isSelected();
-    vcsConfig.isOffline = myWorkOffline.isSelected();
+//    vcsConfig.isOffline = myWorkOffline.isSelected();
+    vcsConfig.setOfflineMode( myWorkOffline.isSelected() );
     vcsConfig.isHistoryResticted = myRestrictHistory.isSelected();
     vcsConfig.setHistoryRevisionsMargin( getMargin() );
     vcsConfig.useIdenticalSwitch = useIdenticalSwitch.isSelected();
