@@ -58,6 +58,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   @NonNls private static final String PERSISTENCY_RENAMED_FILE_TAG = "ClearCasePersistencyRenamedFile";
   @NonNls private static final String PERSISTENCY_RENAMED_FOLDER_TAG = "ClearCasePersistencyRenamedFolder";
   @NonNls private static final String PERSISTENCY_NEW_FILE_TAG = "ClearCasePersistencyNewFile";
+  @NonNls private static final String PERSISTENCY_MODIFIED_FILE_TAG = "ClearCasePersistencyModifiedFile";
   @NonNls private static final String PERSISTENCY_DELETED_FILE_TAG = "ClearCasePersistencyDeletedFile";
   @NonNls private static final String PERSISTENCY_DELETED_FOLDER_TAG = "ClearCasePersistencyDeletedFolder";
   @NonNls private static final String PERSISTENCY_SAVED_ACTIVITY_MAP_TAG = "ClearCasePersistencyActivitiesMap";
@@ -90,7 +91,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   @NonNls private static final String TAG_SIG = "Tag: ";
   @NonNls private static final String TAG_UUID_SIG = "  View tag uuid:";
   @NonNls private static final String ATTRIBUTES_SIG = "iew attributes:";
-  @NonNls private static final String CHECKEDOUT_VERSION_DELIMITER = " from ";
   @NonNls private static final String SNAPSHOT_SIG = "snapshot";
   @NonNls private static final String DYNAMIC_SIG = "dynamic";
   @NonNls private static final String UCM_SIG = "ucmview";
@@ -1173,20 +1173,25 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     readElements( element, removedFolders, PERSISTENCY_REMOVED_FOLDER_TAG, false );
     readElements( element, deletedFiles, PERSISTENCY_DELETED_FILE_TAG, false );
     readElements( element, deletedFolders, PERSISTENCY_DELETED_FOLDER_TAG, false );
+
     readElements( element, tmp, PERSISTENCY_NEW_FILE_TAG, true );
+    convertStringSet2VFileSet( tmp, newFiles );
+    readElements( element, tmp, PERSISTENCY_MODIFIED_FILE_TAG, true );
+    convertStringSet2VFileSet( tmp, modifiedFiles );
 
     readRenamedElements( element, renamedFiles, PERSISTENCY_RENAMED_FILE_TAG, true );
     readRenamedElements( element, renamedFolders, PERSISTENCY_RENAMED_FOLDER_TAG, true );
     readRenamedElements( element, activitiesAssociations, PERSISTENCY_SAVED_ACTIVITY_MAP_TAG, false );
 
     readViewInfo( element );
+  }
 
-    newFiles.clear();
-    for( String path : tmp )
-    {
+  private static void convertStringSet2VFileSet( final HashSet<String> set, HashSet<VirtualFile> vSet )
+  {
+    vSet.clear();
+    for( String path : set ){
       VirtualFile file = VcsUtil.getVirtualFile( path );
-      if( file != null )
-        newFiles.add( file );
+      if( file != null )  vSet.add( file );
     }
   }
 
@@ -1273,6 +1278,14 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
         tmp.add( file.getPath() );
     }
     writeElement( element, tmp, PERSISTENCY_NEW_FILE_TAG );
+
+    for( VirtualFile file : modifiedFiles )
+    {
+      FileStatus status = FileStatusManager.getInstance( myProject ).getStatus( file );
+      if( status == FileStatus.MODIFIED )
+        tmp.add( file.getPath() );
+    }
+    writeElement( element, tmp, PERSISTENCY_MODIFIED_FILE_TAG );
 
     writePairedElement( element, renamedFiles, PERSISTENCY_RENAMED_FILE_TAG );
     writePairedElement( element, renamedFolders, PERSISTENCY_RENAMED_FOLDER_TAG );
