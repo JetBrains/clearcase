@@ -42,7 +42,7 @@ public class CCaseChangeProvider implements ChangeProvider
   @NonNls private final static String SEARCHNEW_MSG = "Searching New";
   @NonNls private final static String FAIL_2_CONNECT_MSG = "Failed to connect to ClearCase Server: ";
   @NonNls private final static String FAIL_2_CONNECT_TITLE = "Server Connection Problem";
-  @NonNls private final static String FAIL_2_START = "Failed to start Cleartool. Check ClearCase installation.";
+  @NonNls private final static String FAIL_2_START = "Failed to start Cleartool. Please check ClearCase installation or current View's settings";
 
   /**
    * If amount of writable files during the batch call exceeds this number,
@@ -149,17 +149,17 @@ public class CCaseChangeProvider implements ChangeProvider
       @NonNls String message = FAIL_2_CONNECT_MSG + e.getMessage();
       if( TransparentVcs.isServerDownMessage( e.getMessage() ))
       {
-        message += "\n\nSwitching to the isOffline mode";
-        host.getConfig().isOffline = true;
+        message += "\n\nSwitching to the offline mode";
+        config.isOffline = true;
       }
       final String msg = message;
-      ApplicationManager.getApplication().invokeLater( new Runnable() { public void run() { VcsUtil.showErrorMessage( project, msg, FAIL_2_CONNECT_TITLE ); } });
+      VcsUtil.showErrorMessage( project, msg, FAIL_2_CONNECT_TITLE );
       LOG.info( message );
     }
     catch( RuntimeException e )
     {
       @NonNls final String message = FAIL_2_START + ": " + e.getMessage();
-      ApplicationManager.getApplication().invokeLater( new Runnable() { public void run() { VcsUtil.showErrorMessage( project, message, FAIL_2_CONNECT_TITLE ); } });
+      VcsUtil.showErrorMessage( project, message, FAIL_2_CONNECT_TITLE );
       LOG.info( message );
     }
     finally
@@ -460,12 +460,12 @@ public class CCaseChangeProvider implements ChangeProvider
           guessed = true;
         }
         else
-        */
         if( status == FileStatus.ADDED || status == FileStatus.UNKNOWN )
         {
           filesNew.add( file );
           guessed = true;
         }
+        */
       }
       
       if( !guessed )
