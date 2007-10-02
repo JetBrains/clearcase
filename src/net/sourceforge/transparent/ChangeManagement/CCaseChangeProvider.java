@@ -40,9 +40,14 @@ public class CCaseChangeProvider implements ChangeProvider
 
   @NonNls private final static String COLLECT_MSG = "Collecting writable files";
   @NonNls private final static String SEARCHNEW_MSG = "Searching New";
+
+  @NonNls private final static String ESTABLISH_CONNECTION_FAIL_SIG = "Unable to establish connection to snapshot view";
+  @NonNls private final static String UNABLE_OPEN_VIEW_SSIG = "Unable to open snapshot view";
+
   @NonNls private final static String FAIL_2_CONNECT_MSG = "Failed to connect to ClearCase Server: ";
   @NonNls private final static String FAIL_2_CONNECT_TITLE = "Server Connection Problem";
-  @NonNls private final static String FAIL_2_START = "Failed to start Cleartool. Please check ClearCase installation or current View's settings";
+  @NonNls private final static String FAIL_2_START_MSG = "Failed to start Cleartool. Please check ClearCase installation or current View's settings";
+  @NonNls private final static String FAIL_2_START_VIEW_MSG = "Failed to start Cleartool. Please check module's View settings";
 
   /**
    * If amount of writable files during the batch call exceeds this number,
@@ -146,19 +151,28 @@ public class CCaseChangeProvider implements ChangeProvider
     }
     catch( ClearCaseException e )
     {
-      @NonNls String message = FAIL_2_CONNECT_MSG + e.getMessage();
-      if( TransparentVcs.isServerDownMessage( e.getMessage() ))
+      String excMessage = e.getMessage();
+      @NonNls String message = FAIL_2_CONNECT_MSG + excMessage;
+
+      if( TransparentVcs.isServerDownMessage( excMessage ))
       {
         message += "\n\nSwitching to the offline mode";
         config.isOffline = true;
       }
+      else
+      if( excMessage.contains( UNABLE_OPEN_VIEW_SSIG ) ||
+          excMessage.contains( ESTABLISH_CONNECTION_FAIL_SIG ) )
+      {
+        message = FAIL_2_START_VIEW_MSG + excMessage;
+      }
+      
       final String msg = message;
       VcsUtil.showErrorMessage( project, msg, FAIL_2_CONNECT_TITLE );
       LOG.info( message );
     }
     catch( RuntimeException e )
     {
-      @NonNls final String message = FAIL_2_START + ": " + e.getMessage();
+      @NonNls final String message = FAIL_2_START_MSG + ": " + e.getMessage();
       VcsUtil.showErrorMessage( project, message, FAIL_2_CONNECT_TITLE );
       LOG.info( message );
     }
