@@ -34,6 +34,7 @@ public class MergeAction extends AsynchronousAction
     {
       String elementVersion = extractVersion( findVerOut );
       cleartool( "merge", "-g", "-to", path, elementVersion );
+      file.refresh( true, false );
     }
     else
     {
