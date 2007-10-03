@@ -928,9 +928,11 @@ public class CCaseChangeProvider implements ChangeProvider
 
   private static void logChangesContent( final VcsDirtyScope scope )
   {
-    LOG.info( "-- ChangeProvider: Dirty files: " + scope.getDirtyFiles().size() +
-              " == " + extMasks( scope.getDirtyFiles() ) +
-              ",\n\t\t\t\t\tdirty recursive directories: " + scope.getRecursivelyDirtyDirectories().size() );
+    LOG.info( "-- ChangeProvider: Dirty files: " + scope.getDirtyFiles().size() );
+    if( scope.getDirtyFiles().size() > 0 )
+      LOG.info( " == " + extMasks( scope.getDirtyFiles() ) );
+    LOG.info( ",\n                 dirty recursive directories: " + scope.getRecursivelyDirtyDirectories().size() );
+
     for( FilePath path : scope.getDirtyFiles() )
       LOG.info( "                                " + path.getPath() );
     LOG.info( "                                ---" );
