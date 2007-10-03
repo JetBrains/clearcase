@@ -10,7 +10,7 @@ public class VersionTreeAction extends AsynchronousAction
 
   public void perform( VirtualFile file, AnActionEvent e )
   {
-    cleartool( "lsvtree", "-g", getVersionExtendedPathName( file, e ) );
+    cleartool( "lsvtree", "-g", getVersionExtendedPathName( file ) );
   }
 
   protected String getActionName( AnActionEvent e ) { return ACTION_NAME; }

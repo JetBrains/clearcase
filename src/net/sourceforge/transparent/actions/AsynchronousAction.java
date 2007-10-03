@@ -5,7 +5,6 @@ import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
-import net.sourceforge.transparent.Status;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 
 import java.util.ArrayList;
@@ -43,10 +42,10 @@ public abstract class AsynchronousAction extends FileAction
     return exceptions;
   }
 
-  public String getVersionExtendedPathName( VirtualFile file, AnActionEvent e )
+  public String getVersionExtendedPathName( VirtualFile file )
   {
     String path = VcsUtil.getCanonicalPath( file.getPath() );
     FileStatus status = getFileStatus( _actionProjectInstance, file );
-    return (status == Status.HIJACKED) ? path + "@@" : path;
+    return status.equals( FileStatus.HIJACKED ) ? path + "@@" : path;
   }
 }
