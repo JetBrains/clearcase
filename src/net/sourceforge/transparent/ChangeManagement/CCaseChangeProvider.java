@@ -13,7 +13,10 @@ import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.text.LineTokenizer;
-import com.intellij.openapi.vcs.*;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.FileStatus;
+import com.intellij.openapi.vcs.FileStatusManager;
+import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
@@ -93,7 +96,6 @@ public class CCaseChangeProvider implements ChangeProvider
     if( project.isDisposed() )
       return;
 
-    validateChangesOverTheHost( dirtyScope );
     logChangesContent( dirtyScope );
 
     //  Do not perform any actions if we have no VSS-related
@@ -255,32 +257,35 @@ public class CCaseChangeProvider implements ChangeProvider
   {
     for( FilePath path : dirtyScope.getDirtyFiles() )
     {
-      String fileName = path.getPath();
-      VirtualFile file = path.getVirtualFile();
-
-      //  make sure that:
-      //  - a file is a folder which exists physically
-      //  - it is under out vcs and is not in the ignore list
-      if( path.isDirectory() && (file != null) && host.fileIsUnderVcs( path ) )
+      if( VcsUtil.isFileForVcs( path, project, host ) )
       {
-        if( host.isFileIgnored( file ))
-          filesIgnored.add( fileName );
-        else
-        {
-          String refName = discoverOldName( fileName );
+        String fileName = path.getPath();
+        VirtualFile file = path.getVirtualFile();
 
-          //  Check that folder physically exists.
-          if( !host.fileExistsInVcs( refName ))
-            filesNew.add( fileName );
+        //  make sure that:
+        //  - a file is a folder which exists physically
+        //  - it is under out vcs and is not in the ignore list
+        if( path.isDirectory() && (file != null) && host.fileIsUnderVcs( path ) )
+        {
+          if( host.isFileIgnored( file ))
+            filesIgnored.add( fileName );
           else
-          //  NB: Do not put to the "Changed" list those folders which are under
-          //      the renamed one since we will have troubles in checking such
-          //      folders in (it is useless, BTW).
-          //      Simultaneously, this prevents valid processing of renamed folders
-          //      that are under another renamed folders.
-          //  Todo Inner rename.
-          if( !refName.equals( fileName ) && !isUnderRenamedFolder( fileName ) )
-            filesChanged.add( fileName );
+          {
+            String refName = discoverOldName( fileName );
+
+            //  Check that folder physically exists.
+            if( !host.fileExistsInVcs( refName ))
+              filesNew.add( fileName );
+            else
+            //  NB: Do not put to the "Changed" list those folders which are under
+            //      the renamed one since we will have troubles in checking such
+            //      folders in (it is useless, BTW).
+            //      Simultaneously, this prevents valid processing of renamed folders
+            //      that are under another renamed folders.
+            //  Todo Inner rename.
+            if( !refName.equals( fileName ) && !isUnderRenamedFolder( fileName ) )
+              filesChanged.add( fileName );
+          }
         }
       }
     }
@@ -290,14 +295,17 @@ public class CCaseChangeProvider implements ChangeProvider
   {
     for( FilePath path : scope.getDirtyFiles() )
     {
-      String fileName = path.getPath();
-      VirtualFile file = path.getVirtualFile();
+      if( VcsUtil.isFileForVcs( path, project, host ) )
+      {
+        String fileName = path.getPath();
+        VirtualFile file = path.getVirtualFile();
 
-      if( host.isFileIgnored( file ))
-        filesIgnored.add( fileName );
-      else
-      if( isFileCCaseProcessable( file ) && isProperNotification( path ) )
-        filesWritable.add( fileName );
+        if( host.isFileIgnored( file ))
+          filesIgnored.add( fileName );
+        else
+        if( isFileCCaseProcessable( file ) && isProperNotification( path ) )
+          filesWritable.add( fileName );
+      }
     }
   }
 
@@ -902,28 +910,6 @@ public class CCaseChangeProvider implements ChangeProvider
     }
 
     return activity;
-  }
-
-  private void validateChangesOverTheHost( final VcsDirtyScope scope )
-  {
-    ApplicationManager.getApplication().runReadAction( new Runnable() {
-      public void run() {
-        //  protect over being called in the forbidden phase
-        if( !project.isDisposed() )
-        {
-          HashSet<FilePath> set = new HashSet<FilePath>();
-          set.addAll( scope.getDirtyFiles() );
-          set.addAll( scope.getRecursivelyDirtyDirectories() );
-
-          ProjectLevelVcsManager mgr = ProjectLevelVcsManager.getInstance( project );
-          for( FilePath path : set )
-          {
-            AbstractVcs fileHost = mgr.getVcsFor( path );
-            LOG.assertTrue( fileHost == host, "Not valid scope for current Vcs: " + path.getPath() );
-          }
-        }
-      }
-    });
   }
 
   private static void logChangesContent( final VcsDirtyScope scope )
