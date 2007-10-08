@@ -9,8 +9,9 @@ import com.intellij.openapi.vcs.VcsException;
  */
 public class AnnotationLineParser
 {
-  private final static String FIELDS_DELIMITER = " \\| ";
-  private static AnnotationLineInfo _cachedValues = new AnnotationLineInfo(); 
+  public final static String FIELDS_DELIMITER = " #|# ";
+  public final static String FIELDS_DELIMITER_RE = " #\\|# ";
+  private static AnnotationLineInfo _cachedValues = new AnnotationLineInfo();
 
   private AnnotationLineParser() {}
 
@@ -26,7 +27,7 @@ public class AnnotationLineParser
   public static AnnotationLineInfo parse( final String line ) throws VcsException
   {
     AnnotationLineInfo info = new AnnotationLineInfo();
-    String[] tokens = line.split( FIELDS_DELIMITER );
+    String[] tokens = line.split( FIELDS_DELIMITER_RE );
 
     //  We rely on the formatter string: "%Sd | %-16.16u | %-40.40Vn | " which
     //  exlicitely delimits date, user and revision number.

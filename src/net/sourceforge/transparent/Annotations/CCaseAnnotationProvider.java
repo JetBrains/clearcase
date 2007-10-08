@@ -55,7 +55,10 @@ public class CCaseAnnotationProvider implements AnnotationProvider
 
   private static FileAnnotation runAnnotation( final String path ) throws VcsException
   {
-    String output = TransparentVcs.cleartoolWithOutput( "annotate", "-out", "-", "-nco", "-nhe", "-fmt", "\"%Sd | %-16.16u | %-40.40Vn | \"", path );
+    @NonNls String format = "\"%Sd" + AnnotationLineParser.FIELDS_DELIMITER +
+                            "%-16.16u" + AnnotationLineParser.FIELDS_DELIMITER +
+                            "%-40.40Vn" + AnnotationLineParser.FIELDS_DELIMITER + "\"";
+    String output = TransparentVcs.cleartoolWithOutput( "annotate", "-out", "-", "-nco", "-nhe", "-fmt", format, path );
 
     //  Show more or less descriptive message for this CCase error. 
     if( output.contains( ERROR_SIG ) )
