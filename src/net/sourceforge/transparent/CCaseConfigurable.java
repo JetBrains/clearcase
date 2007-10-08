@@ -163,6 +163,7 @@ public class CCaseConfigurable implements ProjectComponent, Configurable
     final InternationalFormatter formatter = new InternationalFormatter(format);
     formatter.setAllowsInvalid(false);
     formatter.setCommitsOnValidEdit(true);
+    formatter.setMinimum( 1 );
 
     historyText = new JFormattedTextField( formatter );
   }
