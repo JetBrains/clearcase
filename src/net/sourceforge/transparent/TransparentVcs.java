@@ -577,20 +577,32 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public boolean fileExistsInVcs( FilePath path )
   {
-    //  Non-obvious optimization:
-    //  - if the file already has status "MODIFIED" or "HIJACKED", it means
-    //    that it is already under this vcs (since we managed to determine its
-    //    correct status);
-    //  - Otherwise it would have the status "NEW" or "UNVERSIONED" or (as in the case
-    //    read-only files) have no status at all.
-    FileStatus status = FileStatusManager.getInstance(myProject).getStatus( path.getVirtualFile() );
-    if( status == FileStatus.MODIFIED || status == FileStatus.HIJACKED )
-      return true;
+    VirtualFile vfile = path.getVirtualFile();
+
+    if( vfile != null )
+    {
+      //  Non-obvious optimization:
+      //  - if the file already has status "MODIFIED" or "HIJACKED", it means
+      //    that it is already under this vcs (since we managed to determine its
+      //    correct status);
+      //  - Otherwise it would have the status "NEW" or "UNVERSIONED" or (as in the case
+      //    read-only files) have no status at all.
+
+      FileStatus status = FileStatusManager.getInstance(myProject).getStatus( vfile );
+      if( status == FileStatus.MODIFIED || status == FileStatus.HIJACKED )
+        return true;
+      else
+      if( status == FileStatus.UNKNOWN || status == FileStatus.ADDED )
+        return false;
+      else
+        return fileExistsInVcs( path.getPath() );
+    }
     else
-    if( status == FileStatus.UNKNOWN || status == FileStatus.ADDED )
-      return false;
-    else
+    {
+      //  Probably the file which was removed from the project (e.g. as the
+      //  result of UpdateProject command).
       return fileExistsInVcs( path.getPath() );
+    }
   }
 
   public boolean fileExistsInVcs( @NotNull String path )
