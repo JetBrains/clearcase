@@ -113,10 +113,7 @@ public class CCaseChangeProvider implements ChangeProvider
 
     try
     {
-      if( isBatchUpdate )
-      {
-        iterateOverProjectStructure( dirtyScope );
-      }
+      iterateOverRecursiveFolders( dirtyScope );
       iterateOverDirtyDirectories( dirtyScope );
       iterateOverDirtyFiles( dirtyScope );
       LOG.info( "-- ChangeProvider - passed collection phase" );
@@ -133,7 +130,6 @@ public class CCaseChangeProvider implements ChangeProvider
         restoreStatusesFromCached();
       }
       processStatusExceptions();
-
       LOG.info( "-- ChangeProvider - passed analysis phase" );
       
       //-----------------------------------------------------------------------
@@ -233,17 +229,17 @@ public class CCaseChangeProvider implements ChangeProvider
    *  and check their status against the VSS repository. If file exists in the repository
    *  it is assigned "changed" status, otherwise it has "new" status.
    */
-  private void iterateOverProjectStructure( final VcsDirtyScope dirtyScope )
+  private void iterateOverRecursiveFolders( final VcsDirtyScope dirtyScope )
   {
     for( FilePath path : dirtyScope.getRecursivelyDirtyDirectories() )
     {
-      LOG.info( "-- ChangeProvider - Iterating over content root: " + path.getPath() );
+      LOG.info( "-- ChangeProvider - Iterating over [content] root: " + path.getPath() );
       if( progress != null )
         progress.setText( COLLECT_MSG );
 
       collectWritableFiles( path );
 
-      LOG.info( "-- ChangeProvider - Total: " + filesWritable.size() + " writable files after the last view." );
+      LOG.info( "-- ChangeProvider - Total: " + filesWritable.size() + " writable files after the last root." );
       if( progress != null )
         progress.setText( SEARCHNEW_MSG );
     }
@@ -263,9 +259,9 @@ public class CCaseChangeProvider implements ChangeProvider
         VirtualFile file = path.getVirtualFile();
 
         //  make sure that:
-        //  - a file is a folder which exists physically
+        //  - a file is a folder which exists (VFS has a valid ref to it)
         //  - it is under out vcs and is not in the ignore list
-        if( path.isDirectory() && (file != null) && host.fileIsUnderVcs( path ) )
+        if( path.isDirectory() && (file != null) )
         {
           if( host.isFileIgnored( file ))
             filesIgnored.add( fileName );
