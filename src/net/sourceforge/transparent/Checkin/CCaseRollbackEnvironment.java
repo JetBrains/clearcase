@@ -234,8 +234,7 @@ public class CCaseRollbackEnvironment implements RollbackEnvironment
       }
       else
       {
-        HashSet<String> folders = host.isFolderRemoved( normPath ) ? host.removedFolders : host.deletedFolders;
-        folders.remove( normPath );
+        host.removeFolderFromDeleted( normPath );
       }
     }
     else
