@@ -220,10 +220,23 @@ public class CCaseRollbackEnvironment implements RollbackEnvironment
       //  state before the checking out on deletion.
       updateFile( path.getPath(), errors );
 
-      //  If that folder contained checked out files, then they are not
-      //  reverted back after the parent folder is updated. For each of
-      //  file we need to issue "undocheckout" command.
-      undocheckoutInFolder( path.getPath(), errors );
+      //  In the case we restoring the folder which IS NOT in the repository
+      //  (e.g. it was inproperly put into the list of deleted or it was already
+      //  removed from the VOB), it is not restored locally and no update is
+      //  needed. BUT: since it is not created, its record in the hash of removed
+      //  folders is not removed too - thus remove it explicitely here.
+      if( path.getIOFile().exists() )
+      {
+        //  If that folder contained checked out files, then they are not
+        //  reverted back after the parent folder is updated. For each of
+        //  file we need to issue "undocheckout" command.
+        undocheckoutInFolder( path.getPath(), errors );
+      }
+      else
+      {
+        HashSet<String> folders = host.isFolderRemoved( normPath ) ? host.removedFolders : host.deletedFolders;
+        folders.remove( normPath );
+      }
     }
     else
     {
