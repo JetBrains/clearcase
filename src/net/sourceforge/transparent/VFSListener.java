@@ -141,7 +141,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener
     if( !VcsUtil.isFileForVcs( file, project, host ))
       return;
 
-    if( event.getPropertyName() == VirtualFile.PROP_WRITABLE )
+    if( event.getPropertyName().equals( VirtualFile.PROP_WRITABLE ))
     {
       //  If user managed to perform maerge on the file outside the
       //  environment, clear this mark so that we will not confuse ourselves.
@@ -159,7 +159,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener
       host.removeFileFromActivity( file.getPath() );
     }
     else
-    if( event.getPropertyName() == VirtualFile.PROP_NAME )
+    if( event.getPropertyName().equals( VirtualFile.PROP_NAME ))
     {
       FileStatus status = FileStatusManager.getInstance( project ).getStatus( file );
       if( status != FileStatus.ADDED && status != FileStatus.UNKNOWN && status != FileStatus.IGNORED )
