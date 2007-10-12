@@ -2,10 +2,12 @@
    <name>ClearcasePlugin</name>
    <description>Allows using ClearCase from within IDEA</description>
    <version>2.0</version>
-   <vendor email="bibou644-jetbrains@yahoo.com">Jacques Morel</vendor>
+   <vendor logo="/general/ijLogo.png">JetBrains</vendor>
    <idea-version since-build="3431"/>
    <change-notes>
-      <![CDATA[=== 1.36.0, 2005.08.22 by Vince Mallet<br>
+      <![CDATA[=== 2.0, 2007.10.15 by JetBrains Inc.<br>
+                  * Completely rewritten version which uses all new major VCS interfaces<br>
+               === 1.36.0, 2005.08.22 by Vince Mallet<br>
                   * New context menu item: Compare with Previous Version<br>
                   * Upgraded NewNativeClearcase implementation to eclipsecase 1.03<br>
                === 1.35.0, 2005.08.12 by Vince Mallet<br>
