@@ -28,7 +28,6 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
 {
   @NonNls private final static String HISTORY_CMD = "lshistory";
   @NonNls private final static String LIMITED_SWITCH = "-last";
-  @NonNls private final static String HIJACKED_SIG = "[hijacked]";
   @NonNls private final static String CCASE_DATE_COLUMN = "ClearCase Date";
   @NonNls private final static String ACTION_COLUMN = "Action";
   @NonNls private final static String LABEL_COLUMN = "Label";
