@@ -8,9 +8,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.ContentIterator;
-import com.intellij.openapi.roots.ProjectFileIndex;
-import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.vcs.FilePath;
@@ -19,6 +16,7 @@ import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.Processor;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.*;
 import static net.sourceforge.transparent.TransparentVcs.MERGE_CONFLICT;
@@ -312,18 +310,18 @@ public class CCaseChangeProvider implements ChangeProvider
    */
   private void collectWritableFiles( final FilePath filePath )
   {
-    final ProjectFileIndex fileIndex = ProjectRootManager.getInstance( project ).getFileIndex();
     VirtualFile vf = filePath.getVirtualFile();
     if( vf != null )
     {
-      fileIndex.iterateContentUnderDirectory( vf, new ContentIterator()
+      ProjectLevelVcsManager.getInstance(project).iterateVcsRoot( vf, new Processor<FilePath>()
         {
-          public boolean processFile( VirtualFile file )
+          public boolean process(final FilePath file)
           {
             String path = file.getPath();
-            if( VcsUtil.isPathUnderProject( project, path ) && isValidFile( file ) )
+            VirtualFile vFile = file.getVirtualFile();
+            if( isValidFile( vFile ) )
             {
-              if( host.isFileIgnored( file ) )
+              if( host.isFileIgnored( vFile ) )
                 filesIgnored.add( path );
               else
                 filesWritable.add( path );
