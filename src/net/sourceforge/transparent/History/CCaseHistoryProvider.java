@@ -2,10 +2,7 @@ package net.sourceforge.transparent.History;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.FileStatus;
-import com.intellij.openapi.vcs.FileStatusManager;
-import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.history.*;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.ColumnInfo;
@@ -19,6 +16,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -32,6 +30,8 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
   @NonNls private final static String CCASE_DATE_COLUMN = "ClearCase Date";
   @NonNls private final static String ACTION_COLUMN = "Action";
   @NonNls private final static String LABEL_COLUMN = "Label";
+
+  @NonNls private final static String NOT_A_VOB_OBJECT = "Not a vob object";
 
   private Project project;
   private TransparentVcs host;
@@ -124,22 +124,33 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
     {
       log = TransparentVcs.cleartoolWithOutput( HISTORY_CMD, path );
     }
-    ArrayList<CCaseHistoryParser.SubmissionData> changes = CCaseHistoryParser.parse( log );
+
+    //  There may exist files for which we know nothing.
     ArrayList<VcsFileRevision> revisions = new ArrayList<VcsFileRevision>();
-    for( CCaseHistoryParser.SubmissionData change : changes )
+    if( log.contains( NOT_A_VOB_OBJECT ))
     {
-      //  When file is being committed into the repository, "lshistory"
-      //  returns a intermediate record with commit date in the invalid format
-      //  which can not be parsed (actually, it contains only full date wihtout
-      //  time information delimited by '.'). Just skip this record.
-      try
+      List<VcsException> errors = new ArrayList<VcsException>();
+      errors.add( new VcsException( log ) );
+      AbstractVcsHelper.getInstance( project ).showErrors( errors, VcsBundle.message("message.title.could.not.load.file.history") );
+    }
+    else
+    {
+      ArrayList<CCaseHistoryParser.SubmissionData> changes = CCaseHistoryParser.parse( log );
+      for( CCaseHistoryParser.SubmissionData change : changes )
       {
-        VcsFileRevision rev = new CCaseFileRevision( change, path );
-        revisions.add( rev );
-      }
-      catch( NullPointerException e)
-      {
-        TransparentVcs.LOG.info( "Can not parse history record, found intermediate record.");
+        //  When file is being committed into the repository, "lshistory"
+        //  returns a intermediate record with commit date in the invalid format
+        //  which can not be parsed (actually, it contains only full date wihtout
+        //  time information delimited by '.'). Just skip this record.
+        try
+        {
+          VcsFileRevision rev = new CCaseFileRevision( change, path );
+          revisions.add( rev );
+        }
+        catch( NullPointerException e)
+        {
+          TransparentVcs.LOG.info( "Can not parse history record, found intermediate record.");
+        }
       }
     }
 
