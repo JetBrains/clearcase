@@ -1,4 +1,4 @@
-package net.sourceforge.transparent;
+package net.sourceforge.transparent.History;
 
 import com.intellij.openapi.util.text.LineTokenizer;
 import org.jetbrains.annotations.NonNls;
@@ -52,9 +52,14 @@ public class CCaseHistoryParser
         if( changes.size() > 0 )
         {
           SubmissionData lastChange = changes.get( changes.size() - 1 );
-          String newComment = line.substring( COMMENT_SIG1.length(), line.length() - 1 );
-          String comment = lastChange.comment;
-          lastChange.comment = (comment == null) ? newComment : comment.concat(" ").concat( newComment );
+
+          //  Protect from illegally formed comments.
+          if( COMMENT_SIG1.length() < line.length() )
+          {
+            String newComment = line.substring( COMMENT_SIG1.length(), line.length() - 1 );
+            String comment = lastChange.comment;
+            lastChange.comment = (comment == null) ? newComment : comment.concat(" ").concat( newComment );
+          }
         }
       }
       else

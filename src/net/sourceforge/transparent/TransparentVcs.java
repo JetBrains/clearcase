@@ -35,6 +35,7 @@ import net.sourceforge.transparent.ChangeManagement.CCaseChangeProvider;
 import net.sourceforge.transparent.Checkin.CCaseCheckinEnvironment;
 import net.sourceforge.transparent.Checkin.CCaseCheckinHandler;
 import net.sourceforge.transparent.Checkin.CCaseRollbackEnvironment;
+import net.sourceforge.transparent.History.CCaseHistoryProvider;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import net.sourceforge.transparent.exceptions.ClearCaseNoServerException;
 import org.jdom.Element;
