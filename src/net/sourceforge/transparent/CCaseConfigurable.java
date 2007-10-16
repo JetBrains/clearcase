@@ -58,6 +58,9 @@ public class CCaseConfigurable implements ProjectComponent, Configurable
     myWorkOffline.addActionListener(new ActionListener() {
         public void actionPerformed(ActionEvent e) {  resetCheckInOutCheckboxes();  }
     });
+    myRestrictHistory.addActionListener(new ActionListener() {
+        public void actionPerformed(ActionEvent e) {  resetHistoryMargin();  }
+    });
 
     return myConfigPanel;
   }
@@ -71,6 +74,11 @@ public class CCaseConfigurable implements ProjectComponent, Configurable
 
     if( isOffline )
       myCheckOutForHijacked.setSelected( true );
+  }
+
+  private void resetHistoryMargin()
+  {
+    historyText.setEnabled( myRestrictHistory.isSelected() );
   }
 
   public boolean isModified()
