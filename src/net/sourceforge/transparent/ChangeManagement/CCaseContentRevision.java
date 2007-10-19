@@ -7,6 +7,7 @@ import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import com.intellij.openapi.vfs.CharsetToolkit;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.History.CCaseHistoryParser;
@@ -136,7 +137,8 @@ public class CCaseContentRevision implements ContentRevision
           }
           else
           {
-            content = VcsUtil.getFileContent( myTmpFile );
+            byte[] byteContent = VcsUtil.getFileByteContent( myTmpFile );
+            content = new String( byteContent, CharsetToolkit.getIDEOptionsCharset().name() );
             myTmpFile.delete();
           }
         }
