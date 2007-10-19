@@ -19,6 +19,7 @@ import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
+import net.sourceforge.transparent.CCaseViewsManager;
 import net.sourceforge.transparent.ClearCase;
 import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
@@ -210,8 +211,15 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
         FilePath newFile = change.getAfterRevision().getFile();
         FilePath oldFile = change.getBeforeRevision().getFile();
 
-        host.renameAndCheckInFile( oldFile.getIOFile(), newFile.getName(), comment, errors );
-        host.renamedFolders.remove( newFile.getPath() );
+        if( oldFile.getVirtualFileParent().getPath().equals( newFile.getVirtualFileParent().getPath() ))
+        {
+          host.renameAndCheckInFile( oldFile.getIOFile(), newFile.getName(), comment, errors );
+          host.renamedFolders.remove( newFile.getPath() );
+        }
+        else
+        {
+          
+        }
         incrementProgress( newFile.getPath() );
       }
     }
@@ -331,16 +339,19 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   {
     if( host.getConfig().useUcmModel )
     {
+      CCaseViewsManager viewsManager = CCaseViewsManager.getInstance( project );
+
       initProgress( files.size() );
+
       for( FilePath file : files )
       {
-          String activity = host.getActivityOfViewOfFile( file );
-          String currentActivity = getChangeListName( file.getVirtualFile() );
-          if(( activity != null ) && !activity.equals( currentActivity ) )
-          {
-            host.changeActivityForLastVersion( file, activity, currentActivity, errors );
-          }
-          incrementProgress( CHANGE_ACTIVITY + file.getName() );
+        String activity = viewsManager.getActivityOfViewOfFile( file );
+        String currentActivity = getChangeListName( file.getVirtualFile() );
+        if(( activity != null ) && !activity.equals( currentActivity ) )
+        {
+          host.changeActivityForLastVersion( file, activity, currentActivity, errors );
+        }
+        incrementProgress( CHANGE_ACTIVITY + file.getName() );
       }
     }
   }
@@ -411,12 +422,6 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
         {
           FilePath oldFile = change.getBeforeRevision().getFile();
 
-          //  Safety Checks (debug only)
-          if( oldFile.getVirtualFileParent() == null )
-            throw new NullPointerException( "VF Parent for BeforeRevision FilePath is null ");
-          if( file.getVirtualFileParent() == null )
-            throw new NullPointerException( "VF Parent for AfterRevision FilePath is null ");
-
           //  If parent folders' names of the revisions coinside, then we
           //  deal with the simple rename, otherwise we process full-scaled
           //  file movement across folders (packages).
@@ -437,11 +442,14 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
           host.checkinFile( file, comment, errors );
           if( host.getConfig().useUcmModel )
           {
+            CCaseViewsManager viewsManager = CCaseViewsManager.getInstance( project );
+            
             //  If the file was checked out using one view's activity but has then
             //  been moved to another changelist (activity) we must issue "chactivity"
             //  command for the file element so that subsequent "checkin" command
             //  behaves as desired.
-            String activity = host.getCheckoutActivityForFile( file.getPath() );
+
+            String activity = viewsManager.getCheckoutActivityForFile( file.getPath() );
             String currentActivity = getChangeListName( file.getVirtualFile() );
             if(( activity != null ) && !activity.equals( currentActivity ) )
             {

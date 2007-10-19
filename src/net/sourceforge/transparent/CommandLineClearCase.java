@@ -92,7 +92,8 @@ public class CommandLineClearCase implements ClearCase
     //  non-UCM views, do not disturb host.
     if( activity != null )
     {
-      host.addFile2Changelist( file, activity );
+      CCaseViewsManager viewsManager = CCaseViewsManager.getInstance( host.getProject() );
+      viewsManager.addFile2Changelist( file.getPath(), activity );
     }
   }
 

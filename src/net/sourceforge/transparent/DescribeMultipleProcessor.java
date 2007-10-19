@@ -64,8 +64,6 @@ public class DescribeMultipleProcessor
   @Nullable
   public String getActivity( String fileName )
   {
-//    String normName = VcsUtil.getCanonicalLocalPath( fileName ).toLowerCase();
-//    return file2Activity.get( normName );
     return file2Activity.get( fileName );
   }
 

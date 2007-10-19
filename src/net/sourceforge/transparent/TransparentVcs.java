@@ -8,9 +8,10 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.startup.StartupManager;
-import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.util.*;
+import com.intellij.openapi.util.InvalidDataException;
+import com.intellij.openapi.util.JDOMExternalizable;
+import com.intellij.openapi.util.Key;
+import com.intellij.openapi.util.WriteExternalException;
 import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.*;
@@ -26,8 +27,6 @@ import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileListener;
-import com.intellij.openapi.wm.ToolWindowId;
-import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.util.containers.HashSet;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.Annotations.CCaseAnnotationProvider;
@@ -37,15 +36,15 @@ import net.sourceforge.transparent.Checkin.CCaseCheckinHandler;
 import net.sourceforge.transparent.Checkin.CCaseRollbackEnvironment;
 import net.sourceforge.transparent.History.CCaseHistoryProvider;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
-import net.sourceforge.transparent.exceptions.ClearCaseNoServerException;
 import org.jdom.Element;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 
 public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDOMExternalizable
 {
@@ -62,17 +61,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   @NonNls private static final String PERSISTENCY_MODIFIED_FILE_TAG = "ClearCasePersistencyModifiedFile";
   @NonNls private static final String PERSISTENCY_DELETED_FILE_TAG = "ClearCasePersistencyDeletedFile";
   @NonNls private static final String PERSISTENCY_DELETED_FOLDER_TAG = "ClearCasePersistencyDeletedFolder";
-  @NonNls private static final String PERSISTENCY_SAVED_ACTIVITY_MAP_TAG = "ClearCasePersistencyActivitiesMap";
-
-  @NonNls private static final String  VIEW_INFO_TAG = "ViewInfo";
-  @NonNls private static final String  CONTENT_ROOT_TAG = "ContentRoot";
-  @NonNls private static final String  TAG_TAG = "Tag";
-  @NonNls private static final String  UUID_TAG = "Uuid";
-  @NonNls private static final String  UCM_TAG = "Ucm";
-  @NonNls private static final String  DYNAMIC_TAG = "Dynamic";
-  @NonNls private static final String  SNAPSHOT_TAG = "Snapshot";
-  @NonNls private static final String  ACTIVITY_TAG = "Activity";
-  @NonNls private static final String  ACTIVITY_NAME_TAG = "ActivityName";
 
   @NonNls private static final String PATH_DELIMITER = "%%%";
   @NonNls private static final String CCASE_KEEP_FILE_SIG = "*.keep";
@@ -82,38 +70,10 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   @NonNls private static final String CCASE_FINDMERGE_FILE_SIG = "findmerge.log.*";
   @NonNls private static final String HIJACKED_EXT = ".hijacked";
 
-  @NonNls private static final String LIST_VIEW_CMD = "lsview";
-  @NonNls private static final String CURRENT_VIEW_SWITCH = "-cview";
-  @NonNls private static final String CURRENT_ACTIVITY_SWITCH = "-cact";
-  @NonNls private static final String LONG_SWITCH = "-long";
-  @NonNls private static final String LIST_ACTIVITY_CMD = "lsactivity";
   @NonNls private static final String CHANGE_ACTIVITY_CMD = "chactivity";
-
-  @NonNls private static final String TAG_SIG = "Tag: ";
-  @NonNls private static final String TAG_UUID_SIG = "  View tag uuid:";
-  @NonNls private static final String ATTRIBUTES_SIG = "iew attributes:";
-  @NonNls private static final String SNAPSHOT_SIG = "snapshot";
-  @NonNls private static final String DYNAMIC_SIG = "dynamic";
-  @NonNls private static final String UCM_SIG = "ucmview";
 
   @NonNls private final static String RESERVED_SIG = "reserved";
   @NonNls private final static String UNRESERVED_SIG = "unreserved";
-
-  @NonNls private static final String ERRORS_TAB_NAME = "ClearCase views";
-  @NonNls private static final String INIT_FAILED_TITLE = "Server intialization failed";
-  @NonNls private static final String SERVER_UNAVAILABLE_MESSAGE = "\nServer is unavailable, ClearCase support is switched to isOffline mode";
-  @NonNls private static final String FAILED_TO_INIT_VIEW_MESSAGE = "Plugin failed to initialize view:\n";
-
-  public static class ViewInfo
-  {
-    public String tag;
-    public String uuid;
-    public boolean isSnapshot;
-    public boolean isDynamic;
-    public boolean isUcm;
-    public String activity;
-    public String activityName;
-  }
 
   //  Resolve the case when parent folder was already checked out by
   //  the presence of this substring in the error message.
@@ -134,12 +94,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   //  Used to keep a set of modified files when user switches to the
   //  offline mode. Empty and unused in online mode.
   private HashSet<VirtualFile> modifiedFiles;
-
-  //  Keeps for any checked out file the activity which it was checked out with
-  private HashMap<String, String> activitiesAssociations;
-  private HashMap<String, String> activitiesNames;
-
-  public HashMap<String,ViewInfo> viewsMap;
 
   private ClearCase clearcase;
   private CCaseConfig config;
@@ -169,10 +123,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     renamedFiles = new HashMap<String, String>();
     renamedFolders = new HashMap<String, String>();
     modifiedFiles = new HashSet<VirtualFile>();
-
-    activitiesAssociations = new HashMap<String, String>();
-    activitiesNames = new HashMap<String, String>();
-    viewsMap = new HashMap<String, ViewInfo>();
   }
 
   @NotNull
@@ -181,8 +131,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public String getDisplayName()    {  return "ClearCase";  }
   public String getMenuItemText()   {  return super.getMenuItemText();  }
   public Project getProject()       {  return myProject;   }
-//  public boolean isCmdImpl()        {  return getClearCase().getName().indexOf( COMMAND_LINE_CLASS_SIG ) != -1; }
-  public static boolean isCmdImpl()        {  return true; }
+  public static boolean isCmdImpl() {  return true; }
 
   public VcsShowSettingOption      getCheckoutOptions()   {  return myCheckoutOptions;   }
   public VcsShowConfirmationOption getAddConfirmation()   {  return addConfirmation;     }
@@ -253,7 +202,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
     if( !config.isOffline )
     {
-      resetViewsInformation();
+      resetClearCaseFromConfiguration();
+      CCaseViewsManager.getInstance( myProject ).reloadViews();
     }
 
     //  Control the appearance of project items so that we can easily
@@ -295,44 +245,9 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public void directoryMappingChanged()
   {
-    resetViewsInformation();
+    CCaseViewsManager.getInstance( myProject ).reloadViews();
   }
 
-  @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-  private void resetViewsInformation()
-  {
-    resetClearCaseFromConfiguration();
-    extractViewProperties();
-
-    //  If configuration has changed, check that we do not operate with
-    //  activities in the inappropriate environment.
-    if( config.useUcmModel )
-    {
-      if( !allViewsAreUCM() )
-      {
-        VcsException warn = new VcsException( "Not all views are of UCM type. Activities processing is suspended.");
-        warn.setIsWarning( true );
-        AbstractVcsHelper.getInstance( myProject ).showError( warn, ERRORS_TAB_NAME );
-
-        StartupManager.getInstance( myProject ).registerPostStartupActivity( new Runnable() {
-          public void run() { ToolWindowManager.getInstance( myProject ).getToolWindow( ToolWindowId.MESSAGES_WINDOW ).activate( null ); }
-        });
-
-        config.useUcmModel = false;
-      }
-    }
-    else{
-      LOG.info( "+++ Session does not use UCM model +++" );
-    }
-
-    if( config.useUcmModel )
-    {
-      extractViewActivities();
-      checkViewsWithoutActions();
-    }
-  }
-
-//  public void  setClearCase( ClearCase clearCase ) {  clearcase = clearCase;  }
   public ClearCase getClearCase()
   {
     if( clearcase == null )
@@ -347,194 +262,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       CommandLineClearCase cc = new CommandLineClearCase();
       cc.setHost( this );
       clearcase = new ClearCaseDecorator( cc );
-    }
-  }
-
-  public boolean allViewsAreUCM()
-  {
-    boolean ucm = true;
-    for( ViewInfo info : viewsMap.values() )
-      ucm &= info.isUcm;
-
-    return ucm;
-  }
-
-  /**
-   * Retrieve basic view's properties - Tag, type, activity, uuid.
-   * For each content root (the CCase view), issue the command
-   * "cleartool lsview -cview" from the working folder equals to that root.
-   */
-  private void extractViewProperties()
-  {
-    ProjectLevelVcsManager mgr = ProjectLevelVcsManager.getInstance( myProject );
-    VirtualFile[] roots = mgr.getRootsUnderVcs( this );
-    try
-    {
-      for( VirtualFile root : roots )
-      {
-        if( !viewsMap.containsKey( root.getPath() ) )
-        {
-          ViewInfo info = new ViewInfo();
-          extractViewType( root.getPath(), info );
-
-          viewsMap.put( root.getPath(), info );
-        }
-      }
-
-      //  Remove those ViewInfo_s which do not correspond to any content roots
-      //  currently configured in the application.
-      Set<String> storedRoots = new HashSet<String>( viewsMap.keySet() );
-      for( String storedRoot : storedRoots )
-      {
-        boolean isFound = false;
-        for( VirtualFile root : roots )
-        {
-          if( storedRoot.equals( root.getPath() ) )
-          {
-            isFound = true; break;
-          }
-        }
-        if( !isFound )
-        {
-          viewsMap.remove( storedRoot );
-        }
-      }
-    }
-    catch( ClearCaseNoServerException e )
-    {
-      Messages.showMessageDialog( getProject(), e.getMessage() + SERVER_UNAVAILABLE_MESSAGE,
-                                  INIT_FAILED_TITLE, Messages.getErrorIcon());
-      config.isOffline = true;
-    }
-    catch( ClearCaseException e )
-    {
-      //  It is possible that some configuration paths point to an invalid
-      //  or obsolete view.
-      Messages.showMessageDialog( getProject(), FAILED_TO_INIT_VIEW_MESSAGE + e.getMessage(),
-                                  INIT_FAILED_TITLE, Messages.getErrorIcon());
-    }
-  }
-
-  private static void extractViewType( String viewPath, ViewInfo info ) throws ClearCaseNoServerException
-  {
-    String output = cleartoolOnLocalPathWithOutput( viewPath, LIST_VIEW_CMD, CURRENT_VIEW_SWITCH, LONG_SWITCH );
-    if( isServerDownMessage( output ) )
-      throw new ClearCaseNoServerException( output );
-
-    List<String> lines = StringUtil.split( output, "\n" );
-    for( String line : lines )
-    {
-      if( line.startsWith( TAG_SIG ) )
-      {
-        info.tag = line.substring( TAG_SIG.length() );
-      }
-      else
-      if( line.startsWith( TAG_UUID_SIG ) )
-      {
-        info.uuid = line.substring( TAG_UUID_SIG.length() );
-      }
-      else
-      if( line.indexOf( ATTRIBUTES_SIG ) != -1 )
-      {
-        info.isSnapshot = (line.indexOf( SNAPSHOT_SIG ) != -1);
-        info.isDynamic = (line.indexOf( DYNAMIC_SIG ) != -1);
-        info.isUcm = ( line.indexOf( UCM_SIG ) != -1 );
-
-        break;
-      }
-    }
-  }
-
-  public void extractViewActivities()
-  {
-    //  1. Collect all activities related somehow to a view. Store the pait of
-    //     its names - internal and display name.
-    //  2. Retrieve the current activity of a view.
-
-    activitiesNames.clear();
-    for( ViewInfo info : viewsMap.values() )
-    {
-      String output = cleartoolWithOutput( LIST_ACTIVITY_CMD, "-view", info.tag );
-      if( !isServerDownMessage( output ) )
-      {
-        LOG.info( output );
-        
-        String[] lines = LineTokenizer.tokenize( output, false );
-        for( String line : lines )
-        {
-          Pair<String,String> acts = parseActivities( line );
-          activitiesNames.put( acts.getFirst(), acts.getSecond() );
-        }
-      }
-    }
-
-    for( ViewInfo info : viewsMap.values() )
-    {
-      String output = cleartoolWithOutput( LIST_ACTIVITY_CMD, CURRENT_ACTIVITY_SWITCH, "-view", info.tag );
-      if( !isServerDownMessage( output ) )
-      {
-        LOG.info( output );
-        
-        Pair<String,String> acts = parseActivities( output );
-        info.activity = acts.getFirst();
-        info.activityName = acts.getSecond();
-      }
-    }
-
-    LOG.info( ">>> Extracted Activities:" );
-    try
-    {
-      for( ViewInfo info : viewsMap.values() )
-      {
-        LOG.info( ">>>\t" + info.activity + "->" + info.activityName );
-      }
-    }
-    catch( Exception e)
-    {
-      LOG.info( ">>> INTERNAL FAULT DURING ACTIVITES DUMPING. THUS ACTIVITIES PARSING FAILED." );
-    }
-  }
-
-  private static Pair<String,String> parseActivities( String str )
-  {
-    final String TEMPLATE = "   \"";
-
-    String name = null;
-    String showName = null;
-    int index = str.indexOf( TEMPLATE );
-    if( index != -1 )
-    {
-      showName = str.substring( index + TEMPLATE.length(), str.length() - 1 );
-      str = str.substring( 0, index );
-      String[] fields = str.split( "  " );
-      name = fields[ 1 ];
-    }
-    return new Pair<String,String>( name, showName );
-  }
-
-  private void checkViewsWithoutActions()
-  {
-    Set<String> passiveViews = new HashSet<String>();
-    for( ViewInfo info : viewsMap.values() )
-    {
-      if( StringUtil.isEmpty( info.activityName ))
-      {
-        passiveViews.add( info.tag );
-      }
-    }
-    if( passiveViews.size() > 0 )
-    {
-      List<VcsException> list = new ArrayList<VcsException>();
-      for( String view : passiveViews )
-      {
-        VcsException warn = new VcsException( "View " + view + " has no associated activity. Checkout from this view will be problematic.");
-        warn.setIsWarning( true );
-        list.add( warn );
-      }
-      AbstractVcsHelper.getInstance( myProject ).showErrors( list, ERRORS_TAB_NAME );
-      StartupManager.getInstance( myProject ).registerPostStartupActivity( new Runnable() {
-        public void run() { ToolWindowManager.getInstance( myProject ).getToolWindow( ToolWindowId.MESSAGES_WINDOW ).activate( null ); }
-      });
     }
   }
 
@@ -661,28 +388,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     return file != null && modifiedFiles.contains( file );
   }
 
-  public void addFile2Changelist( File file, @NotNull String changeListName )
-  {
-    String normName = VcsUtil.getCanonicalLocalPath( file.getPath() );
-    activitiesAssociations.put( normName, changeListName );
-  }
-  public void removeFileFromActivity( String fileName )
-  {
-    fileName = VcsUtil.getCanonicalLocalPath( fileName );
-    activitiesAssociations.remove( fileName );
-  }
-  @Nullable
-  public String getCheckoutActivityForFile( @NotNull String fileName )
-  {
-    return activitiesAssociations.get( fileName ); 
-  }
-
-  @Nullable
-  public String getNormalizedActivityName( String activity )
-  {
-    return activitiesNames.get( activity );
-  }
-  
   private boolean isCheckInToUseHijack() {  return config.isOffline || config.checkInUseHijack;  }
 
   public Status getStatus( VirtualFile file ) {  return getClearCase().getStatus( new File( file.getPath() ) );   }
@@ -1017,15 +722,17 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public void changeActivityForLastVersion( FilePath file, String srcActivity, String dstActivity,
                                             List<VcsException> errors )
   {
-    //  First get the proper version of the checked out element.
+    CCaseViewsManager viewsMgr = CCaseViewsManager.getInstance( myProject );
     VirtualFile root = VcsUtil.getVcsRootFor( myProject, file );
+
+    //  First get the proper version of the checked out element.
     String output = cleartoolOnLocalPathWithOutput( root.getPath(), "lshistory", "-short", file.getPath() );
     String[] lines = LineTokenizer.tokenize( output, false );
     if( lines.length > 0 )
     {
       String version = lines[ 0 ];
-      srcActivity = findNormalizedName( srcActivity );
-      String dstActivityNorm = findNormalizedName( dstActivity );
+      srcActivity = viewsMgr.getActivityIdName( srcActivity );
+      String dstActivityNorm = viewsMgr.getActivityIdName( dstActivity );
 
       @NonNls Runner runner = new Runner();
       runner.workingDir = root.getPath();
@@ -1198,9 +905,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
     readRenamedElements( element, renamedFiles, PERSISTENCY_RENAMED_FILE_TAG, true );
     readRenamedElements( element, renamedFolders, PERSISTENCY_RENAMED_FOLDER_TAG, true );
-    readRenamedElements( element, activitiesAssociations, PERSISTENCY_SAVED_ACTIVITY_MAP_TAG, false );
-
-    readViewInfo( element );
   }
 
   private static void convertStringSet2VFileSet( final HashSet<String> set, HashSet<VirtualFile> vSet )
@@ -1229,8 +933,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     }
   }
 
-  private static void readRenamedElements( final Element element, HashMap<String, String> list,
-                                           String tag, boolean isExist )
+  public static void readRenamedElements( final Element element, HashMap<String, String> list,
+                                          String tag, boolean isExist )
   {
     List files = element.getChildren( tag );
     for (Object cclObj : files)
@@ -1249,33 +953,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
           if( new File( newName ).exists() == isExist )
             list.put( newName, oldName );
         }
-      }
-    }
-  }
-
-  private void readViewInfo( final Element element )
-  {
-    List elements = element.getChildren( VIEW_INFO_TAG );
-    for (Object cclObj : elements)
-    {
-      if (cclObj instanceof Element)
-      {
-        ViewInfo info = new ViewInfo();
-        info.tag = ((Element)cclObj).getChild( TAG_TAG ).getValue();
-
-        //  IDEADEV-19094. Can it be so that View may NOT have an UUID tag?
-        //  Or we were fucked by the parsing output?
-        if( ((Element)cclObj).getChild( UUID_TAG ) != null )
-          info.uuid = ((Element)cclObj).getChild( UUID_TAG ).getValue();
-        
-        info.isUcm = Boolean.valueOf(((Element)cclObj).getChild( UCM_TAG ).getValue()).booleanValue();
-        info.isDynamic = Boolean.valueOf(((Element)cclObj).getChild(DYNAMIC_TAG).getValue()).booleanValue();
-        info.isSnapshot = Boolean.valueOf(((Element)cclObj).getChild(SNAPSHOT_TAG).getValue()).booleanValue();
-        info.activity = ((Element)cclObj).getChild( ACTIVITY_TAG ).getValue();
-        info.activityName = ((Element)cclObj).getChild( ACTIVITY_NAME_TAG ).getValue();
-
-        String root = ((Element)cclObj).getChild( CONTENT_ROOT_TAG ).getValue();
-        viewsMap.put( root, info );
       }
     }
   }
@@ -1306,9 +983,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
     writePairedElement( element, renamedFiles, PERSISTENCY_RENAMED_FILE_TAG );
     writePairedElement( element, renamedFolders, PERSISTENCY_RENAMED_FOLDER_TAG );
-    writePairedElement( element, activitiesAssociations, PERSISTENCY_SAVED_ACTIVITY_MAP_TAG );
-
-    writeViewInfo( element );
   }
 
   private static void writeElement( final Element element, HashSet<String> files, String tag )
@@ -1326,7 +1000,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     }
   }
 
-  private static void writePairedElement( final Element element, HashMap<String, String> files, String tag )
+  public static void writePairedElement( final Element element, HashMap<String, String> files, String tag )
   {
     for( String file : files.keySet() )
     {
@@ -1336,50 +1010,5 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       listElement.addContent( pathPair );
       element.addContent( listElement );
     }
-  }
-
-  private void writeViewInfo( final Element element )
-  {
-    for( String root : viewsMap.keySet() )
-    {
-      final ViewInfo info = viewsMap.get( root );
-      final Element listElement = new Element( VIEW_INFO_TAG );
-
-      listElement.addContent( new Element( CONTENT_ROOT_TAG ).addContent( root ) );
-      listElement.addContent( new Element( TAG_TAG ).addContent( info.tag ) );
-      listElement.addContent( new Element( UUID_TAG ).addContent( info.uuid ) );
-      listElement.addContent( new Element( UCM_TAG ).addContent( Boolean.toString( info.isUcm ) ) );
-      listElement.addContent( new Element( DYNAMIC_TAG ).addContent( Boolean.toString( info.isDynamic ) ) );
-      listElement.addContent( new Element( SNAPSHOT_TAG ).addContent( Boolean.toString( info.isSnapshot ) ) );
-      listElement.addContent( new Element( ACTIVITY_TAG ).addContent( info.activity) );
-      listElement.addContent( new Element( ACTIVITY_NAME_TAG ).addContent( info.activityName) );
-
-      element.addContent( listElement );
-    }
-  }
-
-  private String findNormalizedName( String activity )
-  {
-    for( ViewInfo info : viewsMap.values() )
-    {
-      if( info.activityName.equals( activity ) )
-      {
-        return info.activity;
-      }
-    }
-    return activity.replace( ' ', '_' );
-  }
-
-  @Nullable
-  public String getActivityOfViewOfFile( FilePath path )
-  {
-    String activity = null;
-    VirtualFile root = VcsUtil.getVcsRootFor( myProject, path );
-    ViewInfo info = viewsMap.get( root.getPath() );
-    if( info != null )
-    {
-      activity = info.activityName;
-    }
-    return activity;
   }
 }

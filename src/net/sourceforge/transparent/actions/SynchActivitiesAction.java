@@ -1,6 +1,7 @@
 package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsException;
@@ -8,11 +9,11 @@ import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vfs.VirtualFile;
+import net.sourceforge.transparent.CCaseViewsManager;
 import net.sourceforge.transparent.ChangeManagement.CCaseChangeProvider;
 import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,22 +28,15 @@ public class SynchActivitiesAction extends SynchronousAction
 
   protected boolean isEnabled( VirtualFile file, AnActionEvent e )
   {
-    boolean status = true;
-    TransparentVcs host = getHost( e );
-
-    for( TransparentVcs.ViewInfo info : host.viewsMap.values() )
-      status &= info.isUcm;
-
-    return status;
+    return CCaseViewsManager.getInstance( getProject( e ) ).isAnyUcmView();
   }
 
   protected void perform( VirtualFile file, AnActionEvent e ) throws VcsException
   {
-    TransparentVcs host = getHost( e );
-    host.extractViewActivities();
+    CCaseViewsManager.getInstance( getProject(e) ).extractViewActivities();
 
-    //  Find out a current activity for each view
-    rereadCurrentActivities( e );
+    //  Convert current activity of each view into ChangeList
+    reloadCurrentActivities2Changelists( e );
 
     //  For each file with "MODIFIED" status reread its mapped activity
     //  (via "describe" command), and if its activity differs from the name
@@ -54,15 +48,18 @@ public class SynchActivitiesAction extends SynchronousAction
     relocateNewFiles( e );
   }
 
-  private static void rereadCurrentActivities( AnActionEvent e )
+  private static void reloadCurrentActivities2Changelists( AnActionEvent e )
   {
-    TransparentVcs host = getHost( e );
-    ChangeListManager mgr = ChangeListManager.getInstance( getProject(e) );
-    for( TransparentVcs.ViewInfo info : host.viewsMap.values() )
+    CCaseViewsManager viewsManager = CCaseViewsManager.getInstance( getProject(e) );
+    ChangeListManager changesMgr = ChangeListManager.getInstance( getProject(e) );
+    for( CCaseViewsManager.ViewInfo info : viewsManager.viewsMapByRoot.values() )
     {
-      if( mgr.findChangeList( info.activityName ) == null )
+      if( info.currentActivity != null )
       {
-        mgr.addChangeList( info.activityName, null );
+        if( changesMgr.findChangeList( info.currentActivity.publicName ) == null )
+        {
+          changesMgr.addChangeList( info.currentActivity.publicName, null );
+        }
       }
     }
   }
@@ -70,6 +67,7 @@ public class SynchActivitiesAction extends SynchronousAction
   private static void relocateChangedFiles( AnActionEvent e )
   {
     TransparentVcs host = getHost( e );
+    CCaseViewsManager viewsManager = CCaseViewsManager.getInstance( getProject(e) );
     ChangeListManager mgr = ChangeListManager.getInstance( getProject(e) );
     List<VirtualFile> files = mgr.getAffectedFiles();
     List<String> files2Analyze = new ArrayList<String>();
@@ -91,7 +89,7 @@ public class SynchActivitiesAction extends SynchronousAction
       {
         Change change = mgr.getChange( vfile );
         LocalChangeList list = mgr.getChangeList( change );
-        String hostedActivity = host.getCheckoutActivityForFile( vfile.getPath() );
+        String hostedActivity = viewsManager.getCheckoutActivityForFile( vfile.getPath() );
         if( hostedActivity != null && !hostedActivity.equals( list.getName() ) )
         {
           mgr.moveChangesTo( mgr.findChangeList( hostedActivity ), new Change[]{ change } );
@@ -102,25 +100,29 @@ public class SynchActivitiesAction extends SynchronousAction
 
   private static void relocateNewFiles( AnActionEvent e )
   {
-    TransparentVcs host = getHost( e );
-    ChangeListManager mgr = ChangeListManager.getInstance( getProject(e) );
-    ProjectLevelVcsManager pmgr = ProjectLevelVcsManager.getInstance( getProject(e) );
+    Project project = getProject( e );
+    ChangeListManager changesMgr = ChangeListManager.getInstance( project );
+    ProjectLevelVcsManager pmgr = ProjectLevelVcsManager.getInstance( project );
+    CCaseViewsManager viewsManager = CCaseViewsManager.getInstance( project );
 
-    List<VirtualFile> files = mgr.getAffectedFiles();
+    List<VirtualFile> files = changesMgr.getAffectedFiles();
     for( VirtualFile vfile : files )
     {
-      FileStatus status = mgr.getStatus( vfile );
+      FileStatus status = changesMgr.getStatus( vfile );
       if( status == FileStatus.ADDED )
       {
         VirtualFile root = pmgr.getVcsRootFor( vfile );
-        TransparentVcs.ViewInfo info = host.viewsMap.get( root.getPath() );
-        Change change = mgr.getChange( vfile );
-        LocalChangeList list = mgr.getChangeList( change );
-
-        if( !list.getName().equals( info.activityName ) )
+        CCaseViewsManager.ViewInfo info = viewsManager.getViewByRoot( root );
+        String currentActivityName = (info.currentActivity != null) ? info.currentActivity.publicName : null;
+        if( info != null )
         {
-          host.addFile2Changelist( new File( vfile.getPath() ), info.activityName );
-          mgr.moveChangesTo( mgr.findChangeList( info.activityName ), new Change[]{ change } );
+          Change change = changesMgr.getChange( vfile );
+          LocalChangeList list = changesMgr.getChangeList( change );
+          if( currentActivityName != null && !list.getName().equals( currentActivityName ) )
+          {
+            viewsManager.addFile2Changelist( vfile.getPath(), currentActivityName );
+            changesMgr.moveChangesTo( changesMgr.findChangeList( currentActivityName ), new Change[]{ change } );
+          }
         }
       }
     }

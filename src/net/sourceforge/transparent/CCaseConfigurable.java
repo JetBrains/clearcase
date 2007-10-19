@@ -112,8 +112,7 @@ public class CCaseConfigurable implements ProjectComponent, Configurable
 
     if( need2ReloadActivities )
     {
-      TransparentVcs host = TransparentVcs.getInstance( project );
-      host.extractViewActivities();
+      CCaseViewsManager.getInstance( project ).extractViewActivities();
     }
 
     vcsConfig.scrTextFileName = scrText.getText();
@@ -133,6 +132,7 @@ public class CCaseConfigurable implements ProjectComponent, Configurable
     historyText.setValue( vcsConfig.getHistoryRevisionsMargin() );
     historyText.setEnabled( vcsConfig.isHistoryResticted );
 
+    /*
     //  Disable "Use USM mode" completely if not all views associated with the
     //  project belong to UCM type.
     TransparentVcs host = TransparentVcs.getInstance( project );
@@ -141,6 +141,7 @@ public class CCaseConfigurable implements ProjectComponent, Configurable
       myUseUCMModel.setSelected( false );
       myUseUCMModel.setEnabled( false );
     }
+    */
 
     myWorkOffline.setSelected( !vcsConfig.isViewDynamic() && vcsConfig.isOffline );
     myWorkOffline.setEnabled( !vcsConfig.isViewDynamic() );

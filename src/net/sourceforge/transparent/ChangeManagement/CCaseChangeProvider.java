@@ -598,10 +598,12 @@ public class CCaseChangeProvider implements ChangeProvider
    */
   private void setActivityInfoOnChangedFiles()
   {
+    CCaseViewsManager viewsManager = CCaseViewsManager.getInstance( project );
+
     List<String> filesToCheck = new ArrayList<String>();
     for( String fileName : filesChanged )
     {
-      if( host.getCheckoutActivityForFile( fileName ) == null )
+      if( viewsManager.getCheckoutActivityForFile( fileName ) == null )
         filesToCheck.add( fileName );
     }
 
@@ -620,32 +622,34 @@ public class CCaseChangeProvider implements ChangeProvider
       refFilesToCheck.add( discoverOldName( fileName ) );
     }
 
-    boolean hasAlreadyReloadedActivities = false;
     DescribeMultipleProcessor processor = new DescribeMultipleProcessor( refFilesToCheck );
     processor.execute();
 
+    boolean hasAlreadyReloadedActivities = false;
+    CCaseViewsManager viewsManager = CCaseViewsManager.getInstance( project );
+    
     for( int i = 0; i < refFilesToCheck.size(); i++ )
     {
       String activity = processor.getActivity( refFilesToCheck.get( i ) );
       if( activity != null )
       {
-        String activityName = host.getNormalizedActivityName( activity );
+        String activityName = viewsManager.getActivityDisplayName( activity );
         if( activityName == null )
         {
-          //  Something has changed outside the IDEA, we need to synchronize
-          //  views and activities all together to properly move the change
-          //  into the changelist.
+          //  Something has changed outside the IDEA - we did not recognize the
+          //  activity name. Thus we need to synchronize views and activities
+          //  all together to properly move the change into its changelist.
           if( !hasAlreadyReloadedActivities )
           {
             hasAlreadyReloadedActivities = true;
-            host.extractViewActivities();
+            viewsManager.extractViewActivities();
           }
 
-          activityName = host.getNormalizedActivityName( activity );
+          activityName = viewsManager.getActivityDisplayName( activity );
         }
 
         if( activityName != null )
-          host.addFile2Changelist( new File( files.get( i ) ), activityName );
+          viewsManager.addFile2Changelist( files.get( i ), activityName );
       }
     }
   }
@@ -674,8 +678,6 @@ public class CCaseChangeProvider implements ChangeProvider
     {
       String oldFolderName = host.renamedFolders.get( folderName );
 
-//      add2ChangeList( builder, FileStatus.MODIFIED, folderName, oldFolderName );
-//      final FilePath refPath = VcsUtil.getFilePath( oldFolderName );
       final FilePath refPath = VcsUtil.getFilePathForDeletedFile( oldFolderName, true );
       final FilePath currPath = VcsUtil.getFilePath( folderName ); // == refPath if no rename occured
       String activity = findActivityForFile( refPath, currPath );
@@ -742,10 +744,10 @@ public class CCaseChangeProvider implements ChangeProvider
 
   private static boolean isPathUnderProcessedFolders( HashSet<String> folders, String path )
   {
-    String parentPathToCheck = new File( path ).getParent().toLowerCase();
+    String parentPathToCheck = new File( path ).getParent();
     for( String folderPath : folders )
     {
-      if( parentPathToCheck == folderPath )
+      if( parentPathToCheck.equalsIgnoreCase( folderPath ) )
         return true;
     }
     return false;
@@ -866,20 +868,21 @@ public class CCaseChangeProvider implements ChangeProvider
   @Nullable
   private String findActivityForFile( FilePath refPath, final FilePath currPath )
   {
+    CCaseViewsManager viewsManager = CCaseViewsManager.getInstance( project );
     String activity = null;
 
     //  Computing the activity name (to be used as the Changelist name) is defined
     //  only if the "UCM" mode is checked on. Otherwise IDEA's changelist preserve
-    //  only their local semantics.
+    //  their local (IDE-wide) semantics.
     if( config.useUcmModel )
     {
       //  First check whether the file was checked out under IDEA, we've
       //  parsed the "co" output and extracted the name of the activity under
-      //  which the file is checked out.
-      activity = host.getCheckoutActivityForFile( refPath.getPath() );
+      //  which the file had been checked out.
+      activity = viewsManager.getCheckoutActivityForFile( refPath.getPath() );
       if( activity == null )
       {
-        //  Check the changelists which contain this particular file -
+        //  Check the changelist which contain this particular file -
         //  if there is no such, then this file (change) is processed for the
         //  very first time and we need to find (or create) the appropriate
         //  change list for it.
@@ -887,18 +890,18 @@ public class CCaseChangeProvider implements ChangeProvider
         Change change = mgr.getChange( currPath );
         if( change == null )
         {
+          //  Possibly the change had been made outside.
           //  1. Find the view responsible for this file.
           //  2. Take it current activity
           //  3. Find or create a change named after this activity.
           //  4. Remember that this file was first changed in this activity.
 
-          VirtualFile root = VcsUtil.getVcsRootFor( project, currPath );
-          TransparentVcs.ViewInfo info = host.viewsMap.get( root.getPath() );
-          activity = info.activityName;
+          activity = viewsManager.getActivityOfViewOfFile( currPath );
 
           if( activity == null )
-            throw new NullPointerException( "Illegal (NULL) activity name from ViewInfo for a view " + info.tag );
-          host.addFile2Changelist( refPath.getIOFile(), activity );
+            throw new NullPointerException( "Illegal (NULL) activity name from ViewInfo for a view.");
+
+          viewsManager.addFile2Changelist( refPath.getPath(), activity );
         }
       }
     }
