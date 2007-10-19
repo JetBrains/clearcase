@@ -98,7 +98,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener
         return;
 
     VirtualFile file = event.getFile();
-    if( !file.isDirectory() )
+//    if( !file.isDirectory() )
     {
       String oldName = file.getPath();
       String newName = event.getNewParent().getPath() + "/" + file.getName();
@@ -108,6 +108,8 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener
       //  "for removal" in the current, versioned module.
       if( VcsUtil.isFileForVcs( newName, project, host ) )
       {
+        processMove( file.isDirectory() ? host.renamedFolders : host.renamedFiles, oldName, newName );
+        /*
         //  Newer name must refer to the oldest one in the chain of movements
         String prevName = host.renamedFiles.get( oldName );
         if( prevName == null )
@@ -119,6 +121,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener
           host.renamedFiles.put( newName, prevName );
 
         host.renamedFiles.remove( oldName );
+        */
 
         //  Clear the cache of the content revisions for this file.
         //  This will make possible to reread the correct version content
@@ -130,6 +133,21 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener
         performDeleteFile( file );
       }
     }
+  }
+
+  private static void processMove( HashMap<String,String> filesStore, String oldName, String newName )
+  {
+    //  Newer name must refer to the oldest one in the chain of movements
+    String prevName = filesStore.get( oldName );
+    if( prevName == null )
+      prevName = oldName;
+
+    //  Check whether we are trying to rename the file back -
+    //  if so, just delete the old key-value pair
+    if( !prevName.equals( newName ) )
+      filesStore.put( newName, prevName );
+
+    filesStore.remove( oldName );
   }
 
   public void beforePropertyChange(VirtualFilePropertyEvent event)
@@ -156,7 +174,8 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener
       //  in the CCase Explorer) we need to clear its internally kept activity
       //  name since next time the file can be checked out into the different
       //  activity.
-      host.removeFileFromActivity( file.getPath() );
+      CCaseViewsManager viewsManager = CCaseViewsManager.getInstance( project );
+      viewsManager.removeFileFromActivity( file.getPath() );
     }
     else
     if( event.getPropertyName().equals( VirtualFile.PROP_NAME ))
