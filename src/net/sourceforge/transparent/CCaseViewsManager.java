@@ -400,6 +400,24 @@ public class CCaseViewsManager implements ProjectComponent, JDOMExternalizable
     return activity;
   }
 
+  /**
+   * Collect all activities which are "current" or "active" in their views. 
+   */
+  public List<String> getDefaultActivities()
+  {
+    List<String> activities = new ArrayList<String>();
+    for( ActivityInfo info : activitiesMap.values() )
+    {
+      if( info.activeInView != null )
+        activities.add( info.publicName );
+    }
+
+    return activities;
+  }
+
+  //
+  // JDOMExternalizable methods
+  //
   public void readExternal(final Element element) throws InvalidDataException
   {
     TransparentVcs.readRenamedElements( element, activitiesAssociations, PERSISTENCY_SAVED_ACTIVITY_MAP_TAG, false );

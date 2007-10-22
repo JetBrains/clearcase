@@ -50,6 +50,11 @@ public class CCaseChangeProvider implements ChangeProvider
   @NonNls private final static String FAIL_2_START_MSG = "Failed to start Cleartool. Please check ClearCase installation or current View's settings";
   @NonNls private final static String FAIL_2_START_VIEW_MSG = "Failed to start Cleartool. Please check module's View settings";
 
+  @NonNls private final static String LIST_CHECKOUTS_CMD = "lsco";
+  @NonNls private final static String CURR_USER_ONLY_SWITCH = "-me";
+  @NonNls private final static String SHORT_SWITCH = "-short";
+  @NonNls private final static String RECURSE_SWITCH = "-recurse";
+
   /**
    * If amount of writable files during the batch call exceeds this number,
    * switch from iterative calls to cleartool's LS command to the different
@@ -107,6 +112,7 @@ public class CCaseChangeProvider implements ChangeProvider
 
     showOptionalReminder();
     initInternals();
+    checkDefaultChangeLists();
     isFirstShow = false;
 
     try
@@ -193,6 +199,25 @@ public class CCaseChangeProvider implements ChangeProvider
     }
   }
 
+  /**
+   * Check whether default activities are present as changelists, even if there is no
+   * checked out file in it. Create if necessary. 
+   */
+  private void checkDefaultChangeLists()
+  {
+    CCaseViewsManager viewMgr = CCaseViewsManager.getInstance( project );
+    ChangeListManager changesMgr = ChangeListManager.getInstance( project );
+
+    List<String> defaultActivities = viewMgr.getDefaultActivities();
+    for( String activityName : defaultActivities )
+    {
+      if( changesMgr.findChangeList( activityName ) == null )
+      {
+        changesMgr.addChangeList( activityName, null );
+      }
+    }
+  }
+
   private void collectCheckouts( HashSet<String> files )
   {
     LOG.info( "---ChangeProvider - Checking status by analyzing the set of checked out files via LSCO.");
@@ -200,7 +225,8 @@ public class CCaseChangeProvider implements ChangeProvider
     VirtualFile[] roots = ProjectLevelVcsManager.getInstance( project ).getRootsUnderVcs( host );
     for( VirtualFile root : roots )
     {
-      String out = TransparentVcs.cleartoolOnLocalPathWithOutput( root.getPath(), "lsco", "-me", "-short", "-recurse" );
+      String out = TransparentVcs.cleartoolOnLocalPathWithOutput( root.getPath(), LIST_CHECKOUTS_CMD, CURR_USER_ONLY_SWITCH,
+                                                                                  SHORT_SWITCH, RECURSE_SWITCH );
       String[] lines = LineTokenizer.tokenize( out, false );
       for( String line : lines )
       {
