@@ -2,6 +2,7 @@ package net.sourceforge.transparent;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.util.text.StringUtil;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
 
@@ -124,10 +125,17 @@ public class Runner
             return false;
          }
       } catch (RuntimeException e) {
-        LOG.info( "CCAse runtime exception: " + e.getMessage(), e );
+        if( StringUtil.isNotEmpty( workingDir ) )
+          LOG.info( "CCAse runtime exception (started in [" + workingDir + "]: " + e.getMessage(), e );
+        else
+          LOG.info( "CCAse runtime exception :" + e.getMessage(), e );
+
         throw e;
       } catch (Exception e) {
-        LOG.info( "CCAse runtime exception: " + e.getMessage(), e );
+        if( StringUtil.isNotEmpty( workingDir ) )
+          LOG.info( "CCAse exception: (started in [" + workingDir + "]: " + e.getMessage(), e );
+        else
+          LOG.info( "CCAse exception: " + e.getMessage(), e );
         throw new RuntimeException(e.getMessage());
       }
    }
