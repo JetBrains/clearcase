@@ -227,6 +227,8 @@ public class CCaseChangeProvider implements ChangeProvider
     {
       String out = TransparentVcs.cleartoolOnLocalPathWithOutput( root.getPath(), LIST_CHECKOUTS_CMD, CURR_USER_ONLY_SWITCH,
                                                                                   SHORT_SWITCH, RECURSE_SWITCH );
+      LOG.info( out );
+      
       String[] lines = LineTokenizer.tokenize( out, false );
       for( String line : lines )
       {
