@@ -638,7 +638,10 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
         public void run()
         {
           renameFile( newFile, oldFile );
-          checkinFile( oldFile, modComment, errors );
+          if( !oldFile.isDirectory() )
+          {
+            checkinFile( oldFile, modComment, errors );
+          }
 
           //  Continue transaction only if there was no error on the previous
           //  step.

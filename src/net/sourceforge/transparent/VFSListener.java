@@ -98,56 +98,25 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener
         return;
 
     VirtualFile file = event.getFile();
-//    if( !file.isDirectory() )
+    String oldName = file.getPath();
+    String newName = event.getNewParent().getPath() + "/" + file.getName();
+
+    //  If the file is moved into Vss-versioned module, then it is a simple
+    //  movement. Otherwise (move into non-versioned module), mark it
+    //  "for removal" in the current, versioned module.
+    if( VcsUtil.isFileForVcs( newName, project, host ) )
     {
-      String oldName = file.getPath();
-      String newName = event.getNewParent().getPath() + "/" + file.getName();
+      storeRenameOrMoveInfo( file.isDirectory() ? host.renamedFolders : host.renamedFiles, oldName, newName );
 
-      //  If the file is moved into Vss-versioned module, then it is a simple
-      //  movement. Otherwise (move into non-versioned module), mark it
-      //  "for removal" in the current, versioned module.
-      if( VcsUtil.isFileForVcs( newName, project, host ) )
-      {
-        processMove( file.isDirectory() ? host.renamedFolders : host.renamedFiles, oldName, newName );
-        /*
-        //  Newer name must refer to the oldest one in the chain of movements
-        String prevName = host.renamedFiles.get( oldName );
-        if( prevName == null )
-          prevName = oldName;
-
-        //  Check whether we are trying to rename the file back -
-        //  if so, just delete the old key-value pair
-        if( !prevName.equals( newName ) )
-          host.renamedFiles.put( newName, prevName );
-
-        host.renamedFiles.remove( oldName );
-        */
-
-        //  Clear the cache of the content revisions for this file.
-        //  This will make possible to reread the correct version content
-        //  after the referred FilePath/VirtualFile is changed
-        ContentRevisionFactory.clearCacheForFile( file.getPath() );
-      }
-      else
-      {
-        performDeleteFile( file );
-      }
+      //  Clear the cache of the content revisions for this file.
+      //  This will make possible to reread the correct version content
+      //  after the referred FilePath/VirtualFile is changed
+      ContentRevisionFactory.clearCacheForFile( file.getPath() );
     }
-  }
-
-  private static void processMove( HashMap<String,String> filesStore, String oldName, String newName )
-  {
-    //  Newer name must refer to the oldest one in the chain of movements
-    String prevName = filesStore.get( oldName );
-    if( prevName == null )
-      prevName = oldName;
-
-    //  Check whether we are trying to rename the file back -
-    //  if so, just delete the old key-value pair
-    if( !prevName.equals( newName ) )
-      filesStore.put( newName, prevName );
-
-    filesStore.remove( oldName );
+    else
+    {
+      performDeleteFile( file );
+    }
   }
 
   public void beforePropertyChange(VirtualFilePropertyEvent event)
@@ -187,12 +156,12 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener
         String oldName = parentDir + event.getOldValue();
         String newName = parentDir + event.getNewValue();
 
-        performRename( file.isDirectory() ? host.renamedFolders : host.renamedFiles, oldName, newName );
+        storeRenameOrMoveInfo( file.isDirectory() ? host.renamedFolders : host.renamedFiles, oldName, newName );
       }
     }
   }
 
-  private static void performRename( HashMap<String, String> store, String oldName, String newName )
+  private static void storeRenameOrMoveInfo( HashMap<String, String> store, String oldName, String newName )
   {
     //  Newer name must refer to the oldest name in the chain of renamings
     String prevName = store.get( oldName );

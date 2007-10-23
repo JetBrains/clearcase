@@ -202,6 +202,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     }
   }
 
+  @SuppressWarnings({"ConstantConditions"})
   private void commitRenamedFolders( List<Change> changes, String comment, List<VcsException> errors )
   {
     for (Change change : changes)
@@ -214,12 +215,12 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
         if( oldFile.getVirtualFileParent().getPath().equals( newFile.getVirtualFileParent().getPath() ))
         {
           host.renameAndCheckInFile( oldFile.getIOFile(), newFile.getName(), comment, errors );
-          host.renamedFolders.remove( newFile.getPath() );
         }
         else
         {
-          
+          host.moveRenameAndCheckInFile( oldFile.getPath(), newFile.getVirtualFileParent().getPath(), newFile.getName(), comment, errors );
         }
+        host.renamedFolders.remove( newFile.getPath() );
         incrementProgress( newFile.getPath() );
       }
     }
