@@ -2,6 +2,7 @@ package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataKeys;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
@@ -28,18 +29,23 @@ public class MergeAction extends AsynchronousAction
 
   protected String getActionName( AnActionEvent e ) { return ACTION_NAME; }
 
-  public void perform( VirtualFile file, AnActionEvent e )
+  public void perform( final VirtualFile file, AnActionEvent e )
   {
-    String path = file.getPath().replace( '/', File.separatorChar ); 
+    final String path = file.getPath().replace( '/', File.separatorChar );
     String findVerOut = TransparentVcs.cleartoolWithOutput( "findmerge", path, "-flatest", "-print", "-long" );
     if( StringUtil.isNotEmpty( findVerOut ))
     {
-      String elementVersion = extractVersion( findVerOut );
-      cleartool( "merge", "-g", "-to", path, elementVersion );
-      file.putUserData( TransparentVcs.MERGE_CONFLICT, null );
-      file.refresh( false, false );
-      VcsUtil.waitForTheFile( file.getPath() );
-      VcsUtil.markFileAsDirty( _actionProjectInstance, file );
+      final String elementVersion = extractVersion( findVerOut );
+      ApplicationManager.getApplication().executeOnPooledThread( new Runnable() {
+        public void run()
+        {
+          TransparentVcs.cleartoolWithOutput( "merge", "-g", "-to", path, elementVersion );
+
+          file.putUserData( TransparentVcs.MERGE_CONFLICT, null );
+          file.refresh( false, false );
+          VcsUtil.markFileAsDirty( _actionProjectInstance, file );
+        }
+      });
     }
     else
     {
