@@ -18,6 +18,7 @@ import com.intellij.openapi.vcs.update.UpdatedFiles;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -44,7 +45,8 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
 
   public void fillGroups( UpdatedFiles groups ) {}
 
-  public UpdateSession updateDirectories( FilePath[] contentRoots, UpdatedFiles updatedFiles,
+  @NotNull
+  public UpdateSession updateDirectories( @NotNull FilePath[] contentRoots, UpdatedFiles updatedFiles,
                                           ProgressIndicator progressIndicator ) throws ProcessCanceledException
   {
     final ArrayList<VcsException> errors = new ArrayList<VcsException>();
@@ -65,6 +67,7 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
     }
 
     return new UpdateSession(){
+      @NotNull
       public List<VcsException> getExceptions() { return errors; }
       public void onRefreshFilesCompleted()     {}
       public boolean isCanceled()               { return false;  }
