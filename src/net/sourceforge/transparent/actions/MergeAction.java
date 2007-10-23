@@ -2,11 +2,13 @@ package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataKeys;
-import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FileStatus;
+import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
 
@@ -34,11 +36,14 @@ public class MergeAction extends AsynchronousAction
     {
       String elementVersion = extractVersion( findVerOut );
       cleartool( "merge", "-g", "-to", path, elementVersion );
-      file.refresh( true, false );
+      file.putUserData( TransparentVcs.MERGE_CONFLICT, null );
+      file.refresh( false, false );
+      VcsUtil.waitForTheFile( file.getPath() );
+      VcsUtil.markFileAsDirty( _actionProjectInstance, file );
     }
     else
     {
-      Messages.showErrorDialog( _actionProjectInstance, ERROR_TEXT, ERROR_TITLE );
+      AbstractVcsHelper.getInstance( _actionProjectInstance ).showError( new VcsException( ERROR_TEXT ), ERROR_TITLE );
     }
   }
 
