@@ -191,7 +191,11 @@ public class CCaseRollbackEnvironment implements RollbackEnvironment
         }
         else
         {
-          host.undoCheckoutFile( filePath.getVirtualFile(), errors );
+          FileStatus status = FileStatusManager.getInstance( project ).getStatus( filePath.getVirtualFile() );
+          if( status != FileStatus.HIJACKED )
+            host.undoCheckoutFile( filePath.getVirtualFile(), errors );
+          else
+            updateFile( path, errors );
         }
         processedFiles.add( filePath );
       }
@@ -285,7 +289,7 @@ public class CCaseRollbackEnvironment implements RollbackEnvironment
   {
     try
     {
-      String err = TransparentVcs.cleartoolWithOutput( "update", "-overwrite", path );
+      String err = TransparentVcs.cleartoolWithOutput( "update", "-overwrite", "-force", path );
       if( err != null )
       {
         String[] lines = LineTokenizer.tokenize( err, false );
