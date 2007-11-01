@@ -318,8 +318,12 @@ public class CCaseViewsManager implements ProjectComponent, JDOMExternalizable
     {
       if( info.isUcm )
       {
-        try{  TransparentVcs.LOG.info( ">>>\t" + info.tag + "->" + info.currentActivity.publicName );  }
-        catch( Exception e ){  TransparentVcs.LOG.info( ">>> INTERNAL FAULT DURING ACTIVITES DUMPING. THUS ACTIVITIES PARSING FAILED." );  }
+        TransparentVcs.LOG.info( ">>>\t" + info.tag );
+        
+        if( info.currentActivity != null )
+          TransparentVcs.LOG.info( " -> " + info.currentActivity.publicName );
+        else
+          TransparentVcs.LOG.info( " has no default activity" );
       }
     }
   }
