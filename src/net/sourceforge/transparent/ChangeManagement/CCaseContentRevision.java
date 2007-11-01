@@ -29,6 +29,7 @@ public class CCaseContentRevision implements ContentRevision
 {
   @NonNls private static final String TMP_FILE_NAME = "idea_ccase";
   @NonNls private static final String VERSION_SEPARATOR = "@@";
+  @NonNls private static final String WARNING_NO_GROUP_SIG = "Warning: Can not find a group named";
 
   private VirtualFile   file;
   private FilePath      revisionPath;
@@ -125,13 +126,13 @@ public class CCaseContentRevision implements ContentRevision
 
         if( version != null )
         {
-//          final String out2 = TransparentVcs.cleartoolWithOutput( "get", "-to", myTmpFile.getPath(), file.getPath() + VERSION_SEPARATOR + version );
           String path = VcsUtil.getCanonicalLocalPath( revisionPath.getPath() );
           final String out2 = TransparentVcs.cleartoolWithOutput( "get", "-to", myTmpFile.getPath(), path + VERSION_SEPARATOR + version );
 
           //  We expect that properly finished command produce no (error or
-          //  warning) output.
-          if( out2.length() > 0 )
+          //  warning) output. The only messages allowed are the warnings from
+          //  other subsystems which are not related to the "ct get" command per se.
+          if( out2.length() > 0 && !isKnownMessage( out2 ) )
           {
             ApplicationManager.getApplication().invokeLater( new Runnable() { public void run() { VcsUtil.showErrorMessage( project, out2, TITLE ); } });
           }
@@ -152,6 +153,11 @@ public class CCaseContentRevision implements ContentRevision
     return content;
   }
 
+  private static boolean isKnownMessage( final String message )
+  {
+    return message.contains( WARNING_NO_GROUP_SIG );
+  }
+  
   //-------------------------------------------------------------------------
   //  The sample format of the "DESCRIBE" command output is as follows below:
   //  --
