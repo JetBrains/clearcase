@@ -1,6 +1,7 @@
 package net.sourceforge.transparent;
 
 import com.intellij.openapi.util.text.LineTokenizer;
+import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
 
 import java.util.HashSet;
@@ -69,7 +70,16 @@ public class StatusMultipleProcessor
 
       String[] aOptions = options.toArray( new String[ options.size() ]);
       String out = TransparentVcs.cleartoolWithOutput( aOptions );
-      parseCleartoolOutput( out, batchStartIndex );
+      try
+      {
+        parseCleartoolOutput( out, batchStartIndex );
+      }
+      catch( Exception e )
+      {
+        TransparentVcs.LOG.info( "Failed to parse LS output (possible unknown message format):" );
+        TransparentVcs.LOG.info( out );
+        throw new ClearCaseException( "Failed to parse LS output (possible unknown message format):" + e.getMessage() );
+      }
       batchStartIndex = currFileIndex;
     }
   }
