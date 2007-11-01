@@ -750,7 +750,9 @@ public class CCaseChangeProvider implements ChangeProvider
     {
       FilePath refPath = VcsUtil.getFilePathForDeletedFile( path, false );
       CCaseContentRevision revision = ContentRevisionFactory.getRevision( refPath, project );
-      builder.processChange( new Change( revision, null, FileStatus.DELETED ));
+      String activity = findActivityForFile( refPath, refPath );
+
+      builder.processChangeInList( new Change( revision, null, FileStatus.DELETED ), activity );
     }
   }
 
