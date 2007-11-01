@@ -67,17 +67,30 @@ public class DescribeMultipleProcessor
     return file2Activity.get( fileName );
   }
 
+  /**
+   * NB: The strict format (hm, grammar, boys!) of the command output is not
+   *     defined since it may contain info, warning and error messages from
+   *     different subsystems involved during the command execution.
+   * Example: !> cleartool describe <file>
+   *          !noname: Warning: Can not find a group named "XXX"
+   *          !<file>@@<version>  --> <activity>
+   *
+   * Thus we can rely only on some patterns which strip out known garbage messages.
+   */
   private void parseCleartoolOutput( final String out, int startIndex )
   {
     TransparentVcs.LOG.info( "\n" + out );
+
+    int shiftIndex = 0;
     String[] lines = LineTokenizer.tokenize( out, false );
-    for( int i = 0; i < lines.length; i++ )
+    for( String line : lines )
     {
-      int index = lines[ i ].indexOf( DELIMITER );
+      int index = line.indexOf( DELIMITER );
       if( index != -1 )
       {
-        String activity = lines[ i ].substring( index + DELIMITER.length() );
-        file2Activity.put( files[ i + startIndex ], activity);
+        String activity = line.substring( index + DELIMITER.length() );
+        file2Activity.put( files[ shiftIndex + startIndex ], activity );
+        shiftIndex++;
       }
     }
   }
