@@ -21,6 +21,8 @@ public class StatusMultipleProcessor
   @NonNls private static final String CHECKEDOUT_SIG = "Rule: CHECKEDOUT";
   @NonNls private final static String CHECKEDOUT_REMOVED_SIG = "checkedout but removed";
 
+  @NonNls private final static String WARNING_TO_SKIP_SIG = "Warning: "; 
+
   private static final int  CMDLINE_MAX_LENGTH = 512;
 
   private String[] files;
@@ -72,20 +74,40 @@ public class StatusMultipleProcessor
     }
   }
 
+  /**
+   * NB: The strict format (hm, grammar, boys!) of the command output is not
+   *     defined since it may contain info, warning and error messages from
+   *     different subsystems involved during the command execution.
+   * Example: !> cleartool ls <file>
+   *          !noname: Warning: Can not find a group named "XXX"
+   *          !<file>@@<version>  etc...
+   *
+   * Thus we can rely only on some patterns which strip out known garbage messages.
+   */
   private void parseCleartoolOutput( final String out, int startIndex )
   {
+    int shiftIndex = 0;
     String[] lines = LineTokenizer.tokenize( out, false );
-    for( int i = 0; i < lines.length; i++ )
+
+    for( String line : lines )
     {
-      if( lines[ i ].indexOf( VERSIONED_SIG ) == -1 )
-        nonexistingFiles.add( files[ startIndex + i ].toLowerCase() );
-      else
-      if( lines[ i ].indexOf( CHECKEDOUT_SIG ) != -1 ||
-          lines[ i ].indexOf( CHECKEDOUT_REMOVED_SIG ) != -1 )
-        checkoutFiles.add( files[ startIndex + i ].toLowerCase() );
-      else
-      if( lines[ i ].indexOf( HIJACKED_SIG ) != -1 )
-        hijackedFiles.add( files[ startIndex + i ].toLowerCase() );
+      if( line.indexOf( WARNING_TO_SKIP_SIG ) == -1 )
+      {
+        if( line.indexOf( VERSIONED_SIG ) == -1) {
+          nonexistingFiles.add( files[ startIndex + shiftIndex ].toLowerCase() );
+        }
+        else
+        if( line.indexOf( CHECKEDOUT_SIG ) != -1 || line.indexOf( CHECKEDOUT_REMOVED_SIG ) != -1) {
+          checkoutFiles.add( files[ startIndex + shiftIndex ].toLowerCase() );
+        }
+        else
+        if( line.indexOf( HIJACKED_SIG ) != -1 )
+          hijackedFiles.add( files[ startIndex + shiftIndex ].toLowerCase() );
+
+        //  inc it only in the case of "known" line format. Assume that information
+        //  about files is printed in the order of input parameters (silly?).
+        shiftIndex++;
+      }
     }
   }
 }
