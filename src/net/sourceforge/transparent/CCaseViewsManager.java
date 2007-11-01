@@ -457,7 +457,9 @@ public class CCaseViewsManager implements ProjectComponent, JDOMExternalizable
       listElement.addContent( new Element( UUID_TAG ).addContent( info.uuid ) );
       listElement.addContent( new Element( UCM_TAG ).addContent( Boolean.toString( info.isUcm ) ) );
       listElement.addContent( new Element( SNAPSHOT_TAG ).addContent( Boolean.toString( info.isSnapshot ) ) );
-      listElement.addContent( new Element( ACTIVITY_TAG ).addContent( info.currentActivity.name ) );
+      
+      if( info.currentActivity != null )
+        listElement.addContent( new Element( ACTIVITY_TAG ).addContent( info.currentActivity.name ) );
 
       element.addContent( listElement );
     }
