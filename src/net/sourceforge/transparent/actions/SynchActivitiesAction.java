@@ -26,9 +26,18 @@ public class SynchActivitiesAction extends SynchronousAction
 {
   @NonNls private final static String ACTION_NAME = "Synchronize Activities";
 
-  protected boolean isEnabled( VirtualFile file, AnActionEvent e )
+  public void update( AnActionEvent e )
   {
-    return CCaseViewsManager.getInstance( getProject( e ) ).isAnyUcmView();
+    super.update( e );
+
+    boolean enabled = CCaseViewsManager.getInstance( getProject( e ) ).isAnyUcmView();
+    e.getPresentation().setEnabled( enabled );
+  }
+
+  protected void execute( AnActionEvent e, List<VcsException> errors )
+  {
+    try {  perform( null, e ); }
+    catch( VcsException exc ) { errors.add( exc ); }
   }
 
   protected void perform( VirtualFile file, AnActionEvent e ) throws VcsException
