@@ -742,7 +742,11 @@ public class CCaseChangeProvider implements ChangeProvider
     files.clear();
     files.addAll( host.deletedFolders );
     for( String path : files )
-      builder.processChange( new Change( new CurrentContentRevision( VcsUtil.getFilePathForDeletedFile( path, true )), null, FileStatus.DELETED ));
+    {
+      FilePath refPath = VcsUtil.getFilePathForDeletedFile( path, true );
+      String activity = findActivityForFile( refPath, refPath );
+      builder.processChangeInList( new Change( new CurrentContentRevision( refPath ), null, FileStatus.DELETED ), activity );
+    }
 
     files.clear();
     files.addAll( host.deletedFiles );
