@@ -127,10 +127,27 @@ public class CCaseViewsManager implements ProjectComponent, JDOMExternalizable
     return status;
   }
 
+  public boolean isAnySnapshotView()
+  {
+    boolean status = false;
+    for( ViewInfo info : viewsMapByRoot.values() )
+      status = status || info.isSnapshot;
+
+    return status;
+  }
+
   @Nullable
   public ViewInfo getViewByRoot( VirtualFile root )
   {
     return (root != null) ? viewsMapByRoot.get( root.getPath() ) : null;
+  }
+
+  @Nullable
+  public ViewInfo getViewByFile( VirtualFile file )
+  {
+    ProjectLevelVcsManager mgr = ProjectLevelVcsManager.getInstance( project );
+    VirtualFile root = mgr.getVcsRootFor( file );
+    return getViewByRoot( root );
   }
 
   /**

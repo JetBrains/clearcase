@@ -1,8 +1,8 @@
 package net.sourceforge.transparent.actions;
+
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.DataKeys;
 import com.intellij.openapi.vfs.VirtualFile;
-import net.sourceforge.transparent.CCaseConfig;
+import net.sourceforge.transparent.CCaseViewsManager;
 import org.jetbrains.annotations.NonNls;
 
 public class UpdateFileAction extends AsynchronousAction
@@ -18,8 +18,9 @@ public class UpdateFileAction extends AsynchronousAction
   //  allow this command at all.
   protected boolean isEnabled( VirtualFile file, AnActionEvent e )
   {
-    CCaseConfig config = CCaseConfig.getInstance( e.getData( DataKeys.PROJECT ) );
-    return super.isEnabled( file, e ) && !config.isViewDynamic();
+    CCaseViewsManager viewsMgr = CCaseViewsManager.getInstance( getProject( e ) );
+    CCaseViewsManager.ViewInfo view = viewsMgr.getViewByFile( file );
+    return super.isEnabled( file, e ) && (view != null) && view.isSnapshot;
   }
 
   public void perform( VirtualFile vfile, AnActionEvent e )

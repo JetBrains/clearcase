@@ -7,7 +7,6 @@ import com.intellij.openapi.util.InvalidDataException;
 import com.intellij.openapi.util.JDOMExternalizable;
 import com.intellij.openapi.util.WriteExternalException;
 import org.jdom.Element;
-import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -16,9 +15,6 @@ import org.jetbrains.annotations.NotNull;
  */
 public class CCaseConfig implements JDOMExternalizable, ProjectComponent
 {
-  @NonNls private final static String DYNAMIC = "Dynamic";
-  @NonNls private final static String SNAPSHOT = "Snapshot";
-
   public boolean checkoutReserved = false;
   public boolean markExternalChangeAsUpToDate = true;
   public boolean checkInUseHijack = true;
@@ -29,7 +25,6 @@ public class CCaseConfig implements JDOMExternalizable, ProjectComponent
   public boolean useIdenticalSwitch = true;
   public String lastScr = "";
   public String scrTextFileName = "";
-  public String lastViewType = null;
   public int    historyRevisionsNumber = 4;
 
   private TransparentVcs host;
@@ -47,11 +42,6 @@ public class CCaseConfig implements JDOMExternalizable, ProjectComponent
   public void setHost( TransparentVcs host ){
     this.host = host;
   }
-
-  public void  setViewSnapshot()   {  lastViewType = SNAPSHOT;  }
-  public void  setViewDynamic()    {  lastViewType = DYNAMIC;   }
-  public boolean isViewSnapshot()  {  return lastViewType == SNAPSHOT;  }
-  public boolean isViewDynamic()   {  return lastViewType == DYNAMIC;  }
 
   public int  getHistoryRevisionsMargin() {  return historyRevisionsNumber;  }
   public void setHistoryRevisionsMargin( int v) {  historyRevisionsNumber = v;  }

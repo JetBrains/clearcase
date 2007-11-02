@@ -154,7 +154,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public UpdateEnvironment  getUpdateEnvironment()
   {
     //  For dynamic views "Update project" action makes no sence.
-    return (config == null) || config.isViewDynamic() ? null : updateEnvironment;
+    CCaseViewsManager viewsMgr = CCaseViewsManager.getInstance( myProject );
+    return viewsMgr.isAnySnapshotView() ? updateEnvironment : null;
   }
 
   public static TransparentVcs getInstance( Project project ) { return project.getComponent(TransparentVcs.class); }
@@ -173,7 +174,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     editProvider = new CCaseEditFileProvider( this );
     historyProvider = new CCaseHistoryProvider( myProject );
     annotationProvider = new CCaseAnnotationProvider( myProject, this );
-
 
     final ProjectLevelVcsManager vcsManager = ProjectLevelVcsManager.getInstance( myProject );
     myCheckoutOptions = vcsManager.getStandardOption( VcsConfiguration.StandardOption.CHECKOUT, this );

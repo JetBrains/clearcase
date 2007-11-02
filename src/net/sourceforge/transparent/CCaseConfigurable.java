@@ -104,7 +104,6 @@ public class CCaseConfigurable implements ProjectComponent, Configurable
     vcsConfig.checkoutReserved = myReservedCheckoutsCheckBox.isSelected();
     vcsConfig.checkInUseHijack = myCheckOutForHijacked.isSelected();
     vcsConfig.useUcmModel = myUseUCMModel.isSelected();
-//    vcsConfig.isOffline = myWorkOffline.isSelected();
     vcsConfig.setOfflineMode( myWorkOffline.isSelected() );
     vcsConfig.isHistoryResticted = myRestrictHistory.isSelected();
     vcsConfig.setHistoryRevisionsMargin( getMargin() );
@@ -132,19 +131,9 @@ public class CCaseConfigurable implements ProjectComponent, Configurable
     historyText.setValue( vcsConfig.getHistoryRevisionsMargin() );
     historyText.setEnabled( vcsConfig.isHistoryResticted );
 
-    /*
-    //  Disable "Use USM mode" completely if not all views associated with the
-    //  project belong to UCM type.
-    TransparentVcs host = TransparentVcs.getInstance( project );
-    if( !host.allViewsAreUCM() )
-    {
-      myUseUCMModel.setSelected( false );
-      myUseUCMModel.setEnabled( false );
-    }
-    */
-
-    myWorkOffline.setSelected( !vcsConfig.isViewDynamic() && vcsConfig.isOffline );
-    myWorkOffline.setEnabled( !vcsConfig.isViewDynamic() );
+    CCaseViewsManager mgr = CCaseViewsManager.getInstance( project );
+    myWorkOffline.setSelected( mgr.isAnySnapshotView() && vcsConfig.isOffline );
+    myWorkOffline.setEnabled( mgr.isAnySnapshotView() );
 
     resetCheckInOutCheckboxes();
   }
