@@ -57,6 +57,7 @@ public class CCaseViewsManager implements ProjectComponent, JDOMExternalizable
   @NonNls private static final String FORMAT_SWITCH = "-fmt";
   @NonNls private static final String LONG_SWITCH = "-long";
   @NonNls private static final String LIST_ACTIVITY_CMD = "lsactivity";
+  @NonNls private static final String ME_ONLY_SWITCH = "-me";
   @NonNls private static final String LIST_ACTIVITY_FORMAT = "%n <-> %[locked]p <-> %[headline]p <-> %[view]p\\n";
   @NonNls private static final String FIELDS_DELIMITER = " <-> ";
   
@@ -326,7 +327,7 @@ public class CCaseViewsManager implements ProjectComponent, JDOMExternalizable
     {
       if( info.isUcm )
       {
-        String output = TransparentVcs.cleartoolWithOutput( LIST_ACTIVITY_CMD, "-view", info.tag, FORMAT_SWITCH, LIST_ACTIVITY_FORMAT );
+        String output = TransparentVcs.cleartoolWithOutput( LIST_ACTIVITY_CMD, ME_ONLY_SWITCH, "-view", info.tag, FORMAT_SWITCH, LIST_ACTIVITY_FORMAT );
         if( TransparentVcs.isServerDownMessage( output ) )
           return;
 
