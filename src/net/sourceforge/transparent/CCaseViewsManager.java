@@ -151,6 +151,14 @@ public class CCaseViewsManager implements ProjectComponent, JDOMExternalizable
   }
 
   @Nullable
+  public ViewInfo getViewByFile( FilePath file )
+  {
+    ProjectLevelVcsManager mgr = ProjectLevelVcsManager.getInstance( project );
+    VirtualFile root = mgr.getVcsRootFor( file );
+    return getViewByRoot( root );
+  }
+
+  @Nullable
   public ActivityInfo getActivityForName( String name )
   {
     for( ActivityInfo info : activitiesMap.values() )
