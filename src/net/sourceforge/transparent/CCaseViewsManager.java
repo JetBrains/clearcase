@@ -170,6 +170,18 @@ public class CCaseViewsManager implements ProjectComponent, JDOMExternalizable
     return null;
   }
 
+  public boolean isUcmViewForFile( VirtualFile file )
+  {
+    ViewInfo view = getViewByFile( file );
+    return (view != null) && view.isUcm;
+  }
+
+  public boolean isUcmViewForFile( FilePath file )
+  {
+    ViewInfo view = getViewByFile( file );
+    return (view != null) && view.isUcm;
+  }
+
   /**
    * Retrieve basic view's properties - Tag, type, activity, uuid.
    * For each content root (the CCase view), issue the command
