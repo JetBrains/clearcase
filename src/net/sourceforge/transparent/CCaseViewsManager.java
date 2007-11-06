@@ -91,7 +91,7 @@ public class CCaseViewsManager implements ProjectComponent, JDOMExternalizable
       name = actName;
       publicName = pubName;
       isObsolete = isObs.equals( "obsolete" );
-      activeInView = inView;
+      activeInView = (inView == null) ? null : inView.trim();
     }
     public String name;
     public String publicName;
@@ -369,7 +369,15 @@ public class CCaseViewsManager implements ProjectComponent, JDOMExternalizable
       }
     }
 
-    TransparentVcs.LOG.info( ">>> Extracted Activities:" );
+    TransparentVcs.LOG.info( ">>> Default Activities Detected:" );
+    for( String actName : activitiesMap.keySet() )
+    {
+      ActivityInfo actInfo = activitiesMap.get( actName );
+      if( actInfo.activeInView != null )
+        TransparentVcs.LOG.info( ">>>\t\t[" + actName + "] -> [" + actInfo.activeInView + "]" );
+    }
+
+    TransparentVcs.LOG.info( "\n>>> Extracted Activities:" );
     for( ViewInfo info : viewsMapByRoot.values() )
     {
       if( info.isUcm )
