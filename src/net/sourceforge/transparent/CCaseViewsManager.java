@@ -115,7 +115,7 @@ public class CCaseViewsManager implements ProjectComponent, JDOMExternalizable
     viewsMapByTag = new HashMap<String, ViewInfo>();
 
     activitiesAssociations = new HashMap<String, String>();
-    activitiesMap = new HashMap<String, CCaseViewsManager.ActivityInfo>();
+    activitiesMap = new HashMap<String, ActivityInfo>();
   }
 
   public boolean isAnyUcmView()
@@ -148,6 +148,17 @@ public class CCaseViewsManager implements ProjectComponent, JDOMExternalizable
     ProjectLevelVcsManager mgr = ProjectLevelVcsManager.getInstance( project );
     VirtualFile root = mgr.getVcsRootFor( file );
     return getViewByRoot( root );
+  }
+
+  @Nullable
+  public ActivityInfo getActivityForName( String name )
+  {
+    for( ActivityInfo info : activitiesMap.values() )
+    {
+      if( info.publicName.equalsIgnoreCase( name ) )
+        return info;
+    }
+    return null;
   }
 
   /**
