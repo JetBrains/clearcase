@@ -367,12 +367,10 @@ public class CCaseViewsManager implements ProjectComponent, JDOMExternalizable
     {
       if( info.isUcm )
       {
-        TransparentVcs.LOG.info( ">>>\t" + info.tag );
-        
         if( info.currentActivity != null )
-          TransparentVcs.LOG.info( " -> " + info.currentActivity.publicName );
+          TransparentVcs.LOG.info( ">>>\t" + info.tag + " -> " + info.currentActivity.publicName );
         else
-          TransparentVcs.LOG.info( " has no default activity" );
+          TransparentVcs.LOG.info( ">>>\t" + info.tag + " has no default activity" );
       }
     }
   }
