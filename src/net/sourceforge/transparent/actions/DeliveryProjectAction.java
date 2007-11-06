@@ -29,8 +29,7 @@ public class DeliveryProjectAction extends AsynchronousAction
     VirtualFile[] roots = mgr.getRootsUnderVcs( getHost( e ) );
     for( VirtualFile root : roots )
     {
-      CCaseViewsManager.ViewInfo view = viewsMgr.getViewByRoot( root );
-      if( view != null && view.isUcm )
+      if( viewsMgr.isUcmViewForFile( root ) )
       {
         String path = VcsUtil.getCanonicalPath( root.getPath() );
         TransparentVcs.cleartoolOnLocalPath( path, "deliver", "-g" );
