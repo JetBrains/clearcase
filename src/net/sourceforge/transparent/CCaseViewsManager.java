@@ -299,6 +299,13 @@ public class CCaseViewsManager implements ProjectComponent, JDOMExternalizable
     {
       viewsMapByTag.put( view.tag, view );
     }
+
+    // log result views list
+    TransparentVcs.LOG.info( ">>> Views list:" );
+    for( String root : viewsMapByRoot.keySet() )
+    {
+      TransparentVcs.LOG.info( "\t\t" + root + " -> " + viewsMapByRoot.get( root ).tag );
+    }
   }
 
   private void checkViewsWithoutActions()
