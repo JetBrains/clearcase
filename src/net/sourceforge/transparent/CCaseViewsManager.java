@@ -341,15 +341,21 @@ public class CCaseViewsManager implements ProjectComponent, JDOMExternalizable
    */
   public void extractViewActivities()
   {
+    //  Sometimes users configure content roots so that several of them correspond
+    //  to the same view. Thus we should not repeat the command for the same view
+    //  more than one time.
+    HashSet<String> viewTags = new HashSet<String>();
+
     activitiesMap.clear();
     for( CCaseViewsManager.ViewInfo info : viewsMapByRoot.values() )
     {
-      if( info.isUcm )
+      if( info.isUcm && !viewTags.contains( info.tag ) )
       {
         String output = TransparentVcs.cleartoolWithOutput( LIST_ACTIVITY_CMD, ME_ONLY_SWITCH, "-view", info.tag, FORMAT_SWITCH, LIST_ACTIVITY_FORMAT );
         if( TransparentVcs.isServerDownMessage( output ) )
           return;
 
+        viewTags.add( info.tag );
         TransparentVcs.LOG.info( output );
 
         //  Reset values so that we can always determine that we did not manage
