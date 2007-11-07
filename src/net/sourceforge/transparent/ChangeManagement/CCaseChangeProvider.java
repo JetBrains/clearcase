@@ -10,6 +10,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.text.LineTokenizer;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
@@ -120,7 +121,6 @@ public class CCaseChangeProvider implements ChangeProvider
       iterateOverRecursiveFolders( dirtyScope );
       iterateOverDirtyDirectories( dirtyScope );
       iterateOverDirtyFiles( dirtyScope );
-      LOG.info( "-- ChangeProvider - passed collection phase" );
 
       //  Perform status computation only if we operate in the online mode.
       //  For offline mode just display the last valid state (for new and
@@ -134,16 +134,13 @@ public class CCaseChangeProvider implements ChangeProvider
         restoreStatusesFromCached();
       }
       processStatusExceptions();
-      LOG.info( "-- ChangeProvider - passed analysis phase" );
-      
+
       //-----------------------------------------------------------------------
       //  For an UCM view we must determine the corresponding changes list name
       //  which is associated with the "activity" of the particular view.
       //-----------------------------------------------------------------------
       if( config.useUcmModel )
         setActivityInfoOnChangedFiles();
-
-      LOG.info( "-- ChangeProvider - passed activity description phase" );
 
       addAddedFiles( builder );
       addChangedFiles( builder );
@@ -803,7 +800,7 @@ public class CCaseChangeProvider implements ChangeProvider
     //  Check the case when the file is deleted - its FilePath's VirtualFile
     //  component is null and thus new name is empty.
     return newParent.equals( oldParent ) &&
-          ( newName.equals( oldName ) || (newName == "" && oldName != "") );
+          ( newName.equals( oldName ) || (StringUtil.isEmpty( newName ) && StringUtil.isEmpty( oldName ) ) );
   }
 
   private void initInternals()
@@ -906,9 +903,9 @@ public class CCaseChangeProvider implements ChangeProvider
     String activity = null;
 
     //  Computing the activity name (to be used as the Changelist name) is defined
-    //  only if the "UCM" mode is checked on. Otherwise IDEA's changelist preserve
-    //  their local (IDE-wide) semantics.
-    if( config.useUcmModel )
+    //  only if the "UCM" mode is checked on for the view. Otherwise IDEA's changelist
+    //  preserve their local (IDE-wide) semantics.
+    if( config.useUcmModel && viewsManager.isUcmViewForFile( refPath ) )
     {
       //  First check whether the file was checked out under IDEA, we've
       //  parsed the "co" output and extracted the name of the activity under
@@ -933,7 +930,7 @@ public class CCaseChangeProvider implements ChangeProvider
           activity = viewsManager.getActivityOfViewOfFile( currPath );
 
           if( activity == null )
-            throw new NullPointerException( "Illegal (NULL) activity name from ViewInfo for a view.");
+            throw new NullPointerException( "Illegal (NULL) activity name from ViewInfo for an UCM view.");
 
           viewsManager.addFile2Changelist( refPath.getPath(), activity );
         }
@@ -948,7 +945,7 @@ public class CCaseChangeProvider implements ChangeProvider
     LOG.info( "-- ChangeProvider: Dirty files: " + scope.getDirtyFiles().size() );
     if( scope.getDirtyFiles().size() > 0 )
       LOG.info( " == " + extMasks( scope.getDirtyFiles() ) );
-    LOG.info( ",\n                 dirty recursive directories: " + scope.getRecursivelyDirtyDirectories().size() );
+    LOG.info( ", dirty recursive directories: " + scope.getRecursivelyDirtyDirectories().size() );
 
     for( FilePath path : scope.getDirtyFiles() )
       LOG.info( "                                " + path.getPath() );
