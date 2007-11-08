@@ -3,7 +3,7 @@ package net.sourceforge.transparent.actions;
 import com.intellij.history.LocalHistoryAction;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.DataKeys;
+import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
@@ -41,7 +41,7 @@ public abstract class VcsAction extends AnAction
 
   public void actionPerformed(AnActionEvent e)
   {
-    _actionProjectInstance = e.getData(DataKeys.PROJECT);
+    _actionProjectInstance = e.getData(PlatformDataKeys.PROJECT);
     _hostInstance = getHost( e );
     
     FileDocumentManager.getInstance().saveAllDocuments();
@@ -58,7 +58,7 @@ public abstract class VcsAction extends AnAction
   {
     List<VcsException> list = new ArrayList<VcsException>();
 
-    AbstractVcsHelper helper = AbstractVcsHelper.getInstance(e.getData(DataKeys.PROJECT));
+    AbstractVcsHelper helper = AbstractVcsHelper.getInstance(e.getData(PlatformDataKeys.PROJECT));
     LocalHistoryAction a = helper.startLocalHistoryAction(e.getPresentation().getText());
 
     try {
@@ -77,10 +77,10 @@ public abstract class VcsAction extends AnAction
   }
 
   protected static Project getProject(AnActionEvent e) {
-    return e.getData(DataKeys.PROJECT);
+    return e.getData(PlatformDataKeys.PROJECT);
   }
 
   protected static TransparentVcs getHost(AnActionEvent e) {
-    return TransparentVcs.getInstance(e.getData(DataKeys.PROJECT));
+    return TransparentVcs.getInstance(e.getData(PlatformDataKeys.PROJECT));
   }
 }

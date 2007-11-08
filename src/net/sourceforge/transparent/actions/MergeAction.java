@@ -1,7 +1,7 @@
 package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.DataKeys;
+import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.text.StringUtil;
@@ -55,7 +55,7 @@ public class MergeAction extends AsynchronousAction
 
   protected boolean isEnabled( VirtualFile file, AnActionEvent e )
   {
-    FileStatus status = getFileStatus( e.getData( DataKeys.PROJECT ), file );
+    FileStatus status = getFileStatus( e.getData( PlatformDataKeys.PROJECT ), file );
     return status == FileStatus.MERGED_WITH_CONFLICTS;
   }
 

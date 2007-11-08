@@ -1,7 +1,7 @@
 package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.DataKeys;
+import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
@@ -20,7 +20,7 @@ public class PropertiesAction extends AsynchronousAction
 
     if( e.getPresentation().isEnabled())
     {
-      Project project = e.getData( DataKeys.PROJECT );
+      Project project = e.getData( PlatformDataKeys.PROJECT );
       FileStatusManager mgr = FileStatusManager.getInstance( project );
       e.getPresentation().setEnabled( mgr.getStatus( files[ 0 ] ) != FileStatus.HIJACKED );
     }
