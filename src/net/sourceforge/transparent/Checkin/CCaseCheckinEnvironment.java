@@ -445,7 +445,6 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
           CCaseViewsManager viewsManager = CCaseViewsManager.getInstance( project );
           if( host.getConfig().useUcmModel && viewsManager.isUcmViewForFile( file ) )
           {
-
             //  If the file was checked out using one view's activity but has then
             //  been moved to another changelist (activity) we must issue "chactivity"
             //  command for the file element so that subsequent "checkin" command
