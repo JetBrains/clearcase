@@ -441,10 +441,11 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
         else
         {
           host.checkinFile( file, comment, errors );
-          if( host.getConfig().useUcmModel )
+
+          CCaseViewsManager viewsManager = CCaseViewsManager.getInstance( project );
+          if( host.getConfig().useUcmModel && viewsManager.isUcmViewForFile( file ) )
           {
-            CCaseViewsManager viewsManager = CCaseViewsManager.getInstance( project );
-            
+
             //  If the file was checked out using one view's activity but has then
             //  been moved to another changelist (activity) we must issue "chactivity"
             //  command for the file element so that subsequent "checkin" command
@@ -454,6 +455,8 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
             String currentActivity = getChangeListName( file.getVirtualFile() );
             if(( activity != null ) && !activity.equals( currentActivity ) )
             {
+              TransparentVcs.LOG.info( " --changeActivityForLastVersion - activities do not coinside: [" +
+                                       activity + "] vs [" + currentActivity + "]" );
               host.changeActivityForLastVersion( file, activity, currentActivity, errors );
             }
           }
