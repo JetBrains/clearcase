@@ -53,6 +53,7 @@ public class CCaseChangeProvider implements ChangeProvider
 
   @NonNls private final static String LIST_CHECKOUTS_CMD = "lsco";
   @NonNls private final static String CURR_USER_ONLY_SWITCH = "-me";
+  @NonNls private final static String CURR_VIEW_ONLY_SWITCH = "-cview";
   @NonNls private final static String SHORT_SWITCH = "-short";
   @NonNls private final static String RECURSE_SWITCH = "-recurse";
 
@@ -223,7 +224,7 @@ public class CCaseChangeProvider implements ChangeProvider
     for( VirtualFile root : roots )
     {
       String out = TransparentVcs.cleartoolOnLocalPathWithOutput( root.getPath(), LIST_CHECKOUTS_CMD, CURR_USER_ONLY_SWITCH,
-                                                                                  SHORT_SWITCH, RECURSE_SWITCH );
+                                                                                  CURR_VIEW_ONLY_SWITCH, SHORT_SWITCH, RECURSE_SWITCH );
       LOG.info( out );
       
       String[] lines = LineTokenizer.tokenize( out, false );
