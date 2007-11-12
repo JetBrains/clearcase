@@ -11,10 +11,7 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.*;
-import com.intellij.openapi.vcs.changes.Change;
-import com.intellij.openapi.vcs.changes.ChangeListManager;
-import com.intellij.openapi.vcs.changes.ContentRevision;
-import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
+import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -54,6 +51,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   private Project project;
   private TransparentVcs host;
   private double fraction;
+  private String submittedChangeListName;
 
   public CCaseCheckinEnvironment( Project project, TransparentVcs host )
   {
@@ -135,6 +133,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     comment = comment.replace( "\"", "\\\"" );
 
     clearTemporaryStatuses( changes );
+    storeChangeListName( changes );
 
     adjustChangesWithRenamedParentFolders( changes );
 
@@ -189,6 +188,21 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
         if( file != null ) //  e.g. for deleted files
           file.putUserData( TransparentVcs.MERGE_CONFLICT, null );
       }
+    }
+  }
+
+  /**
+   * Store the name of the changelist (aka activity if the UCM mode is on) since
+   * the object behind it might be removed in the ChangeListManager during the
+   * checkin process. 
+   */
+  private void storeChangeListName( List<Change> changes )
+  {
+    if( changes.size() > 0 )
+    {
+      ChangeListManager mgr = ChangeListManager.getInstance( project );
+      LocalChangeList change = mgr.getChangeList( changes.get( 0 ) );
+      submittedChangeListName = change.getName();
     }
   }
 
@@ -451,12 +465,11 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
             //  behaves as desired.
 
             String activity = viewsManager.getCheckoutActivityForFile( file.getPath() );
-            String currentActivity = getChangeListName( file.getVirtualFile() );
-            if(( activity != null ) && !activity.equals( currentActivity ) )
+            if(( activity != null ) && !activity.equals( submittedChangeListName ) )
             {
               TransparentVcs.LOG.info( " --changeActivityForLastVersion - activities do not coinside: [" +
-                                       activity + "] vs [" + currentActivity + "]" );
-              host.changeActivityForLastVersion( file, activity, currentActivity, errors );
+                                       activity + "] vs [" + submittedChangeListName + "]" );
+              host.changeActivityForLastVersion( file, activity, submittedChangeListName, errors );
             }
           }
         }
