@@ -94,6 +94,11 @@ public class CommandLineClearCase implements ClearCase
     {
       CCaseViewsManager viewsManager = CCaseViewsManager.getInstance( host.getProject() );
       viewsManager.addFile2Changelist( file.getPath(), activity );
+
+      //  If the current activity for a view was changed in the CCase Explorer
+      //  and we did not synchronize that in IDEA, we can catch that automatically
+      //  by the monitoring the last activity for checked out file.
+      viewsManager.checkChangedActivityForView( file.getPath(), activity );
     }
   }
 

@@ -396,6 +396,39 @@ public class CCaseViewsManager implements ProjectComponent, JDOMExternalizable
     }
   }
 
+  /**
+   * Given the checkout activity for a file, compare it with the current activity
+   * for a file's view. If they differ (it means that the user has changed current
+   * activity for a view in CCaseExp in the background and we did not synchronized
+   * IDEA) - change the current activity for a view with that from file's checkout. 
+   */
+  public void checkChangedActivityForView( String fileName, String activityName )
+  {
+    VirtualFile file = VcsUtil.getVirtualFile( fileName );
+    if( file != null )
+    {
+      ViewInfo view = getViewByFile( file );
+      if( (view != null) && needToChangeActivity( view, activityName ))
+      {
+        ActivityInfo activity = getActivityForName( activityName );
+        if( activity != null )
+        {
+          if( view.currentActivity != null )
+            view.currentActivity.activeInView = null;
+
+          view.currentActivity = activity;
+          activity.activeInView = view.tag;
+        }
+      }
+    }
+  }
+
+  private static boolean needToChangeActivity( ViewInfo view, String activityName )
+  {
+    return  (view.currentActivity == null) ||
+            !view.currentActivity.publicName.equalsIgnoreCase( activityName );
+  }
+
   @Nullable
   private static ActivityInfo parseActivities( String str )
   {
