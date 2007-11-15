@@ -93,11 +93,13 @@ public class CCaseViewsManager implements ProjectComponent, JDOMExternalizable
       name = actName;
       publicName = pubName;
       isObsolete = isObs.equals( "obsolete" );
+      isLocked = isObs.equals( "locked" );
       activeInView = (inView == null) ? null : inView.trim();
     }
     public String name;
     public String publicName;
     public boolean isObsolete;
+    public boolean isLocked;
     public String activeInView;
   }
 
