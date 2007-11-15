@@ -12,6 +12,8 @@ import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.changes.ChangeListManager;
+import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindowId;
 import com.intellij.openapi.wm.ToolWindowManager;
@@ -204,6 +206,7 @@ public class CCaseViewsManager implements ProjectComponent, JDOMExternalizable
       {
         extractViewActivities();
         checkViewsWithoutActions();
+        synchActivities2ChangeLists();
       }
     }
     catch( ClearCaseNoServerException e )
@@ -351,7 +354,7 @@ public class CCaseViewsManager implements ProjectComponent, JDOMExternalizable
     {
       if( info.isUcm && !completedViews.contains( info.tag ) )
       {
-        String output = TransparentVcs.cleartoolWithOutput( LIST_ACTIVITY_CMD, ME_ONLY_SWITCH, "-view", info.tag, FORMAT_SWITCH, LIST_ACTIVITY_FORMAT );
+        String output = TransparentVcs.cleartoolWithOutput( LIST_ACTIVITY_CMD, ME_ONLY_SWITCH, "-obsolete", "-view", info.tag, FORMAT_SWITCH, LIST_ACTIVITY_FORMAT );
         if( TransparentVcs.isServerDownMessage( output ) )
           return;
 
@@ -392,6 +395,24 @@ public class CCaseViewsManager implements ProjectComponent, JDOMExternalizable
           TransparentVcs.LOG.info( ">>>\t" + info.tag + " -> " + info.currentActivity.publicName );
         else
           TransparentVcs.LOG.info( ">>>\t" + info.tag + " has no default activity" );
+      }
+    }
+  }
+
+  public void synchActivities2ChangeLists()
+  {
+    ChangeListManager mgr = ChangeListManager.getInstance( project );
+    for( ActivityInfo info : activitiesMap.values() )
+    {
+      LocalChangeList list = mgr.findChangeList( info.publicName );
+      if( list != null && info.isObsolete )
+      {
+        mgr.removeChangeList( list );
+      }
+      else
+      if( list == null && !info.isObsolete )
+      {
+        mgr.addChangeList( info.publicName, null );
       }
     }
   }
