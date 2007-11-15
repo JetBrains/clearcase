@@ -114,7 +114,6 @@ public class CCaseChangeProvider implements ChangeProvider
 
     showOptionalReminder();
     initInternals();
-    checkDefaultChangeLists();
     isFirstShow = false;
 
     try
@@ -194,25 +193,6 @@ public class CCaseChangeProvider implements ChangeProvider
       ApplicationManager.getApplication().invokeLater( new Runnable() {
          public void run() {  Messages.showWarningDialog( project, REMINDER_TEXT, REMINDER_TITLE );  }
        });
-    }
-  }
-
-  /**
-   * Check whether default activities are present as changelists, even if there is no
-   * checked out file in it. Create if necessary. 
-   */
-  private void checkDefaultChangeLists()
-  {
-    CCaseViewsManager viewMgr = CCaseViewsManager.getInstance( project );
-    ChangeListManager changesMgr = ChangeListManager.getInstance( project );
-
-    List<String> defaultActivities = viewMgr.getDefaultActivities();
-    for( String activityName : defaultActivities )
-    {
-      if( changesMgr.findChangeList( activityName ) == null )
-      {
-        changesMgr.addChangeList( activityName, null );
-      }
     }
   }
 
