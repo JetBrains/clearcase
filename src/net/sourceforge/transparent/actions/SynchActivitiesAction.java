@@ -42,42 +42,44 @@ public class SynchActivitiesAction extends SynchronousAction
 
   protected void perform( VirtualFile file, AnActionEvent e ) throws VcsException
   {
-    CCaseViewsManager.getInstance( getProject(e) ).extractViewActivities();
+    Project project = getProject( e );
+    CCaseViewsManager.getInstance( project ).extractViewActivities();
 
     //  Convert current activity of each view into ChangeList
-    reloadCurrentActivities2Changelists( e );
+    CCaseViewsManager.getInstance( project ).synchActivities2ChangeLists();
+
+    //  Delete obsolete activities from the list of changes.
+    deleteObsoleteChangeLists( project );
 
     //  For each file with "MODIFIED" status reread its mapped activity
     //  (via "describe" command), and if its activity differs from the name
     //  of its current change list, move it to the new change list.
-    relocateChangedFiles( e );
+    relocateChangedFiles( project, getHost( e ) );
     
     //  New files (with status "ADDED") should be relocated to the newly
     //  activated activities.
-    relocateNewFiles( e );
+    relocateNewFiles( project );
   }
 
-  private static void reloadCurrentActivities2Changelists( AnActionEvent e )
+  private static void deleteObsoleteChangeLists( Project project )
   {
-    CCaseViewsManager viewsManager = CCaseViewsManager.getInstance( getProject(e) );
-    ChangeListManager changesMgr = ChangeListManager.getInstance( getProject(e) );
-    for( CCaseViewsManager.ViewInfo info : viewsManager.viewsMapByRoot.values() )
+    CCaseViewsManager viewsMgr = CCaseViewsManager.getInstance( project );
+    ChangeListManager changesMgr = ChangeListManager.getInstance( project );
+    List<LocalChangeList> list = changesMgr.getChangeLists();
+    for( LocalChangeList changeList : list )
     {
-      if( info.currentActivity != null )
+      CCaseViewsManager.ActivityInfo info = viewsMgr.getActivityForName( changeList.getName() );
+      if( info != null && info.isObsolete )
       {
-        if( changesMgr.findChangeList( info.currentActivity.publicName ) == null )
-        {
-          changesMgr.addChangeList( info.currentActivity.publicName, null );
-        }
+        changesMgr.removeChangeList( changeList );
       }
     }
   }
 
-  private static void relocateChangedFiles( AnActionEvent e )
+  private static void relocateChangedFiles( Project project, TransparentVcs host )
   {
-    TransparentVcs host = getHost( e );
-    CCaseViewsManager viewsManager = CCaseViewsManager.getInstance( getProject(e) );
-    ChangeListManager mgr = ChangeListManager.getInstance( getProject(e) );
+    CCaseViewsManager viewsManager = CCaseViewsManager.getInstance( project );
+    ChangeListManager mgr = ChangeListManager.getInstance( project );
     List<VirtualFile> files = mgr.getAffectedFiles();
     List<String> files2Analyze = new ArrayList<String>();
 
@@ -107,9 +109,8 @@ public class SynchActivitiesAction extends SynchronousAction
     }
   }
 
-  private static void relocateNewFiles( AnActionEvent e )
+  private static void relocateNewFiles( Project project )
   {
-    Project project = getProject( e );
     ChangeListManager changesMgr = ChangeListManager.getInstance( project );
     ProjectLevelVcsManager pmgr = ProjectLevelVcsManager.getInstance( project );
     CCaseViewsManager viewsManager = CCaseViewsManager.getInstance( project );
