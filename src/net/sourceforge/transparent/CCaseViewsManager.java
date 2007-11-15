@@ -12,11 +12,14 @@ import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.changes.ChangeListDecorator;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindowId;
 import com.intellij.openapi.wm.ToolWindowManager;
+import com.intellij.ui.ColoredTreeCellRenderer;
+import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.util.containers.HashSet;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
@@ -36,7 +39,7 @@ import java.util.Set;
  * User: lloix
  * Date: Oct 18, 2007
  */
-public class CCaseViewsManager implements ProjectComponent, JDOMExternalizable
+public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator, JDOMExternalizable
 {
   @NonNls private static final String PERSISTENCY_SAVED_ACTIVITY_MAP_TAG = "ClearCasePersistencyActivitiesMap";
   
@@ -541,6 +544,21 @@ public class CCaseViewsManager implements ProjectComponent, JDOMExternalizable
     }
 
     return activities;
+  }
+
+  public void decorateChangeList( LocalChangeList changeList, @NonNls ColoredTreeCellRenderer cellRenderer,
+                                  boolean selected, boolean expanded, boolean hasFocus )
+  {
+    ActivityInfo info = getActivityForName( changeList.getName() );
+    if( info != null )
+    {
+      if( info.isLocked )
+        cellRenderer.append( " (LOCKED)", SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES );
+    }
+    else
+    {
+      cellRenderer.append( " (not associated with any CC activity)", SimpleTextAttributes.GRAY_ATTRIBUTES );
+    }
   }
 
   //
