@@ -8,13 +8,8 @@ import com.intellij.openapi.util.JDOMExternalizable;
 import com.intellij.openapi.util.WriteExternalException;
 import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.openapi.vcs.AbstractVcsHelper;
-import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.ProjectLevelVcsManager;
-import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.changes.ChangeListDecorator;
-import com.intellij.openapi.vcs.changes.ChangeListManager;
-import com.intellij.openapi.vcs.changes.LocalChangeList;
+import com.intellij.openapi.vcs.*;
+import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindowId;
 import com.intellij.openapi.wm.ToolWindowManager;
@@ -546,9 +541,19 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
     return activities;
   }
 
-  public void decorateChangeList( LocalChangeList changeList, @NonNls ColoredTreeCellRenderer cellRenderer,
+  public void decorateChangeList( final LocalChangeList changeList, @NonNls final ColoredTreeCellRenderer cellRenderer,
                                   boolean selected, boolean expanded, boolean hasFocus )
   {
+    ChangesUtil.processChangesByVcs(project, changeList.getChanges(), new ChangesUtil.PerVcsProcessor<Change>() {
+      public void process(final AbstractVcs vcs, final List<Change> items) {
+        if (vcs == TransparentVcs.getInstance(project)) {
+          decorateClearCaseChangelist(changeList, cellRenderer);
+        }
+      }
+    });
+  }
+
+  private void decorateClearCaseChangelist(final LocalChangeList changeList, final ColoredTreeCellRenderer cellRenderer) {
     ActivityInfo info = getActivityForName( changeList.getName() );
     if( info != null )
     {
