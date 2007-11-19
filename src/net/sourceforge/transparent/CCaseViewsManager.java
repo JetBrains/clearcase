@@ -339,8 +339,7 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
 
   /**
    * Iterate over views, issue "lsactivity" for the view, collect all activities
-   * associated with the view. Remember its status - normal or obsolete ("locked"
-   * is not supported now).
+   * associated with the view. Remember its status - normal, locked or obsolete.
    */
   public void extractViewActivities()
   {

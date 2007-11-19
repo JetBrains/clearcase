@@ -127,6 +127,12 @@ public class CCaseChangeProvider implements ChangeProvider
       //  modified files, others are hijacked).
       if( !config.isOffline )
       {
+        if( isBatchUpdate && config.synchActivitiesOnRefresh )
+        {
+          CCaseViewsManager mgr = CCaseViewsManager.getInstance( project );
+          mgr.extractViewActivities();
+          mgr.synchActivities2ChangeLists();
+        }
         computeStatuses();
       }
       else
