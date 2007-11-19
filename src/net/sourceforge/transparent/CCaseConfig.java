@@ -23,6 +23,7 @@ public class CCaseConfig implements JDOMExternalizable, ProjectComponent
   public boolean synchOutside = false;
   public boolean isHistoryResticted = true;
   public boolean useIdenticalSwitch = true;
+  public boolean synchActivitiesOnRefresh = true;
   public String lastScr = "";
   public String scrTextFileName = "";
   public int    historyRevisionsNumber = 4;
