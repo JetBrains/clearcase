@@ -519,10 +519,23 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
   }
 
   @Nullable
-  public String getActivityOfViewOfFile( FilePath path )
+  public String getActivityOfViewOfFile( final FilePath path )
+  {
+    VirtualFile root = VcsUtil.getVcsRootFor( project, path );
+    return (root != null) ? getActivityOfViewByRoot( root ) : null;
+  }
+
+  @Nullable
+  public String getActivityOfViewOfFile( final VirtualFile file )
+  {
+    VirtualFile root = VcsUtil.getVcsRootFor( project, file );
+    return (root != null) ? getActivityOfViewByRoot( root ) : null;
+  }
+
+  @Nullable
+  public String getActivityOfViewByRoot( @NotNull final VirtualFile root )
   {
     String activity = null;
-    VirtualFile root = VcsUtil.getVcsRootFor( project, path );
     ViewInfo info = viewsMapByRoot.get( root.getPath() );
     if( info != null && info.isUcm && info.currentActivity != null )
     {
