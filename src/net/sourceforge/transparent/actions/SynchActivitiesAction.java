@@ -9,6 +9,7 @@ import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vfs.VirtualFile;
+import net.sourceforge.transparent.CCaseConfig;
 import net.sourceforge.transparent.CCaseViewsManager;
 import net.sourceforge.transparent.ChangeManagement.CCaseChangeProvider;
 import net.sourceforge.transparent.TransparentVcs;
@@ -30,7 +31,8 @@ public class SynchActivitiesAction extends SynchronousAction
   {
     super.update( e );
 
-    boolean enabled = CCaseViewsManager.getInstance( getProject( e ) ).isAnyUcmView();
+    boolean enabled = CCaseViewsManager.getInstance( getProject( e ) ).isAnyUcmView() &&
+                      !CCaseConfig.getInstance( getProject( e ) ).synchActivitiesOnRefresh;
     e.getPresentation().setEnabled( enabled );
   }
 
