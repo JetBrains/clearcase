@@ -54,6 +54,8 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
 
   @NonNls private static final String LIST_VIEW_CMD = "lsview";
   @NonNls private static final String CURRENT_VIEW_SWITCH = "-cview";
+  @NonNls private static final String VIEW_SWITCH = "-view";
+  @NonNls private static final String OBSOLETE_SWITCH = "-obsolete";
   @NonNls private static final String FORMAT_SWITCH = "-fmt";
   @NonNls private static final String LONG_SWITCH = "-long";
   @NonNls private static final String LIST_ACTIVITY_CMD = "lsactivity";
@@ -343,17 +345,21 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
    */
   public void extractViewActivities()
   {
+    if( CCaseConfig.getInstance( project ).isOffline )
+      return;
+    
     //  Sometimes users configure content roots so that several of them correspond
     //  to the same view. Thus we should not repeat the command for the same view
     //  more than one time.
     HashSet<String> completedViews = new HashSet<String>();
 
     activitiesMap.clear();
-    for( CCaseViewsManager.ViewInfo info : viewsMapByRoot.values() )
+    for( ViewInfo info : viewsMapByRoot.values() )
     {
       if( info.isUcm && !completedViews.contains( info.tag ) )
       {
-        String output = TransparentVcs.cleartoolWithOutput( LIST_ACTIVITY_CMD, ME_ONLY_SWITCH, "-obsolete", "-view", info.tag, FORMAT_SWITCH, LIST_ACTIVITY_FORMAT );
+        String output = TransparentVcs.cleartoolWithOutput( LIST_ACTIVITY_CMD, ME_ONLY_SWITCH, OBSOLETE_SWITCH,
+                                                            VIEW_SWITCH, info.tag, FORMAT_SWITCH, LIST_ACTIVITY_FORMAT );
         if( TransparentVcs.isServerDownMessage( output ) )
           return;
 
