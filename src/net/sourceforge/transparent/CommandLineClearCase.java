@@ -90,7 +90,7 @@ public class CommandLineClearCase implements ClearCase
 
     //  In the case we did not manage to parse out the activity or we deal with
     //  non-UCM views, do not disturb host.
-    if( activity != null )
+    if( activity != null && !file.isDirectory() )
     {
       CCaseViewsManager viewsManager = CCaseViewsManager.getInstance( host.getProject() );
       viewsManager.addFile2Changelist( file.getPath(), activity );
