@@ -31,6 +31,7 @@ public class CCaseConfigurable implements ProjectComponent, Configurable
   private JTextField scrText;
   private JPanel myConfigPanel;
   private JCheckBox useIdenticalSwitch;
+  private JCheckBox synchActivitiesOnRefresh;
 
   private Project project;
   private CCaseConfig vcsConfig;
@@ -90,7 +91,8 @@ public class CCaseConfigurable implements ProjectComponent, Configurable
            || vcsConfig.isOffline != myWorkOffline.isSelected()
            || vcsConfig.isHistoryResticted != myRestrictHistory.isSelected()
            || vcsConfig.getHistoryRevisionsMargin() != getMargin()
-           || vcsConfig.useIdenticalSwitch != useIdenticalSwitch.isSelected();
+           || vcsConfig.useIdenticalSwitch != useIdenticalSwitch.isSelected()
+           || vcsConfig.synchActivitiesOnRefresh != synchActivitiesOnRefresh.isSelected();  
   }
 
   private boolean hasScrTextChanged() {
@@ -108,6 +110,7 @@ public class CCaseConfigurable implements ProjectComponent, Configurable
     vcsConfig.isHistoryResticted = myRestrictHistory.isSelected();
     vcsConfig.setHistoryRevisionsMargin( getMargin() );
     vcsConfig.useIdenticalSwitch = useIdenticalSwitch.isSelected();
+    vcsConfig.synchActivitiesOnRefresh = synchActivitiesOnRefresh.isSelected();
 
     if( need2ReloadActivities )
     {
@@ -124,10 +127,11 @@ public class CCaseConfigurable implements ProjectComponent, Configurable
     myReservedCheckoutsCheckBox.setSelected( vcsConfig.checkoutReserved );
     myCheckOutForHijacked.setSelected( vcsConfig.checkInUseHijack );
 
-//    synchOutside.setSelected( vcsConfig.synchOutside );
     myUseUCMModel.setSelected( vcsConfig.useUcmModel );
-    myRestrictHistory.setSelected( vcsConfig.isHistoryResticted );
     useIdenticalSwitch.setSelected( vcsConfig.useIdenticalSwitch );
+    synchActivitiesOnRefresh.setSelected( vcsConfig.synchActivitiesOnRefresh );
+
+    myRestrictHistory.setSelected( vcsConfig.isHistoryResticted );
     historyText.setValue( vcsConfig.getHistoryRevisionsMargin() );
     historyText.setEnabled( vcsConfig.isHistoryResticted );
 
@@ -158,6 +162,7 @@ public class CCaseConfigurable implements ProjectComponent, Configurable
     format.setMinimumIntegerDigits( 1 );
     format.setMaximumIntegerDigits( 4 );
     format.setGroupingUsed( false );
+    
     final InternationalFormatter formatter = new InternationalFormatter(format);
     formatter.setAllowsInvalid(false);
     formatter.setCommitsOnValidEdit(true);
