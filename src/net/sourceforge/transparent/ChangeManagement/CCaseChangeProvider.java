@@ -222,7 +222,7 @@ public class CCaseChangeProvider implements ChangeProvider
         {
           try
           {
-            String path = VcsUtil.getCanonicalLocalPath( file.getCanonicalPath() ).toLowerCase();
+            String path = VcsUtil.getCanonicalLocalPath( file.getCanonicalPath() );
             files.add( path );
           }
           catch( IOException e ){
@@ -357,7 +357,12 @@ public class CCaseChangeProvider implements ChangeProvider
       collectCheckouts( filesChanged );
       for( String file : filesWritable )
       {
-        String normPath = VcsUtil.getCanonicalLocalPath( file ).toLowerCase();
+        String normPath;
+
+        //  enough for comparison?
+        try {  normPath = VcsUtil.getCanonicalLocalPath( new File( file ).getCanonicalPath() );  }
+        catch( IOException exc ){  normPath = VcsUtil.getCanonicalLocalPath( file );  }
+
         if( !filesChanged.contains( normPath ) )
           filesNew.add( file );
       }
