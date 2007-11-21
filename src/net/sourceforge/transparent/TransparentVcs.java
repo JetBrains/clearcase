@@ -18,6 +18,7 @@ import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.annotate.AnnotationProvider;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
+import com.intellij.openapi.vcs.changes.IgnoredFileBean;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vcs.checkin.CheckinHandlerFactory;
@@ -68,6 +69,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   @NonNls private static final String CCASE_CONTRIB_FILE_SIG = "*.contrib";
   @NonNls private static final String CCASE_CONTRIB_FILE_MID_SIG = "*.contrib.*";
   @NonNls private static final String CCASE_FINDMERGE_FILE_SIG = "findmerge.log.*";
+  @NonNls private static final String CCASE_UPDATE_LOG_FILE_SIG = "*.updt";
   @NonNls private static final String HIJACKED_EXT = ".hijacked";
 
   @NonNls private static final String CHANGE_ACTIVITY_CMD = "chactivity";
@@ -269,7 +271,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
    * Automatically add several patterns (like "*.keep") into the list of ignored
    * file so that they are not becoming the part of the project.
    */
-  private static void addIgnoredFiles()
+  private void addIgnoredFiles()
   {
     String patterns = FileTypeManager.getInstance().getIgnoredFilesList();
     String newPattern = patterns;
@@ -289,6 +291,9 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     if( patterns.indexOf(CCASE_FINDMERGE_FILE_SIG) == -1 )
       newPattern += (( newPattern.charAt( newPattern.length() - 1 ) == ';') ? "" : ";" ) + CCASE_FINDMERGE_FILE_SIG;
 
+    if( patterns.indexOf(CCASE_UPDATE_LOG_FILE_SIG) == -1 )
+      newPattern += (( newPattern.charAt( newPattern.length() - 1 ) == ';') ? "" : ";" ) + CCASE_UPDATE_LOG_FILE_SIG;
+
     if( !newPattern.equals( patterns ))
     {
       final String newPat = newPattern;
@@ -297,6 +302,17 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       ApplicationManager.getApplication().invokeLater( new Runnable() {
         public void run() { ApplicationManager.getApplication().runWriteAction( action );  }
       });
+    }
+
+    //  Add file templates to ignore into the change list management also.
+    ChangeListManager mgr = ChangeListManager.getInstance( getProject() );
+    String[] sigs = new String[] { CCASE_KEEP_FILE_SIG, CCASE_KEEP_FILE_MID_SIG, CCASE_CONTRIB_FILE_SIG,
+                                   CCASE_CONTRIB_FILE_MID_SIG, CCASE_FINDMERGE_FILE_SIG, CCASE_UPDATE_LOG_FILE_SIG };
+    for( String sig : sigs )
+    {
+      IgnoredFileBean bean = new IgnoredFileBean();
+      bean.setMask( sig );
+      mgr.addFilesToIgnore( bean );
     }
   }
 
