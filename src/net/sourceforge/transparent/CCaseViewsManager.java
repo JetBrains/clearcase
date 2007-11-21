@@ -364,7 +364,8 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
           return;
 
         completedViews.add( info.tag );
-        TransparentVcs.LOG.info( output );
+        if( !StringUtil.isEmptyOrSpaces( output ))
+          TransparentVcs.LOG.info( output );
 
         //  Reset values so that we can always determine that we did not manage
         //  to correctly parse "lsactivity" command's output.
