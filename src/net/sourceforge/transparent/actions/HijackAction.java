@@ -18,11 +18,12 @@ public class HijackAction extends SynchronousAction
   public void update( AnActionEvent e )
   {
     super.update( e );
+    boolean isEnabled = e.getPresentation().isEnabled();
 
     TransparentVcs host = getHost( e );
     boolean isVisible = (host != null && host.getConfig() != null);
     e.getPresentation().setVisible( isVisible );
-    e.getPresentation().setEnabled( isVisible && host.getConfig().isOffline );
+    e.getPresentation().setEnabled( isVisible && isEnabled && host.getConfig().isOffline );
   }
 
   protected boolean isEnabled( VirtualFile file, AnActionEvent e )
