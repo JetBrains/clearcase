@@ -626,7 +626,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
             if( !oldFile.isDirectory() )
               checkinFile( oldFile, modComment, errors );
 
-            getClearCase().checkOut( ioParent, false, modComment );
+            getClearCase().checkOut( ioParent, config.checkoutReserved, modComment );
             getClearCase().move( oldFile, newFile, modComment );
             getClearCase().checkIn( ioParent, modComment );
           }
