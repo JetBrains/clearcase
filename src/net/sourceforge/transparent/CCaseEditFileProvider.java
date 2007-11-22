@@ -59,8 +59,13 @@ public class CCaseEditFileProvider implements EditFileProvider
         hijackFile( file );
       else
       {
+        CCaseViewsManager mgr = CCaseViewsManager.getInstance( host.getProject() );
+        boolean isUcmView = mgr.isUcmViewForFile( file );
+        boolean hasActivity = (mgr.getActivityOfViewOfFile( file ) != null);
+        boolean needToSetActivity = (isUcmView && !hasActivity);
+
         String comment = "";
-        if( host.getCheckoutOptions().getValue() )
+        if( host.getCheckoutOptions().getValue() || needToSetActivity )
         {
           CheckoutDialog dialog = new CheckoutDialog( host.getProject(), file );
           dialog.show();
@@ -90,7 +95,7 @@ public class CCaseEditFileProvider implements EditFileProvider
 
   private boolean shouldHijackFile( VirtualFile file )
   {
-    Status status = host.getStatus( file );
-    return host.getConfig().isOffline || (status == Status.NOT_AN_ELEMENT);
+    return  host.getConfig().isOffline || 
+           (host.getStatus( file ) == Status.NOT_AN_ELEMENT);
   }
 }
