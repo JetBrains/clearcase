@@ -41,7 +41,7 @@ public abstract class VcsAction extends AnAction
 
   public void actionPerformed(AnActionEvent e)
   {
-    _actionProjectInstance = e.getData(PlatformDataKeys.PROJECT);
+    _actionProjectInstance = getProject( e );
     _hostInstance = getHost( e );
     
     FileDocumentManager.getInstance().saveAllDocuments();
@@ -58,7 +58,7 @@ public abstract class VcsAction extends AnAction
   {
     List<VcsException> list = new ArrayList<VcsException>();
 
-    AbstractVcsHelper helper = AbstractVcsHelper.getInstance(e.getData(PlatformDataKeys.PROJECT));
+    AbstractVcsHelper helper = AbstractVcsHelper.getInstance( getProject( e ) );
     LocalHistoryAction a = helper.startLocalHistoryAction(e.getPresentation().getText());
 
     try {

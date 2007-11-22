@@ -1,7 +1,6 @@
 package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -16,7 +15,7 @@ public class AddAction extends SynchronousAction
 
   protected boolean isEnabled( VirtualFile file, AnActionEvent e )
   {
-    return getFileStatus( e.getData( PlatformDataKeys.PROJECT ), file ) == FileStatus.UNKNOWN;
+    return getFileStatus( getProject( e ), file ) == FileStatus.UNKNOWN;
   }
 
   protected void perform( VirtualFile file, AnActionEvent e )
