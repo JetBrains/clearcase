@@ -321,8 +321,13 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public boolean fileExistsInVcs( FilePath path )
   {
-    VirtualFile vfile = path.getVirtualFile();
+    //  In the case we are offline, reply "NO" since we can not say definitely
+    //  anything on the file status (and must not issue any CCase cleartool
+    //  command).
+    if( config.isOffline )
+      return false;
 
+    VirtualFile vfile = path.getVirtualFile();
     if( vfile != null )
     {
       //  Non-obvious optimization:
