@@ -70,7 +70,6 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
   private Project project;
 
   public HashMap<String, ViewInfo> viewsMapByRoot;
-  public HashMap<String, ViewInfo> viewsMapByTag;
 
   //  Keeps for any checked out file the activity which it was checked out with
   private HashMap<String, String> activitiesAssociations;
@@ -117,7 +116,6 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
     this.project = project;
 
     viewsMapByRoot = new HashMap<String, ViewInfo>();
-    viewsMapByTag = new HashMap<String, ViewInfo>();
 
     activitiesAssociations = new HashMap<String, String>();
     activitiesMap = new HashMap<String, ActivityInfo>();
@@ -202,7 +200,7 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
     {
       loadAbsentViews( roots );
       removeObsoleteViews( roots );
-      reconstructByNameMap();
+      logVIewsByName();
 
       if( config.useUcmModel )
       {
@@ -297,15 +295,9 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
     }
   }
 
-  private void reconstructByNameMap()
+  // log result views list
+  private void logVIewsByName()
   {
-    viewsMapByTag.clear();
-    for( ViewInfo view : viewsMapByRoot.values() )
-    {
-      viewsMapByTag.put( view.tag, view );
-    }
-
-    // log result views list
     TransparentVcs.LOG.info( ">>> Views list:" );
     for( String root : viewsMapByRoot.keySet() )
     {
@@ -407,19 +399,36 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
 
   public void synchActivities2ChangeLists()
   {
+    LocalChangeList nonDefltList = null;
+    LocalChangeList defltListToDelete = null;
     ChangeListManager mgr = ChangeListManager.getInstance( project );
+
     for( ActivityInfo info : activitiesMap.values() )
     {
       LocalChangeList list = mgr.findChangeList( info.publicName );
-      if( list != null && info.isObsolete )
+      if( list != null )
       {
-        mgr.removeChangeList( list );
+        if( info.isObsolete )
+        {
+          if( !list.isDefault() )
+            mgr.removeChangeList( list );
+          else
+            defltListToDelete = list;
+        }
+        else
+          nonDefltList = list; 
       }
       else
-      if( list == null && !info.isObsolete )
+      if( !info.isObsolete )
       {
-        mgr.addChangeList( info.publicName, null );
+        nonDefltList = mgr.addChangeList( info.publicName, null );
       }
+    }
+
+    if( defltListToDelete != null && nonDefltList != null )
+    {
+      mgr.setDefaultChangeList( nonDefltList );
+      mgr.removeChangeList( defltListToDelete );
     }
   }
 
@@ -474,10 +483,10 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
   {
     if( activityInfo.activeInView != null )
     {
-      ViewInfo info = viewsMapByTag.get( activityInfo.activeInView );
-      if( info != null )
+      for( ViewInfo view : viewsMapByRoot.values() )
       {
-        info.currentActivity = activityInfo;
+        if( view.tag.equals( activityInfo.activeInView ) )
+          view.currentActivity = activityInfo;
       }
     }
   }
