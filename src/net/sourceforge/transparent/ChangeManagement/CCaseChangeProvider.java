@@ -762,7 +762,8 @@ public class CCaseChangeProvider implements ChangeProvider
     {
       final FilePath fp = VcsUtil.getFilePath( path );
       CCaseContentRevision revision = ContentRevisionFactory.getRevision( fp, project );
-      builder.processChange( new Change( revision, new CurrentContentRevision( fp ), FileStatus.MERGED_WITH_CONFLICTS ));
+      String activity = findActivityForFile( fp, fp );
+      builder.processChangeInList( new Change( revision, new CurrentContentRevision( fp ), FileStatus.MERGED_WITH_CONFLICTS ), activity );
     }
   }
 
