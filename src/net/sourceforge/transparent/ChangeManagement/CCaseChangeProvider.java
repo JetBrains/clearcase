@@ -309,7 +309,8 @@ public class CCaseChangeProvider implements ChangeProvider
         if( host.isFileIgnored( file ))
           filesIgnored.add( fileName );
         else
-        if( isFileCCaseProcessable( file ) && isProperNotification( path ) )
+//        if( isFileCCaseProcessable( file ) && isProperNotification( path ) )
+        if( isValidFile( file ) && isProperNotification( path ) )
           filesWritable.add( fileName );
       }
     }
@@ -878,11 +879,13 @@ public class CCaseChangeProvider implements ChangeProvider
     return false;
   }
 
+  /*
   private boolean isFileCCaseProcessable( VirtualFile file )
   {
     return isValidFile( file ) && VcsUtil.isPathUnderProject( project, file.getPath() );
   }
 
+  */
   private static boolean isValidFile( VirtualFile file )
   {
     return (file != null) && file.isWritable() && !file.isDirectory();
