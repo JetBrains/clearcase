@@ -41,7 +41,7 @@ public class CheckOutAction extends SynchronousAction
 
   protected boolean isEnabled( VirtualFile file, AnActionEvent e )
   {
-    if( !VcsUtil.isPathUnderProject( _actionProjectInstance, file ))
+    if( !VcsUtil.isFileForVcs( file, _actionProjectInstance, TransparentVcs.getInstance(_actionProjectInstance) ) )
       return false;
 
     //  NB: if invoked for a folder, the status is most often "NOT_CHANGED"
