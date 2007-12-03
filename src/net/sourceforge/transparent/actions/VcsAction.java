@@ -1,5 +1,6 @@
 package net.sourceforge.transparent.actions;
 
+import com.intellij.history.LocalHistory;
 import com.intellij.history.LocalHistoryAction;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -58,8 +59,7 @@ public abstract class VcsAction extends AnAction
   {
     List<VcsException> list = new ArrayList<VcsException>();
 
-    AbstractVcsHelper helper = AbstractVcsHelper.getInstance( getProject( e ) );
-    LocalHistoryAction a = helper.startLocalHistoryAction(e.getPresentation().getText());
+    LocalHistoryAction a = LocalHistory.startAction(getProject(e), e.getPresentation().getText());
 
     try {
       execute(e, list);
