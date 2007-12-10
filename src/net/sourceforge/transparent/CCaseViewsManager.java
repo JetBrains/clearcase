@@ -525,7 +525,9 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
         return info.name;
     }
 
-    return activity.replace( ' ', '_' );
+    //  Strip character which are not allowed in the activity normalized name
+    //  (the list is not complete I suppose).
+    return activity.replaceAll( "[ ()=]", "_" );
   }
 
   @Nullable

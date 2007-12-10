@@ -764,10 +764,17 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       if( !runner.isSuccessfull() )
       {
         runner.run( new String[] { CLEARTOOL_CMD, "mkact", "-nc", "-f", "-headline", "\"" + dstActivity + "\"", dstActivityNorm }, true );
+        if( !runner.isSuccessfull() )
+        {
+          @NonNls String msg = "Error occured while creating an activity (possibly illegal activity name). File(s) is checked to the default activity." +
+                               "Error description: " + runner.getOutput();
+          errors.add( new VcsException( msg ));
+          return;
+        }
       }
 
       runner.run( new String[] { CLEARTOOL_CMD, CHANGE_ACTIVITY_CMD, "-nc", "-fcset", srcActivity,
-                                 "-tcset", dstActivityNorm, CommandLineClearCase.quote( version ) }, true );
+                                 "-tcset", dstActivityNorm, CommandLineClearCase.quote(version) }, true );
       if( !runner.isSuccessfull() )
       {
         errors.add( new VcsException( runner.getOutput() ));
