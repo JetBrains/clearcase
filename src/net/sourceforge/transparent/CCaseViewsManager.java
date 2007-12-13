@@ -62,6 +62,9 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
   @NonNls private static final String ME_ONLY_SWITCH = "-me";
   @NonNls private static final String LIST_ACTIVITY_FORMAT = "%n <-> %[locked]p <-> %[headline]p <-> %[view]p\\n";
   @NonNls private static final String FIELDS_DELIMITER = " <-> ";
+
+  @NonNls private static final String LOCKED_ACTIVITY_SIG = " (LOCKED)";
+  @NonNls private static final String NOT_ASSOCIATED_CHANGELIST_SIG = " (not associated with any CC activity)";
   
   @NonNls private static final String ERRORS_TAB_NAME = "ClearCase views operations";
   @NonNls private static final String SERVER_UNAVAILABLE_MESSAGE = "\nServer is unavailable, ClearCase support is switched to isOffline mode";
@@ -74,7 +77,6 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
   //  Keeps for any checked out file the activity which it was checked out with
   private HashMap<String, String> activitiesAssociations;
   private HashMap<String, ActivityInfo> activitiesMap;
-
 
   public static class ViewInfo
   {
@@ -200,7 +202,7 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
     {
       loadAbsentViews( roots );
       removeObsoleteViews( roots );
-      logVIewsByName();
+      logViewsByName( viewsMapByRoot );
 
       if( config.useUcmModel )
       {
@@ -275,6 +277,13 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
       if( line.startsWith( TAG_SIG ) )
       {
         info.tag = line.substring( TAG_SIG.length() );
+
+        // IDEADEV-23797 - when present, view's comment is printed along with
+        // the view's tag. Strip it (it starts with the quote char).
+        //  NB: assuming that view's tag can not contain quote symbols.
+        int quoteIndex = info.tag.indexOf( '"' );
+        if( quoteIndex != -1 )
+          info.tag = info.tag.substring( 0, quoteIndex ).trim();
       }
       else
       if( line.startsWith( TAG_UUID_SIG ) )
@@ -296,12 +305,12 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
   }
 
   // log result views list
-  private void logVIewsByName()
+  private static void logViewsByName( HashMap<String, ViewInfo> views )
   {
     TransparentVcs.LOG.info( ">>> Views list:" );
-    for( String root : viewsMapByRoot.keySet() )
+    for( String root : views.keySet() )
     {
-      TransparentVcs.LOG.info( "\t\t" + root + " -> " + viewsMapByRoot.get( root ).tag );
+      TransparentVcs.LOG.info( "\t\t" + root + " -> " + views.get( root ).tag );
     }
   }
 
@@ -588,11 +597,11 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
     if( info != null )
     {
       if( info.isLocked )
-        cellRenderer.append( " (LOCKED)", SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES );
+        cellRenderer.append( LOCKED_ACTIVITY_SIG, SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES );
     }
     else
     {
-      cellRenderer.append( " (not associated with any CC activity)", SimpleTextAttributes.GRAY_ATTRIBUTES );
+      cellRenderer.append( NOT_ASSOCIATED_CHANGELIST_SIG, SimpleTextAttributes.GRAY_ATTRIBUTES );
     }
   }
 
