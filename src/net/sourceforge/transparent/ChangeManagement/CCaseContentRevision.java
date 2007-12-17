@@ -77,7 +77,7 @@ public class CCaseContentRevision implements ContentRevision
       {
         if( file != null )
         {
-          try { content = new String( file.contentsToByteArray(), CharsetToolkit.getIDEOptionsCharset().name() ); }
+          try { content = CharsetToolkit.bytesToString(file.contentsToByteArray()); }
           catch( IOException e ){ /* nothing to do, content remains empty */ }
         }
       }
@@ -152,7 +152,7 @@ public class CCaseContentRevision implements ContentRevision
             else
             {
               byte[] byteContent = VcsUtil.getFileByteContent( myTmpFile );
-              content = new String( byteContent, CharsetToolkit.getIDEOptionsCharset().name() );
+              content = CharsetToolkit.bytesToString(byteContent);
               myTmpFile.delete();
             }
           }
