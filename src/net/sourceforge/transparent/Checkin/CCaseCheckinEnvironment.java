@@ -121,8 +121,6 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   }
 
 
-  public boolean showCheckinDialogInAnyCase()   {  return false;  }
-  public String  prepareCheckinMessage(String text)  {  return text;  }
   public String  getHelpId() {  return null;   }
   public String  getCheckinOperationName() {  return CHECKIN_TITLE;  }
 
@@ -513,6 +511,10 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     }
     // Keep intentionally empty.
     return new ArrayList<VcsException>();
+  }
+
+  public boolean keepChangeListAfterCommit(final ChangeList changeList) {
+    return false;
   }
 
   private void extendStatus( VirtualFile file )
