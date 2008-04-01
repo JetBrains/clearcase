@@ -69,6 +69,7 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
   @NonNls private static final String ERRORS_TAB_NAME = "ClearCase views operations";
   @NonNls private static final String SERVER_UNAVAILABLE_MESSAGE = "\nServer is unavailable, ClearCase support is switched to isOffline mode";
   @NonNls private static final String FAILED_TO_INIT_VIEW_MESSAGE = "Plugin failed to initialize view:\n";
+  @NonNls private static final String FAILED_TO_COLLECT_VIEW_MESSAGE = "Plugin failed to collect information on views (absent 'cleartool.exe'?). Plugin is switched to the offline mode.\n"; 
 
   private Project project;
 
@@ -224,6 +225,13 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
       //  or obsolete view.
       String message = FAILED_TO_INIT_VIEW_MESSAGE + e.getMessage();
       AbstractVcsHelper.getInstance( project ).showError( new VcsException( message ), ERRORS_TAB_NAME );
+    }
+    catch( RuntimeException e )
+    {
+      String message = FAILED_TO_COLLECT_VIEW_MESSAGE + e.getMessage();
+      AbstractVcsHelper.getInstance( project ).showError( new VcsException( message ), ERRORS_TAB_NAME );
+
+      config.isOffline = true;
     }
   }
 
