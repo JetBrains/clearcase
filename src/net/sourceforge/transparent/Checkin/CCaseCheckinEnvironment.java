@@ -123,6 +123,10 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
 
   public String  getHelpId() {  return null;   }
   public String  getCheckinOperationName() {  return CHECKIN_TITLE;  }
+  public boolean keepChangeListAfterCommit( ChangeList changeList )
+  {
+    return true;
+  }
 
   public List<VcsException> commit( List<Change> changes, String comment )
   {
