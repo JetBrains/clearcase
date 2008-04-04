@@ -517,10 +517,6 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     return new ArrayList<VcsException>();
   }
 
-  public boolean keepChangeListAfterCommit(final ChangeList changeList) {
-    return false;
-  }
-
   private void extendStatus( VirtualFile file )
   {
     FileStatusManager mgr = FileStatusManager.getInstance( project );
