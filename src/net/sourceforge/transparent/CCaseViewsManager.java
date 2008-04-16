@@ -291,7 +291,7 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
         //  NB: assuming that view's tag can not contain quote symbols.
         int quoteIndex = info.tag.indexOf( '"' );
         if( quoteIndex != -1 )
-          info.tag = info.tag.substring( 0, quoteIndex ).trim();
+          info.tag = info.tag.substring( 0, quoteIndex - 1 ).trim();
       }
       else
       if( line.startsWith( TAG_UUID_SIG ) )
