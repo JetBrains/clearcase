@@ -1,7 +1,10 @@
 package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.vcsUtil.VcsUtil;
+import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
 
 public class VersionTreeAction extends AsynchronousAction
@@ -28,7 +31,7 @@ public class VersionTreeAction extends AsynchronousAction
 
   protected boolean isEnabled( VirtualFile file, AnActionEvent e )
   {
-    if( !VcsUtil.isPathUnderProject( _actionProjectInstance, file ))
+    if( !VcsUtil.isFileForVcs( file, _actionProjectInstance, TransparentVcs.getInstance(_actionProjectInstance) ) )
       return false;
 
     FileStatus status = getFileStatus( _actionProjectInstance, file );
