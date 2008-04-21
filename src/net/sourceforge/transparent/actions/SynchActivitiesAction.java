@@ -1,6 +1,7 @@
 package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.DataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
@@ -38,13 +39,12 @@ public class SynchActivitiesAction extends SynchronousAction
 
   protected void execute( AnActionEvent e, List<VcsException> errors )
   {
-    try {  perform( null, e ); }
+    try {  perform( null, e.getData(DataKeys.PROJECT)); }
     catch( VcsException exc ) { errors.add( exc ); }
   }
 
-  protected void perform( VirtualFile file, AnActionEvent e ) throws VcsException
+  protected void perform(VirtualFile file, final Project project) throws VcsException
   {
-    Project project = getProject( e );
     CCaseViewsManager.getInstance( project ).extractViewActivities();
 
     //  Convert current activity of each view into ChangeList
@@ -56,7 +56,7 @@ public class SynchActivitiesAction extends SynchronousAction
     //  For each file with "MODIFIED" status reread its mapped activity
     //  (via "describe" command), and if its activity differs from the name
     //  of its current change list, move it to the new change list.
-    relocateChangedFiles( project, getHost( e ) );
+    relocateChangedFiles( project, TransparentVcs.getInstance(project));
     
     //  New files (with status "ADDED") should be relocated to the newly
     //  activated activities.

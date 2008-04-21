@@ -3,6 +3,7 @@ package net.sourceforge.transparent.actions;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.project.Project;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
@@ -11,9 +12,9 @@ public class VersionTreeAction extends AsynchronousAction
 {
   @NonNls private final static String ACTION_NAME = "Version Tree";
 
-  public void perform( VirtualFile file, AnActionEvent e )
+  public void perform(VirtualFile file, final Project project)
   {
-    cleartool( "lsvtree", "-g", getVersionExtendedPathName( file ) );
+    cleartool( "lsvtree", "-g", getVersionExtendedPathName(project, file ) );
   }
 
   protected String getActionName( AnActionEvent e ) { return ACTION_NAME; }
@@ -29,12 +30,12 @@ public class VersionTreeAction extends AsynchronousAction
                                     e.getPresentation().isEnabled() );
   }
 
-  protected boolean isEnabled( VirtualFile file, AnActionEvent e )
+  protected boolean isEnabled(VirtualFile file, final Project project)
   {
-    if( !VcsUtil.isFileForVcs( file, _actionProjectInstance, TransparentVcs.getInstance(_actionProjectInstance) ) )
+    if( !VcsUtil.isFileForVcs( file, project, TransparentVcs.getInstance(project) ) )
       return false;
 
-    FileStatus status = getFileStatus( _actionProjectInstance, file );
+    FileStatus status = getFileStatus( project, file );
     return status != FileStatus.ADDED && status != FileStatus.UNKNOWN &&
            status != FileStatus.IGNORED;
   }

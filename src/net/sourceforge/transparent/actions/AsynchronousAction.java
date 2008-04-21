@@ -1,6 +1,8 @@
 package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.DataKeys;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -12,7 +14,7 @@ import java.util.List;
 
 public abstract class AsynchronousAction extends FileAction
 {
-  protected abstract void perform( VirtualFile virtualfile, AnActionEvent e ) throws VcsException;
+  protected abstract void perform(VirtualFile virtualfile, final Project project) throws VcsException;
 
   public void update( AnActionEvent e )
   {
@@ -25,10 +27,11 @@ public abstract class AsynchronousAction extends FileAction
 
   protected List<VcsException> runAction( AnActionEvent e )
   {
+    Project project = e.getData(DataKeys.PROJECT);
     VirtualFile file = VcsUtil.getOneVirtualFile( e );
     List<VcsException> exceptions = new ArrayList<VcsException>();
     try {
-        perform( file, e );
+        perform( file, project);
     }
     catch( VcsException ex ) {
         ex.setVirtualFile( file );
@@ -42,10 +45,10 @@ public abstract class AsynchronousAction extends FileAction
     return exceptions;
   }
 
-  public String getVersionExtendedPathName( VirtualFile file )
+  public static String getVersionExtendedPathName(final Project project, VirtualFile file)
   {
     String path = VcsUtil.getCanonicalPath( file.getPath() );
-    FileStatus status = getFileStatus( _actionProjectInstance, file );
+    FileStatus status = getFileStatus( project, file );
     return status.equals( FileStatus.HIJACKED ) ? path + "@@" : path;
   }
 }

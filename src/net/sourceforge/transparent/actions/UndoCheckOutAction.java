@@ -1,9 +1,11 @@
 package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
+import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
 
 import java.util.ArrayList;
@@ -13,18 +15,18 @@ public class UndoCheckOutAction extends SynchronousAction
 {
   @NonNls private final static String ACTION_NAME = "Undo Checkout";
 
-  protected boolean isEnabled( VirtualFile file, AnActionEvent e )
+  protected boolean isEnabled(VirtualFile file, final Project project)
   {
-    return file.isDirectory() || properStatus( e, file );
+    return file.isDirectory() || properStatus( project, file );
   }
 
-  protected void perform( VirtualFile file, AnActionEvent e ) throws VcsException
+  protected void perform(VirtualFile file, final Project project) throws VcsException
   {
     List<VcsException> errors = new ArrayList<VcsException>();
     
-    if( !file.isDirectory() && properStatus( e, file ) )
+    if( !file.isDirectory() && properStatus( project, file ) )
     {
-      getHost( e ).undoCheckoutFile( file, errors );
+      TransparentVcs.getInstance(project).undoCheckoutFile( file, errors );
       file.refresh( true, false );
     }
 
@@ -34,9 +36,9 @@ public class UndoCheckOutAction extends SynchronousAction
 
   protected String getActionName( AnActionEvent e ) { return ACTION_NAME; }
 
-  private static boolean properStatus( AnActionEvent e, VirtualFile file )
+  private static boolean properStatus( Project project, VirtualFile file )
   {
-    FileStatus status = getFileStatus( getProject( e ), file );
+    FileStatus status = getFileStatus( project, file );
     return (status == FileStatus.MODIFIED) || (status == FileStatus.MERGED_WITH_CONFLICTS);
   }
 }

@@ -4,6 +4,7 @@ import com.intellij.history.LocalHistory;
 import com.intellij.history.LocalHistoryAction;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.DataKeys;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
@@ -23,16 +24,12 @@ public abstract class VcsAction extends AnAction
 {
   @NonNls private static final String OPERATION_FAILED_TEXT = "One or more errors occured during operation";
 
-  protected Project _actionProjectInstance;
-  protected TransparentVcs _hostInstance;
-
   public void update(AnActionEvent e)
   {
     String actionName = getActionName(e);
     if (actionName == null) throw new IllegalStateException("Internal error - Action Name is NULL.");
 
     e.getPresentation().setText(actionName);
-    _actionProjectInstance = getProject( e );
   }
 
   protected abstract String getActionName(AnActionEvent e);
@@ -42,16 +39,15 @@ public abstract class VcsAction extends AnAction
 
   public void actionPerformed(AnActionEvent e)
   {
-    _actionProjectInstance = getProject( e );
-    _hostInstance = getHost( e );
-    
+    Project project = e.getData(DataKeys.PROJECT);
+
     FileDocumentManager.getInstance().saveAllDocuments();
     List<VcsException> errors = runAction(e);
 
     if (errors.size() > 0) {
       @NonNls final String title = getActionName(e) + " failed";
-      AbstractVcsHelper.getInstance( _actionProjectInstance ).showErrors(errors, title);
-      Messages.showErrorDialog( _actionProjectInstance, OPERATION_FAILED_TEXT, title );
+      AbstractVcsHelper.getInstance( project ).showErrors(errors, title);
+      Messages.showErrorDialog( project, OPERATION_FAILED_TEXT, title );
     }
   }
 

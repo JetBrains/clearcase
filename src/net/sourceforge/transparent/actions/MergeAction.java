@@ -8,6 +8,7 @@ import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.project.Project;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
@@ -28,7 +29,7 @@ public class MergeAction extends AsynchronousAction
 
   protected String getActionName( AnActionEvent e ) { return ACTION_NAME; }
 
-  public void perform( final VirtualFile file, AnActionEvent e )
+  public void perform(final VirtualFile file, final Project project)
   {
     final String path = file.getPath().replace( '/', File.separatorChar );
     String findVerOut = TransparentVcs.cleartoolWithOutput( "findmerge", path, "-flatest", "-print", "-long" );
@@ -42,19 +43,19 @@ public class MergeAction extends AsynchronousAction
 
           file.putUserData( TransparentVcs.MERGE_CONFLICT, null );
           file.refresh( false, false );
-          VcsUtil.markFileAsDirty( _actionProjectInstance, file );
+          VcsUtil.markFileAsDirty( project, file );
         }
       });
     }
     else
     {
-      AbstractVcsHelper.getInstance( _actionProjectInstance ).showError( new VcsException( ERROR_TEXT ), ERROR_TITLE );
+      AbstractVcsHelper.getInstance( project ).showError( new VcsException( ERROR_TEXT ), ERROR_TITLE );
     }
   }
 
-  protected boolean isEnabled( VirtualFile file, AnActionEvent e )
+  protected boolean isEnabled(VirtualFile file, final Project project)
   {
-    FileStatus status = getFileStatus( getProject( e ), file );
+    FileStatus status = getFileStatus( project, file );
     return status == FileStatus.MERGED_WITH_CONFLICTS;
   }
 

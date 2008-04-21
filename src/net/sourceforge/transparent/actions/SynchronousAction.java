@@ -1,6 +1,8 @@
 package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.DataKeys;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -18,21 +20,22 @@ public abstract class SynchronousAction extends FileAction
 
   protected void execute( AnActionEvent e, List<VcsException> errors )
   {
+    Project project = e.getData(DataKeys.PROJECT);
     VirtualFile[] files = VcsUtil.getVirtualFiles( e );
     for( VirtualFile file : files )
     {
-      if( isEnabled( file, e ) )
-        executeOnFile( e, file, errors );
+      if( isEnabled( file, project) )
+        executeOnFile(file, errors, project);
     }
   }
 
-  protected void executeOnFile( AnActionEvent e, VirtualFile file, List<VcsException> errors )
+  protected void executeOnFile(VirtualFile file, List<VcsException> errors, final Project project)
   {
-    VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance( _actionProjectInstance );
+    VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance( project );
 
     try
     {
-      perform( file, e );
+      perform( file, project);
       mgr.fileDirty( file );
     }
     catch( VcsException ex ) {
@@ -44,18 +47,18 @@ public abstract class SynchronousAction extends FileAction
       vcsEx.setVirtualFile( file );
       errors.add( vcsEx );
     }
-    handleRecursiveExecute( e, file, errors );
+    handleRecursiveExecute(file, errors, project);
   }
 
-  private void handleRecursiveExecute( AnActionEvent e, VirtualFile file, List<VcsException> errors )
+  private void handleRecursiveExecute(VirtualFile file, List<VcsException> errors, final Project project)
   {
 //    if (file.isDirectory() && context.isActionRecursive) {
     if( file.isDirectory() )
     {
       for( VirtualFile child : file.getChildren() )
-          executeOnFile( e, child, errors );
+          executeOnFile(child, errors, project);
     }
   }
 
-  protected abstract void perform( VirtualFile virtualfile, AnActionEvent e ) throws VcsException;
+  protected abstract void perform(VirtualFile virtualfile, final Project project) throws VcsException;
 }

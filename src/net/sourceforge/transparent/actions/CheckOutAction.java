@@ -1,12 +1,14 @@
 package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.DataKeys;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.project.Project;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.TransparentVcs;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
@@ -39,26 +41,27 @@ public class CheckOutAction extends SynchronousAction
                                     e.getPresentation().isEnabled() );  
   }
 
-  protected boolean isEnabled( VirtualFile file, AnActionEvent e )
+  protected boolean isEnabled(VirtualFile file, final Project project)
   {
-    if( !VcsUtil.isFileForVcs( file, _actionProjectInstance, TransparentVcs.getInstance(_actionProjectInstance) ) )
+    if( !VcsUtil.isFileForVcs( file, project, TransparentVcs.getInstance(project) ) )
       return false;
 
     //  NB: if invoked for a folder, the status is most often "NOT_CHANGED"
-    FileStatus status = getFileStatus( _actionProjectInstance, file );
+    FileStatus status = getFileStatus( project, file );
     return status == FileStatus.NOT_CHANGED || status == FileStatus.HIJACKED;
   }
 
   protected void execute( AnActionEvent e, List<VcsException> errors )
   {
+    Project project = e.getData(DataKeys.PROJECT);
     String comment = "";
     VirtualFile[] files = VcsUtil.getVirtualFiles( e );
 
-    if( _hostInstance.getCheckoutOptions().getValue() )
+    if( TransparentVcs.getInstance(project).getCheckoutOptions().getValue() )
     {
       CheckoutDialog dialog = ( files.length == 1 ) ?
-                                new CheckoutDialog( _actionProjectInstance, files[ 0 ] ) :
-                                new CheckoutDialog( _actionProjectInstance, files );
+                                new CheckoutDialog( project, files[ 0 ] ) :
+                                new CheckoutDialog( project, files );
       dialog.show();
       if( dialog.getExitCode() == CheckoutDialog.CANCEL_EXIT_CODE )
         return;
@@ -68,19 +71,18 @@ public class CheckOutAction extends SynchronousAction
 
     for( VirtualFile file : files )
     {
-      performOnFile( e, file, comment, errors );
+      performOnFile(project, file, comment, errors );
     }
   }
 
-  private void performOnFile( AnActionEvent e, VirtualFile file,
-                              String comment, List<VcsException> errors )
+  private void performOnFile(final Project project, VirtualFile file, String comment, List<VcsException> errors)
   {
-    if( isEnabled( file, e ) )
+    if( isEnabled( file, project) )
     {
-      VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance( _actionProjectInstance );
+      VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance( project );
       try
       {
-        perform( file, comment );
+        perform( file, comment, project);
         mgr.fileDirty( file );
       }
       catch( VcsException ex ) {
@@ -98,27 +100,27 @@ public class CheckOutAction extends SynchronousAction
           errors.add( vcsEx );
         }
       }
-      executeRecursively( e, file, comment, errors );
+      executeRecursively(project, file, comment, errors );
     }
   }
 
-  private void executeRecursively( AnActionEvent e, VirtualFile file, String comment, List<VcsException> errors )
+  private void executeRecursively(final Project project, VirtualFile file, String comment, List<VcsException> errors)
   {
     if( file.isDirectory() )
     {
       for( VirtualFile child : file.getChildren() )
-        performOnFile( e, child, comment, errors );
+        performOnFile(project, child, comment, errors );
     }
   }
 
-  protected void perform( VirtualFile file, String comment ) throws VcsException
+  protected static void perform(VirtualFile file, String comment, final Project project) throws VcsException
   {
     //  Checkout command can be issued for a folder - we do not support this as
     //  the separate operation.
     if( file.isDirectory() )
       return;
 
-    FileStatus status = getFileStatus( _actionProjectInstance, file );
+    FileStatus status = getFileStatus( project, file );
     if( status == FileStatus.UNKNOWN || status == FileStatus.MODIFIED )
       return;
 
@@ -133,7 +135,7 @@ public class CheckOutAction extends SynchronousAction
 
     try
     {
-      _hostInstance.checkoutFile( file, keepHijack, comment );
+      TransparentVcs.getInstance(project).checkoutFile( file, keepHijack, comment );
 
       //  Assign the special marker to the file indicating that there is no need
       //  to run <cleartool> command on the file - it is known to be modified
@@ -144,7 +146,7 @@ public class CheckOutAction extends SynchronousAction
     catch( ClearCaseException exc )
     {
       VcsException vcsExc = new VcsException( exc );
-      AbstractVcsHelper.getInstance( _actionProjectInstance ).showError( vcsExc, ACTION_NAME );
+      AbstractVcsHelper.getInstance( project ).showError( vcsExc, ACTION_NAME );
     }
   }
 
@@ -154,7 +156,7 @@ public class CheckOutAction extends SynchronousAction
            message.indexOf( IS_ALREADY_CHECKED_OUT_SIG ) != -1;
   }
 
-  protected void perform( VirtualFile file, AnActionEvent e ) throws VcsException
+  protected void perform(VirtualFile file, final Project project) throws VcsException
   {
     //  We should never reach this point. Most methods are overloaded to support
     //  adding uniform data (here - comment) to the operation.

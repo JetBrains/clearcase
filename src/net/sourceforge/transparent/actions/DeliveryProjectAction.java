@@ -20,13 +20,12 @@ public class DeliveryProjectAction extends AsynchronousAction
   
   protected String getActionName( AnActionEvent e ) { return ACTION_NAME; }
 
-  public void perform( VirtualFile file, AnActionEvent e )
+  public void perform(VirtualFile file, final Project project)
   {
-    Project project = getProject( e );
     CCaseViewsManager viewsMgr = CCaseViewsManager.getInstance( project );
     ProjectLevelVcsManager mgr = ProjectLevelVcsManager.getInstance( project );
 
-    VirtualFile[] roots = mgr.getRootsUnderVcs( getHost( e ) );
+    VirtualFile[] roots = mgr.getRootsUnderVcs(TransparentVcs.getInstance(project));
     for( VirtualFile root : roots )
     {
       if( viewsMgr.isUcmViewForFile( root ) )
@@ -38,10 +37,10 @@ public class DeliveryProjectAction extends AsynchronousAction
     }
   }
 
-  protected boolean isEnabled( VirtualFile file, AnActionEvent e )
+  protected boolean isEnabled(VirtualFile file, final Project project)
   {
-    boolean status = super.isEnabled( file, e );
-    status &= CCaseViewsManager.getInstance( getProject( e ) ).isAnyUcmView();
+    boolean status = super.isEnabled( file, project);
+    status &= CCaseViewsManager.getInstance( project ).isAnyUcmView();
     return status;
   }
 }

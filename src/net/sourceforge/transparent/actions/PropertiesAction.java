@@ -25,7 +25,7 @@ public class PropertiesAction extends AsynchronousAction
     }
   }
 
-  public void perform( VirtualFile file, AnActionEvent e ) {
+  public void perform(VirtualFile file, final Project project) {
     cleartool( "describe", "-g", file.getPath() );
   }
 

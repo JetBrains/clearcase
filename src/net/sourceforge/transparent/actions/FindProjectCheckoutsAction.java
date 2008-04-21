@@ -4,6 +4,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.project.Project;
 import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
 
@@ -14,14 +15,14 @@ public class FindProjectCheckoutsAction extends AsynchronousAction
 
   @NonNls private final static String ACTION_NAME = "Find Project Checkouts";
 
-  public void perform( VirtualFile file, AnActionEvent e )
+  public void perform(VirtualFile file, final Project project)
   {
-    TransparentVcs host = TransparentVcs.getInstance( getProject( e ) );
-    ProjectLevelVcsManager mgr = ProjectLevelVcsManager.getInstance( getProject( e ) );
+    TransparentVcs host = TransparentVcs.getInstance( project );
+    ProjectLevelVcsManager mgr = ProjectLevelVcsManager.getInstance( project );
     VirtualFile[] roots = mgr.getRootsUnderVcs( host );
     if( roots.length > 1 )
     {
-      Messages.showWarningDialog( getProject( e ), WARNING_TEXT, WARNING_TITLE );
+      Messages.showWarningDialog( project, WARNING_TEXT, WARNING_TITLE );
     }
 
     cleartool( "lscheckout", "-g", roots[ 0 ].getPath() );
