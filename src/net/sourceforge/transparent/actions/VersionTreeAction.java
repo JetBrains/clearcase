@@ -14,4 +14,25 @@ public class VersionTreeAction extends AsynchronousAction
   }
 
   protected String getActionName( AnActionEvent e ) { return ACTION_NAME; }
+
+  public void update( AnActionEvent e )
+  {
+    super.update( e );
+
+    TransparentVcs host = getHost( e );
+    boolean isVisible = (host != null && host.getConfig() != null);
+    e.getPresentation().setVisible( isVisible );
+    e.getPresentation().setEnabled( isVisible && !host.getConfig().isOffline &&
+                                    e.getPresentation().isEnabled() );
+  }
+
+  protected boolean isEnabled( VirtualFile file, AnActionEvent e )
+  {
+    if( !VcsUtil.isPathUnderProject( _actionProjectInstance, file ))
+      return false;
+
+    FileStatus status = getFileStatus( _actionProjectInstance, file );
+    return status != FileStatus.ADDED && status != FileStatus.UNKNOWN &&
+           status != FileStatus.IGNORED;
+  }
 }
