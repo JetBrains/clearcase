@@ -9,12 +9,10 @@ import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.util.text.LineTokenizer;
+import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
-import com.intellij.openapi.vcs.update.FileGroup;
-import com.intellij.openapi.vcs.update.UpdateEnvironment;
-import com.intellij.openapi.vcs.update.UpdateSession;
-import com.intellij.openapi.vcs.update.UpdatedFiles;
+import com.intellij.openapi.vcs.update.*;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
@@ -46,8 +44,8 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
   public void fillGroups( UpdatedFiles groups ) {}
 
   @NotNull
-  public UpdateSession updateDirectories( @NotNull FilePath[] contentRoots, UpdatedFiles updatedFiles,
-                                          ProgressIndicator progressIndicator ) throws ProcessCanceledException
+  public UpdateSession updateDirectories(@NotNull FilePath[] contentRoots, UpdatedFiles updatedFiles, ProgressIndicator progressIndicator,
+                                         @NotNull final Ref<SequentialUpdatesContext> context) throws ProcessCanceledException
   {
     final ArrayList<VcsException> errors = new ArrayList<VcsException>();
 
