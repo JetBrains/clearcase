@@ -15,6 +15,7 @@
                   * Commit Project dialog now better at honoring configured ExcludedFromVcs elements<br>
       ]]>
    </change-notes>
+   <category>VCS Integration</category>
 
    <project-components>
       <component>
@@ -57,7 +58,7 @@
         <add-to-group group-id="VcsGroup" anchor="last" />
       </group>
    </actions>
-  <extensions xmlns="com.intellij">
+  <extensions defaultExtensionNs="com.intellij">
     <errorHandler implementation="com.intellij.diagnostic.ITNReporter"/>
   </extensions>
 </idea-plugin>
