@@ -130,4 +130,8 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
   {
     return null;
   }
+
+  public boolean validateOptions(final Collection<FilePath> roots) {
+    return true;
+  }
 }
