@@ -3,6 +3,9 @@ package net.sourceforge.transparent.Annotations;
 import com.intellij.openapi.vcs.annotate.AnnotationListener;
 import com.intellij.openapi.vcs.annotate.FileAnnotation;
 import com.intellij.openapi.vcs.annotate.LineAnnotationAspect;
+import com.intellij.openapi.vcs.history.VcsFileRevision;
+import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -99,6 +102,16 @@ public class CCaseFileAnnotation implements FileAnnotation
   public String getAnnotatedContent()
   {
     return myContentBuffer.toString();
+  }
+
+  @Nullable
+  public VcsRevisionNumber getLineRevisionNumber(final int lineNumber) {
+    return null;
+  }
+
+  @Nullable
+  public List<VcsFileRevision> getRevisions() {
+    return null;
   }
 
   public void addLineInfo( final String date, final String revision, final String author, final String line)
