@@ -94,7 +94,7 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
   @Nullable
   public HistoryAsTreeProvider getTreeHistoryProvider() {  return null;   }
   public AnAction[]   getAdditionalActions(final FileHistoryPanel panel) {  return AnAction.EMPTY_ARRAY;   }
-  public ColumnInfo[] getRevisionColumns()  {  return new ColumnInfo[] { CCASE_DATE, ACTION, LABEL };  }
+  public ColumnInfo[] getRevisionColumns(final VcsHistorySession session)  {  return new ColumnInfo[] { CCASE_DATE, ACTION, LABEL };  }
 
   public VcsHistorySession createSessionFor( FilePath filePath ) throws VcsException
   {
