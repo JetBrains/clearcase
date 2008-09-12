@@ -91,6 +91,9 @@ public class CCaseChangeProvider implements ChangeProvider
 
   public boolean isModifiedDocumentTrackingRequired() { return false;  }
 
+  public void doCleanup(final List<VirtualFile> files) {
+  }
+
   public void getChanges( final VcsDirtyScope dirtyScope, final ChangelistBuilder builder,
                           final ProgressIndicator progressIndicator )
   {
