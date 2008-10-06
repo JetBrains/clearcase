@@ -60,6 +60,11 @@
    </actions>
   <extensions defaultExtensionNs="com.intellij">
     <errorHandler implementation="com.intellij.diagnostic.ITNReporter"/>
+
+    <ComponentRoamingType component="ClearCase" type="DISABLED"/>
+    <ComponentRoamingType component="CCaseConfig" type="DISABLED"/>
+    <ComponentRoamingType component="CCaseViewsManager" type="DISABLED"/>
   </extensions>
+
 </idea-plugin>
 
