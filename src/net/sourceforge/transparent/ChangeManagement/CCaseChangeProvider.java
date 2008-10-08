@@ -94,8 +94,8 @@ public class CCaseChangeProvider implements ChangeProvider
   public void doCleanup(final List<VirtualFile> files) {
   }
 
-  public void getChanges( final VcsDirtyScope dirtyScope, final ChangelistBuilder builder,
-                          final ProgressIndicator progressIndicator )
+  public void getChanges(final VcsDirtyScope dirtyScope, final ChangelistBuilder builder, final ProgressIndicator progressIndicator,
+                         final ChangeListManagerGate addGate)
   {
     //-------------------------------------------------------------------------
     //  Protect ourselves from the calls which come during the unsafe project
@@ -134,7 +134,7 @@ public class CCaseChangeProvider implements ChangeProvider
         {
           CCaseViewsManager mgr = CCaseViewsManager.getInstance( project );
           mgr.extractViewActivities();
-          mgr.synchActivities2ChangeLists();
+          mgr.synchActivities2ChangeLists(addGate);
         }
         computeStatuses();
       }

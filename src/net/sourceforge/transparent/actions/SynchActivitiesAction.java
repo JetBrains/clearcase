@@ -48,7 +48,7 @@ public class SynchActivitiesAction extends SynchronousAction
     CCaseViewsManager.getInstance( project ).extractViewActivities();
 
     //  Convert current activity of each view into ChangeList
-    CCaseViewsManager.getInstance( project ).synchActivities2ChangeLists();
+    CCaseViewsManager.getInstance( project ).synchActivities2ChangeLists(null);
 
     //  Delete obsolete activities from the list of changes.
     deleteObsoleteChangeLists( project );

@@ -209,7 +209,7 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
       {
         extractViewActivities();
         checkViewsWithoutActions();
-        synchActivities2ChangeLists();
+        synchActivities2ChangeLists(null);
       }
     }
     catch( ClearCaseNoServerException e )
@@ -414,7 +414,7 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
     }
   }
 
-  public void synchActivities2ChangeLists()
+  public void synchActivities2ChangeLists(final ChangeListManagerGate gate)
   {
     LocalChangeList nonDefltList = null;
     LocalChangeList defltListToDelete = null;
@@ -422,7 +422,7 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
 
     for( ActivityInfo info : activitiesMap.values() )
     {
-      LocalChangeList list = mgr.findChangeList( info.publicName );
+      LocalChangeList list = (gate == null) ? mgr.findChangeList( info.publicName ) : gate.findChangeList( info.publicName );
       if( list != null )
       {
         if( info.isObsolete )
@@ -438,7 +438,7 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
       else
       if( !info.isObsolete )
       {
-        nonDefltList = mgr.addChangeList( info.publicName, null );
+        nonDefltList = (gate == null) ? mgr.addChangeList( info.publicName, null ) : gate.addChangeList( info.publicName, null );
       }
     }
 
