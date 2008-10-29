@@ -1,4 +1,5 @@
 <idea-plugin>
+   <id>ClearcasePlugin</id>
    <name>ClearCase Integration</name>
    <description>Allows using ClearCase from within IDEA</description>
    <version>2.0</version>
