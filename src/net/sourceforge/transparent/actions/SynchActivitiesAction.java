@@ -1,7 +1,7 @@
 package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.DataKeys;
+import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
@@ -39,7 +39,7 @@ public class SynchActivitiesAction extends SynchronousAction
 
   protected void execute( AnActionEvent e, List<VcsException> errors )
   {
-    try {  perform( null, e.getData(DataKeys.PROJECT)); }
+    try {  perform( null, e.getData(PlatformDataKeys.PROJECT)); }
     catch( VcsException exc ) { errors.add( exc ); }
   }
 

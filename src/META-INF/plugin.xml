@@ -4,8 +4,8 @@
    <description>Allows using ClearCase from within IDEA</description>
    <version>2.0</version>
    <vendor logo="/general/ijLogo.png">JetBrains</vendor>
-   <idea-version since-build="3431"/>
    <category>VCS Integration</category>
+   <depends>com.intellij.modules.vcs</depends>
 
    <project-components>
       <component>

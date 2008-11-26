@@ -6,9 +6,9 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.*;
+import com.intellij.openapi.vcs.actions.VcsContextFactory;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.*;
-import com.intellij.peer.PeerFactory;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NonNls;
 
@@ -87,7 +87,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener
     else
     if( isFileProcessable( file ) )
     {
-      FilePath path = PeerFactory.getInstance().getVcsContextFactory().createFilePathOn( file );
+      FilePath path = VcsContextFactory.SERVICE.getInstance().createFilePathOn( file );
       filesDeleted.add( path );
     }
   }

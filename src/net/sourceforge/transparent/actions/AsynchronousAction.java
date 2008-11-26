@@ -1,7 +1,7 @@
 package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.DataKeys;
+import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.VcsException;
@@ -27,7 +27,7 @@ public abstract class AsynchronousAction extends FileAction
 
   protected List<VcsException> runAction( AnActionEvent e )
   {
-    Project project = e.getData(DataKeys.PROJECT);
+    Project project = e.getData(PlatformDataKeys.PROJECT);
     VirtualFile file = VcsUtil.getOneVirtualFile( e );
     List<VcsException> exceptions = new ArrayList<VcsException>();
     try {
