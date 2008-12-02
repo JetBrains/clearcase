@@ -11,10 +11,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.FileStatus;
-import com.intellij.openapi.vcs.FileStatusManager;
-import com.intellij.openapi.vcs.ProjectLevelVcsManager;
+import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.Processor;
@@ -97,8 +94,7 @@ public class CCaseChangeProvider implements ChangeProvider
   }
 
   public void getChanges(final VcsDirtyScope dirtyScope, final ChangelistBuilder builder, final ProgressIndicator progressIndicator,
-                         final ChangeListManagerGate addGate)
-  {
+                         final ChangeListManagerGate addGate) throws VcsException {
     //-------------------------------------------------------------------------
     //  Protect ourselves from the calls which come during the unsafe project
     //  phases like unload or reload.
@@ -176,14 +172,14 @@ public class CCaseChangeProvider implements ChangeProvider
       }
       
       final String msg = message;
-      VcsUtil.showErrorMessage( project, msg, FAIL_2_CONNECT_TITLE );
       LOG.info( message );
+      throw new VcsException(msg);
     }
     catch( RuntimeException e )
     {
       @NonNls final String message = FAIL_2_START_MSG + ": " + e.getMessage();
-      VcsUtil.showErrorMessage( project, message, FAIL_2_CONNECT_TITLE );
       LOG.info( message );
+      throw new VcsException(message);
     }
     finally
     {
