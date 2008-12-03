@@ -207,14 +207,13 @@ public class CCaseRollbackEnvironment implements RollbackEnvironment
     }
   }
 
-  public List<VcsException> rollbackMissingFileDeletion( List<FilePath> paths )
+  public void rollbackMissingFileDeletion(List<FilePath> paths, final List<VcsException> exceptions, final RollbackProgressListener listener)
   {
-    List<VcsException> errors = new ArrayList<VcsException>();
     for( FilePath path : paths )
     {
-      rollbackMissingFileDeletion( path, errors );
+      listener.accept(path);
+      rollbackMissingFileDeletion( path, exceptions );
     }
-    return errors;
   }
 
   private void rollbackMissingFileDeletion( FilePath path, List<VcsException> errors )
@@ -276,15 +275,15 @@ public class CCaseRollbackEnvironment implements RollbackEnvironment
     }
   }
 
-  public List<VcsException> rollbackModifiedWithoutCheckout(final List<VirtualFile> files)
+  public void rollbackModifiedWithoutCheckout(final List<VirtualFile> files, final List<VcsException> errors,
+                                                            final RollbackProgressListener listener)
   {
-    List<VcsException> errors = new ArrayList<VcsException>();
     for( VirtualFile file : files )
     {
+      listener.accept(file);
       updateFile( file.getPath(), errors );
       file.refresh( true, true );
     }
-    return errors;
   }
 
   public void rollbackIfUnchanged(VirtualFile file) {
