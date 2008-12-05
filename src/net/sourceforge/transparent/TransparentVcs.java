@@ -19,6 +19,7 @@ import com.intellij.openapi.vcs.annotate.AnnotationProvider;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vcs.changes.IgnoredFileBean;
+import com.intellij.openapi.vcs.changes.IgnoredBeanFactory;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vcs.checkin.CheckinHandlerFactory;
@@ -310,8 +311,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
                                    CCASE_CONTRIB_FILE_MID_SIG, CCASE_FINDMERGE_FILE_SIG, CCASE_UPDATE_LOG_FILE_SIG };
     for( String sig : sigs )
     {
-      IgnoredFileBean bean = new IgnoredFileBean();
-      bean.setMask( sig );
+      IgnoredFileBean bean = IgnoredBeanFactory.withMask(sig);
       mgr.addFilesToIgnore( bean );
     }
   }
