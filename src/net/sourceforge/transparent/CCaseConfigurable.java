@@ -1,11 +1,9 @@
 package net.sourceforge.transparent;
 
-import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NonNls;
-import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.text.InternationalFormatter;
@@ -18,7 +16,7 @@ import java.text.NumberFormat;
  * User: lloix
  * Date: Jun 6, 2007
  */
-public class CCaseConfigurable implements ProjectComponent, Configurable
+public class CCaseConfigurable implements Configurable
 {
   @NonNls private final static String OPTIONS_SCREEN_NAME = "ClearCase Options";
   
@@ -42,16 +40,11 @@ public class CCaseConfigurable implements ProjectComponent, Configurable
 //    createUIComponents();
   }
 
-  public void projectOpened() {}
-  public void projectClosed() {}
-  public void initComponent() {}
-  public void disposeComponent() {}
   public void disposeUIResources() {}
-  @NotNull
-  public String getComponentName(){  return "TransparentConfigurable";  }
+
   public String getDisplayName()  {  return OPTIONS_SCREEN_NAME;        }
   public Icon   getIcon()         {  return null;  }
-  public String getHelpTopic()    {  return null;  }
+  public String getHelpTopic()    {  return "project.propVCSSupport.VCSs.ClearCase";  }
 
   public JComponent createComponent()
   {
