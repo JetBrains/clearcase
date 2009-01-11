@@ -55,6 +55,7 @@ public class CCaseRollbackEnvironment implements RollbackEnvironment
   {
     HashSet<FilePath> processedFiles = new HashSet<FilePath>();
 
+    listener.determinate();
     rollbackRenamedFolders( changes, processedFiles, listener);
     rollbackNew( changes, processedFiles, listener);
     rollbackDeleted( changes, processedFiles, errors, listener);
