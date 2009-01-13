@@ -2,8 +2,11 @@ package net.sourceforge.transparent.History;
 
 import com.intellij.openapi.util.text.LineTokenizer;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -15,17 +18,18 @@ public class CCaseHistoryParser
   @NonNls public static final String BRANCH_COMMAND_SIG = "create branch";
   @NonNls public static final String CREATE_ELEM_COMMAND_SIG = "create file element";
 
-  @NonNls private static final String DATE_DELIM = "   ";
   @NonNls private static final String VERSION_DELIM = "@@";
-  @NonNls private static final String COMMENT_SIG1 = "  \"";
-  @NonNls private static final String COMMENT_SIG2 = "   ";
-  @NonNls private static final String ERROR_SIG = "History parsing error";
   @NonNls private static String[] actions = { CREATE_ELEM_COMMAND_SIG, BRANCH_COMMAND_SIG, "create version", "checkin version" };
+  private static final String FMT = "-fmt";
 
   private CCaseHistoryParser() {}
 
   public static class SubmissionData
   {
+    public SubmissionData(final int order) {
+      this.order = order;
+    }
+
     public String action;
     public String version;
     public String submitter;
@@ -34,87 +38,213 @@ public class CCaseHistoryParser
     public String labels;
     public int    order;
   }
-  
+
   public static ArrayList<SubmissionData> parse( final String content )
   {
-    int order = 0;
-    ArrayList<SubmissionData> changes = new ArrayList<SubmissionData>();
     String[] lines = LineTokenizer.tokenize( content, false );
+
+    final LogParseResult resultHolder = new LogParseResult();
+    final FieldsDetector detector = new FieldsDetector();
+
     for( String line : lines )
     {
-      SubmissionData change = new SubmissionData();
-      change.order = order++;
-
-      //  For every comment line - concatenate it with the comment
-      //  of the last recorder change.
-      if( line.startsWith( COMMENT_SIG1 ) || line.startsWith( COMMENT_SIG2 ) )
-      {
-        if( changes.size() > 0 )
-        {
-          SubmissionData lastChange = changes.get( changes.size() - 1 );
-
-          //  Protect from illegally formed comments.
-          if( COMMENT_SIG1.length() < line.length() )
-          {
-            String newComment = line.substring( COMMENT_SIG1.length(), line.length() - 1 );
-            String comment = lastChange.comment;
-            lastChange.comment = (comment == null) ? newComment : comment.concat(" ").concat( newComment );
-          }
-        }
-      }
-      else
-      {
-        for ( String action : actions )
-        {
-          int index = line.indexOf( action );
-          if ( index != -1 )
-          {
-            change.action = action;
-
-            try
-            {
-              parseLeftSide( change, line.substring( 0, index - 1 ));
-              parseRightSide( change, line.substring( index + action.length() ));
-            }
-            catch( Exception e )
-            {
-              //  Potentially - not enough knowledge on history format,
-              //  construct a dummy change with the source line as a comment
-              //  for future diagnostics.
-              change.comment = line;
-              change.action = ERROR_SIG;
-            }
-            
-            changes.add( change );
-            break;
-          }
+      final Field field = detector.guess(line);
+      if (field != null) {
+        field.parse(line, resultHolder);
+      } else {
+        final Field defaultField = detector.defaultField();
+        if (defaultField != null) {
+          defaultField.fill(defaultField.removeWrappers(line), resultHolder);
         }
       }
     }
-    return changes;
+    return resultHolder.getResult();
   }
 
-  private static void parseLeftSide( SubmissionData data, String str )
-  {
-    int index = str.indexOf( DATE_DELIM );
-    //  Put CCase date unchanged as a string since it is given in non-
-    //  usable format (ISO-...) like 22-Dec.15:14
-    data.changeDate = str.substring( 0, index );
-    data.submitter = str.substring( index + DATE_DELIM.length() ).trim();
+  private static class FieldsDetector {
+    private int myRecentIdx;
+
+    private FieldsDetector() {
+      myRecentIdx = 0;
+    }
+
+    @Nullable
+    public Field guess(final String line) {
+      int guessIdx = (myRecentIdx + 1 == ourFields.length) ? 0 : (myRecentIdx + 1);
+      if (ourFields[guessIdx].acceptString(line)) {
+        myRecentIdx = guessIdx;
+        return ourFields[guessIdx];
+      }
+      for (int i = 0; i < ourFields.length; i++) {
+        final Field field = ourFields[i];
+        if (field.acceptString(line)) {
+          myRecentIdx = i;
+          return field;
+        }
+      }
+      return null;
+    }
+
+    @Nullable
+    public Field defaultField() {
+      int oldRecentIdx = myRecentIdx;
+      // if there was a comment field before
+      if (ourFields[oldRecentIdx].myNum == 5) {
+        myRecentIdx = oldRecentIdx;
+        return ourFields[oldRecentIdx];
+      }
+      return null;
+    }
   }
 
-  private static void parseRightSide( SubmissionData data, String str )
-  {
-    int index = str.indexOf( VERSION_DELIM );
-    int finalIndex = str.indexOf( '"', index + 1 );
-    data.version = str.substring( index, finalIndex );
+  public static void fillParametersTail(final List<String> list) {
+    list.add(FMT);
+    final StringBuilder sb = new StringBuilder();
+    for (Field field : ourFields) {
+      field.append(sb);
+    }
+    list.add(sb.toString());
+  }
 
-    //  parse optional labels
-    index = str.indexOf( '(', finalIndex );
-    if( index != -1 )
-    {
-      finalIndex = str.indexOf( ')', index + 1 );
-      data.labels = str.substring( index + 1, finalIndex ); 
+  private static Field[] ourFields = new Field[] {
+    new Field(0,"\\\"", "\"", "%d") {
+      protected void fill(@Nullable String value, CreatingIterator iterator) {
+        final SubmissionData data = iterator.createNext();
+        data.changeDate = value == null ? "" : value;
+      }
+    },
+    new Field(1,"\\\"", "\"", "%Fu") {
+      protected void fill(@Nullable String value, CreatingIterator iterator) {
+        final SubmissionData data = iterator.getCurrent();
+        data.submitter = value == null ? "" : value;
+      }
+    },
+    new Field(2,"\\\"", "\"", "%e") {
+      protected void fill(@Nullable String value, CreatingIterator iterator) {
+        final SubmissionData data = iterator.getCurrent();
+        data.action = value == null ? "" : value;
+      }
+    },
+    new Field(3,"\\\"", "\"", "%l") {
+      protected void fill(@Nullable String value, CreatingIterator iterator) {
+        final SubmissionData data = iterator.getCurrent();
+        data.labels = value == null ? "" : value;
+      }
+    },
+    new Field(4,"\\\"", "\"", "%n") {
+      @Override
+      protected String parseImpl(String s) {
+        final String parsed = super.parseImpl(s);
+        final int idx = parsed.indexOf(VERSION_DELIM);
+        if (idx != -1) {
+          return parsed.substring(idx);
+        }
+        return "";
+      }
+
+      protected void fill(@Nullable String value, CreatingIterator iterator) {
+        final SubmissionData data = iterator.getCurrent();
+        data.version = value == null ? "" : value;
+      }
+    },
+    new Field(5,"\\\"", "\"", "%Nc") {
+      @Override
+      public void parse(String s, CreatingIterator iterator) {
+        super.parse(s, iterator);
+      }
+
+      protected void fill(@Nullable String value, CreatingIterator iterator) {
+        final SubmissionData data = iterator.getCurrent();
+        if (value != null) {
+          data.comment = (data.comment == null) ? value : data.comment + '\n' + value;
+        }
+      }
+    }
+  };
+
+  private abstract static class Field {
+    private final int myNum;
+    private final String myWriteWrapper;
+    private final String myReadWrapper;
+    private final String myText;
+
+    public Field(final int num, final String writeWrapper, String readWrapper, final String text) {
+      myNum = num;
+      myWriteWrapper = writeWrapper;
+      myReadWrapper = readWrapper;
+      myText = text;
+    }
+
+    public void append(final StringBuilder sb) {
+      sb.append(myNum);
+      if (myWriteWrapper != null) {
+        sb.append(myWriteWrapper);
+      }
+      sb.append(myText);
+      if (myWriteWrapper != null) {
+        sb.append(myWriteWrapper);
+      }
+      sb.append('\n');
+    }
+
+    public boolean acceptString(final String s) {
+      return s.startsWith("" + myNum);
+    }
+
+    protected abstract void fill(@Nullable final String value, final CreatingIterator iterator);
+
+    private String removeWrappers(final String s) {
+      if (myWriteWrapper != null) {
+        final int idxStart = s.startsWith(myReadWrapper) ? 0 : -1;
+        int idxEnd = s.indexOf(myReadWrapper, idxStart + 1);
+        idxEnd = (idxEnd == -1) ? s.length() : idxEnd;
+        return s.substring(idxStart + myReadWrapper.length(), idxEnd);
+      }
+      return s;
+    }
+
+    @Nullable
+    protected String parseImpl(final String s) {
+      if (acceptString(s)) {
+        final String result = s.substring(1);
+        return removeWrappers(result);
+      }
+      return null;
+    }
+
+    public void parse(final String s, final CreatingIterator iterator) {
+      fill(parseImpl(s), iterator);
+    }
+  }
+
+  private interface CreatingIterator {
+    @NotNull SubmissionData getCurrent();
+    @NotNull SubmissionData createNext();
+  }
+
+  private static class LogParseResult implements CreatingIterator {
+    private final ArrayList<SubmissionData> myResult;
+
+    private LogParseResult() {
+      myResult = new ArrayList<SubmissionData>();
+    }
+
+    @NotNull
+    public SubmissionData getCurrent() {
+      if (myResult.isEmpty()) {
+        myResult.add(new SubmissionData(myResult.size()));
+      }
+      return myResult.get(myResult.size() - 1);
+    }
+
+    @NotNull
+    public SubmissionData createNext() {
+      myResult.add(new SubmissionData(myResult.size()));
+      return myResult.get(myResult.size() - 1);
+    }
+
+    public ArrayList<SubmissionData> getResult() {
+      return myResult;
     }
   }
 }

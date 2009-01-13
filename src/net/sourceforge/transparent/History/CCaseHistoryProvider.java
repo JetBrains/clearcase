@@ -120,15 +120,17 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
       }
     }
 
-    if( host.getConfig().isHistoryResticted )
-    {
+    final List<String> commandParts = new ArrayList<String>();
+    commandParts.add(HISTORY_CMD);
+    if (host.getConfig().isHistoryResticted) {
       int margin = host.getConfig().getHistoryRevisionsMargin();
-      log = TransparentVcs.cleartoolWithOutput( HISTORY_CMD, LIMITED_SWITCH, String.valueOf( margin ), path );
+      commandParts.add(LIMITED_SWITCH);
+      commandParts.add(String.valueOf( margin ));
     }
-    else
-    {
-      log = TransparentVcs.cleartoolWithOutput( HISTORY_CMD, path );
-    }
+    CCaseHistoryParser.fillParametersTail(commandParts);
+    commandParts.add(path);
+
+    log = TransparentVcs.cleartoolWithOutput(commandParts.toArray(new String [commandParts.size()]));
 
     //  There may exist files for which we know nothing.
     ArrayList<VcsFileRevision> revisions = new ArrayList<VcsFileRevision>();
