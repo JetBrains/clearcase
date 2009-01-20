@@ -174,6 +174,10 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     return errors;
   }
 
+  public List<VcsException> commit(List<Change> changes, String preparedComment, Object parameters) {
+    return commit(changes, preparedComment);
+  }
+
   /**
    * Before new commit, clear all "Merge Conflict" statuses on files set on
    * them since the last commit. 
