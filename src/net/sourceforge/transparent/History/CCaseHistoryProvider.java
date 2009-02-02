@@ -251,8 +251,8 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
     public boolean isContentAvailable(VcsFileRevision revision)
     {
       return (revision instanceof CCaseFileRevision) &&
-             !((CCaseFileRevision)revision).getAction().equals( CCaseHistoryParser.BRANCH_COMMAND_SIG ) &&
-             !((CCaseFileRevision)revision).getAction().equals( CCaseHistoryParser.CREATE_ELEM_COMMAND_SIG ); 
+             !(CCaseHistoryParser.BRANCH_COMMAND_SIG.equals(((CCaseFileRevision)revision).getAction())) &&
+             !(CCaseHistoryParser.CREATE_ELEM_COMMAND_SIG.equals(((CCaseFileRevision)revision).getAction())); 
     }
 
     protected VcsRevisionNumber calcCurrentRevisionNumber()

@@ -78,6 +78,7 @@ public class CCaseAnnotationProvider implements AnnotationProvider
   public boolean isAnnotationValid( VcsFileRevision rev )
   {
     CCaseHistoryProvider.CCaseFileRevision ccRev = (CCaseHistoryProvider.CCaseFileRevision) rev;
-    return (ccRev.getAction().indexOf( BRANCH_SIG ) == -1);
+    final String action = ccRev.getAction();
+    return (action != null) && (action.indexOf( BRANCH_SIG ) == -1);
   }
 }
