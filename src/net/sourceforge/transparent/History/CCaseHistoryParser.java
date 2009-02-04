@@ -54,7 +54,7 @@ public class CCaseHistoryParser
       } else {
         final Field defaultField = detector.defaultField();
         if (defaultField != null) {
-          defaultField.fill(defaultField.removeWrappers(line), resultHolder);
+          defaultField.fill(line, resultHolder);
         }
       }
     }
@@ -95,6 +95,14 @@ public class CCaseHistoryParser
       }
       return null;
     }
+  }
+
+  public static void fillParametersVersionOnly(final List<String> list) {
+    list.add(FMT);
+    final StringBuilder sb = new StringBuilder();
+    ourFields[4].append(sb);
+    list.add(sb.toString());
+
   }
 
   public static void fillParametersTail(final List<String> list) {
@@ -143,7 +151,10 @@ public class CCaseHistoryParser
       }
 
       protected void fill(@Nullable String value, CreatingIterator iterator) {
-        final SubmissionData data = iterator.getCurrent();
+        SubmissionData data = iterator.getCurrent();
+        if (data.version != null) {
+          data = iterator.createNext();
+        }
         data.version = value == null ? "" : value;
       }
     },
@@ -164,50 +175,32 @@ public class CCaseHistoryParser
 
   private abstract static class Field {
     private final int myNum;
-    private final String myWriteWrapper;
-    private final String myReadWrapper;
     private final String myText;
+    private final static char myMagic = '\1';
 
     public Field(final int num, final String writeWrapper, String readWrapper, final String text) {
       myNum = num;
-      myWriteWrapper = writeWrapper;
-      myReadWrapper = readWrapper;
       myText = text;
     }
 
     public void append(final StringBuilder sb) {
       sb.append(myNum);
-      if (myWriteWrapper != null) {
-        sb.append(myWriteWrapper);
-      }
+      sb.append(myMagic);
       sb.append(myText);
-      if (myWriteWrapper != null) {
-        sb.append(myWriteWrapper);
-      }
       sb.append('\n');
     }
 
     public boolean acceptString(final String s) {
-      return s.startsWith("" + myNum);
+      return s.startsWith(("" + myNum) + myMagic);
     }
 
     protected abstract void fill(@Nullable final String value, final CreatingIterator iterator);
 
-    private String removeWrappers(final String s) {
-      if (myWriteWrapper != null) {
-        final int idxStart = s.startsWith(myReadWrapper) ? 0 : -1;
-        int idxEnd = s.indexOf(myReadWrapper, idxStart + 1);
-        idxEnd = (idxEnd == -1) ? s.length() : idxEnd;
-        return s.substring(idxStart + myReadWrapper.length(), idxEnd);
-      }
-      return s;
-    }
-
     @Nullable
     protected String parseImpl(final String s) {
       if (acceptString(s)) {
-        final String result = s.substring(1);
-        return removeWrappers(result);
+        final String result = s.substring(2);
+        return result;
       }
       return null;
     }

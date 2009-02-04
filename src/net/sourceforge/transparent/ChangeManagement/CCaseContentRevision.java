@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -120,7 +121,11 @@ public class CCaseContentRevision implements ContentRevision
           //---------------------------------------------------------------------
           if( mgr.getStatus( file ) == FileStatus.HIJACKED )
           {
-            String log = TransparentVcs.cleartoolWithOutput( "lshistory", file.getPath() + VERSION_SEPARATOR );
+            final List<String> commandParts = new ArrayList<String>();
+            commandParts.add("lshistory");
+            CCaseHistoryParser.fillParametersVersionOnly(commandParts);
+            commandParts.add(file.getPath() + VERSION_SEPARATOR);
+            String log = TransparentVcs.cleartoolWithOutput( commandParts.toArray(new String[commandParts.size()]) );
             ArrayList<CCaseHistoryParser.SubmissionData> changes = CCaseHistoryParser.parse( log );
             if( changes.size() > 0 )
             {
