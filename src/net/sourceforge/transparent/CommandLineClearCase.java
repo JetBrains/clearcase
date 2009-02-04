@@ -231,7 +231,10 @@ public class CommandLineClearCase implements ClearCase
     return TransparentVcs.getCheckoutComment( file );
   }
 
-  public static String quote(String str) {  return "\"" + str.replaceAll("\"", "\\\"") + "\"";  }
+  public static String quote(String str) {
+    final String result = "\"" + str.replaceAll("\"", "\\\\\\\"") + "\"";
+    return result;
+  }
 
   public void cleartool( @NonNls String subcmd )
   {
