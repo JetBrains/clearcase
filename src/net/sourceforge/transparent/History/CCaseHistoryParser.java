@@ -1,6 +1,7 @@
 package net.sourceforge.transparent.History;
 
 import com.intellij.openapi.util.text.LineTokenizer;
+import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -176,7 +177,7 @@ public class CCaseHistoryParser
   private abstract static class Field {
     private final int myNum;
     private final String myText;
-    private final static char myMagic = '\1';
+    private final static String myMagic = "\1";
 
     public Field(final int num, final String writeWrapper, String readWrapper, final String text) {
       myNum = num;
@@ -191,7 +192,7 @@ public class CCaseHistoryParser
     }
 
     public boolean acceptString(final String s) {
-      return s.startsWith(("" + myNum) + myMagic);
+      return StringUtil.startsWithConcatenationOf(s, String.valueOf(myNum), myMagic);
     }
 
     protected abstract void fill(@Nullable final String value, final CreatingIterator iterator);
