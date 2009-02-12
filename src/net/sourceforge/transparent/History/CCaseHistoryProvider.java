@@ -11,6 +11,7 @@ import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 
+import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -99,7 +100,7 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
   }
 
   public AnAction[]   getAdditionalActions(final FileHistoryPanel panel) {  return AnAction.EMPTY_ARRAY;   }
-  public ColumnInfo[] getRevisionColumns(final VcsHistorySession session)  {  return new ColumnInfo[] { CCASE_DATE, ACTION, LABEL };  }
+  public VcsDependentHistoryComponents getUICustomization(final VcsHistorySession session, JComponent forShortcutRegistration)  {  return VcsDependentHistoryComponents.createOnlyColumns(new ColumnInfo[] { CCASE_DATE, ACTION, LABEL });  }
 
   public VcsHistorySession createSessionFor( FilePath filePath ) throws VcsException
   {
