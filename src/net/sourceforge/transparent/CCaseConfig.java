@@ -51,7 +51,9 @@ public class CCaseConfig implements JDOMExternalizable, ProjectComponent
   {
     if( isOffline != isOfflineMode ) {
       isOffline = isOfflineMode;
-      host.offlineModeChanged();
+      if (host != null) {
+        host.offlineModeChanged();
+      }
     }
   }
   
