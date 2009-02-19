@@ -20,8 +20,8 @@ import java.util.*;
  */
 public class VFSListener extends VirtualFileAdapter implements CommandListener
 {
-  private Project project;
-  private TransparentVcs  host;
+  private final Project project;
+  private final TransparentVcs  host;
 
   private int     commandLevel;
   private final List<VirtualFile> filesAdded = new ArrayList<VirtualFile>();

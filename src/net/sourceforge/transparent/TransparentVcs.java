@@ -88,7 +88,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public  HashSet<String> removedFiles;
   public  HashSet<String> removedFolders;
-  private HashSet<VirtualFile> newFiles;
+  private final HashSet<VirtualFile> newFiles;
   public  HashMap<String, String> renamedFiles;
   public  HashMap<String, String> renamedFolders;
   public  HashSet<String> deletedFiles;
@@ -96,7 +96,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   //  Used to keep a set of modified files when user switches to the
   //  offline mode. Empty and unused in online mode.
-  private HashSet<VirtualFile> modifiedFiles;
+  private final HashSet<VirtualFile> modifiedFiles;
 
   private ClearCase clearcase;
   private CCaseConfig config;

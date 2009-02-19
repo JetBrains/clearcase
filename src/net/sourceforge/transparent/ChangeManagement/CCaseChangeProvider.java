@@ -61,24 +61,24 @@ public class CCaseChangeProvider implements ChangeProvider
    * files, others are considered NEW (since we will not analyze them for
    * "HIJACKED" status).
    */
-  private static int MAX_FILES_FOR_ITERATIVE_STATUS = 200;
+  private static final int MAX_FILES_FOR_ITERATIVE_STATUS = 200;
 
   private static final Logger LOG = Logger.getInstance("#net.sourceforge.transparent.ChangeManagement.CCaseChangeProvider");
 
-  private Project project;
+  private final Project project;
   private final CCaseViewsManager myViewManager;
-  private TransparentVcs host;
+  private final TransparentVcs host;
   private CCaseConfig config;
   private ProgressIndicator progress;
   private boolean isBatchUpdate;
   private boolean isFirstShow;
 
-  private HashSet<String> filesWritable = new HashSet<String>();
-  private HashSet<String> filesNew = new HashSet<String>();
-  private HashSet<String> filesChanged = new HashSet<String>();
-  private HashSet<String> filesHijacked = new HashSet<String>();
-  private HashSet<String> filesIgnored = new HashSet<String>();
-  private HashSet<String> filesMerge = new HashSet<String>();
+  private final HashSet<String> filesWritable = new HashSet<String>();
+  private final HashSet<String> filesNew = new HashSet<String>();
+  private final HashSet<String> filesChanged = new HashSet<String>();
+  private final HashSet<String> filesHijacked = new HashSet<String>();
+  private final HashSet<String> filesIgnored = new HashSet<String>();
+  private final HashSet<String> filesMerge = new HashSet<String>();
 
   public CCaseChangeProvider( Project project, TransparentVcs hostVcs )
   {

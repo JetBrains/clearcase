@@ -22,7 +22,7 @@ public class DescribeMultipleProcessor
 
   private static final int  CMDLINE_MAX_LENGTH = 500;
 
-  private String[] files;
+  private final String[] files;
   private HashMap<String, String> file2Activity;
 
   public DescribeMultipleProcessor( List<String> paths )

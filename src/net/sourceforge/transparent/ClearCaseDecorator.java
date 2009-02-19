@@ -4,7 +4,7 @@ import java.io.File;
 
 public class ClearCaseDecorator implements ClearCase
 {
-  private ClearCase clearCase;
+  private final ClearCase clearCase;
 
   public ClearCaseDecorator(ClearCase clearcase) { clearCase = clearcase;  }
 

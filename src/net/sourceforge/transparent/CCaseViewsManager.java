@@ -71,13 +71,13 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
   @NonNls private static final String FAILED_TO_INIT_VIEW_MESSAGE = "Plugin failed to initialize view:\n";
   @NonNls private static final String FAILED_TO_COLLECT_VIEW_MESSAGE = "Plugin failed to collect information on views (absent 'cleartool.exe'?). Plugin is switched to the offline mode.\n"; 
 
-  private Project project;
+  private final Project project;
 
   public HashMap<String, ViewInfo> viewsMapByRoot;
 
   //  Keeps for any checked out file the activity which it was checked out with
-  private HashMap<String, String> activitiesAssociations;
-  private HashMap<String, ActivityInfo> activitiesMap;
+  private final HashMap<String, String> activitiesAssociations;
+  private final HashMap<String, ActivityInfo> activitiesMap;
 
   public static class ViewInfo
   {

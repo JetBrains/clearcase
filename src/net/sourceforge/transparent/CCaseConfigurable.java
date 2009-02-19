@@ -31,7 +31,7 @@ public class CCaseConfigurable implements Configurable
   private JCheckBox useIdenticalSwitch;
   private JCheckBox synchActivitiesOnRefresh;
 
-  private Project project;
+  private final Project project;
   private CCaseConfig vcsConfig;
 
   public CCaseConfigurable(Project project)

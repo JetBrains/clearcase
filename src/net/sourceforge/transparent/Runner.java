@@ -15,13 +15,13 @@ public class Runner
   private static final Logger LOG = Logger.getInstance("#net.sourceforge.transparent.Runner");
 
   private static final boolean DEBUG = false;
-  private StringBuffer _buffer = new StringBuffer();
+  private final StringBuffer _buffer = new StringBuffer();
   private boolean successfull;
   public String workingDir = null;
 
   private class Consumer implements Runnable
   {
-    private BufferedReader _reader;
+    private final BufferedReader _reader;
 
     public Consumer(InputStream inputStream) {
        _reader = new BufferedReader(new InputStreamReader(inputStream));

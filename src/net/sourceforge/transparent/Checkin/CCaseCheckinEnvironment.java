@@ -48,8 +48,8 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   @NonNls private static final String CHECKIN_FOLDER = "Checking in folder: ";
   @NonNls private static final String CHANGE_ACTIVITY = "Changing activity for file: ";
 
-  private Project project;
-  private TransparentVcs host;
+  private final Project project;
+  private final TransparentVcs host;
   private double fraction;
   private String submittedChangeListName;
 

@@ -26,7 +26,7 @@ public class CCaseEditFileProvider implements EditFileProvider
   @NonNls private final static String FAIL_RO_TEXT = "Can not set R/O attribute for file: ";
   @NonNls private final static String FAIL_DIALOG_TITLE = "Operation Failed";
 
-  private TransparentVcs host;
+  private final TransparentVcs host;
 
   public CCaseEditFileProvider(TransparentVcs host )
   {

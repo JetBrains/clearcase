@@ -20,8 +20,8 @@ public class AddMultipleProcessor
 
   private static final int  CMDLINE_MAX_LENGTH = 1024;
 
-  private String[] files;
-  private String comment;
+  private final String[] files;
+  private final String comment;
 
   public AddMultipleProcessor( HashSet<String> paths, String comment )
   {

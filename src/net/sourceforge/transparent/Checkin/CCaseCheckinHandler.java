@@ -19,8 +19,8 @@ import java.util.Set;
 
 public class CCaseCheckinHandler extends CheckinHandler
 {
-  private TransparentVcs host;
-  private CheckinProjectPanel panel;
+  private final TransparentVcs host;
+  private final CheckinProjectPanel panel;
 
   public CCaseCheckinHandler( TransparentVcs host, final CheckinProjectPanel panel )
   {

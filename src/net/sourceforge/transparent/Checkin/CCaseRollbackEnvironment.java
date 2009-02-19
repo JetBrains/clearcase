@@ -38,8 +38,8 @@ public class CCaseRollbackEnvironment implements RollbackEnvironment
   @NonNls private static final String UPDATE_SUCC_PREFIX_6 = ".";
   @NonNls private static final String UPDATE_SUCC_PREFIX_7= "Making dir";
 
-  private Project project;
-  private TransparentVcs host;
+  private final Project project;
+  private final TransparentVcs host;
 
   public CCaseRollbackEnvironment( Project project, TransparentVcs host )
   {

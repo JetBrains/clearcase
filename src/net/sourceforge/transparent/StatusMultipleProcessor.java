@@ -26,7 +26,7 @@ public class StatusMultipleProcessor
 
   private static final int  CMDLINE_MAX_LENGTH = 512;
 
-  private String[] files;
+  private final String[] files;
 
   private HashSet<String> deletedFiles;
   private HashSet<String> nonexistingFiles;

@@ -33,11 +33,11 @@ public class CCaseContentRevision implements ContentRevision
   @NonNls private static final String VERSION_SEPARATOR = "@@";
   @NonNls private static final String WARNING_NO_GROUP_SIG = "Warning: Can not find a group named";
 
-  private VirtualFile   file;
-  private FilePath      revisionPath;
-  private Project       project;
+  private final VirtualFile   file;
+  private final FilePath      revisionPath;
+  private final Project       project;
   private String        myServerContent;
-  private TransparentVcs host;
+  private final TransparentVcs host;
 
   public CCaseContentRevision( FilePath path, Project proj )
   {

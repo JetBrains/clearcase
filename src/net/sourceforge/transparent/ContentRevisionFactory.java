@@ -18,8 +18,8 @@ import java.util.List;
  */
 public class ContentRevisionFactory
 {
-  private static VFSKeysListener listener;
-  private static HashMap<FilePath, CCaseContentRevision> cachedRevisions;
+  private static final VFSKeysListener listener;
+  private static final HashMap<FilePath, CCaseContentRevision> cachedRevisions;
 
   static
   {

@@ -20,7 +20,7 @@ public class CCaseHistoryParser
   @NonNls public static final String CREATE_ELEM_COMMAND_SIG = "create file element";
 
   @NonNls private static final String VERSION_DELIM = "@@";
-  @NonNls private static String[] actions = { CREATE_ELEM_COMMAND_SIG, BRANCH_COMMAND_SIG, "create version", "checkin version" };
+  @NonNls private static final String[] actions = { CREATE_ELEM_COMMAND_SIG, BRANCH_COMMAND_SIG, "create version", "checkin version" };
   private static final String FMT = "-fmt";
 
   private CCaseHistoryParser() {}
@@ -115,7 +115,7 @@ public class CCaseHistoryParser
     list.add(sb.toString());
   }
 
-  private static Field[] ourFields = new Field[] {
+  private static final Field[] ourFields = new Field[] {
     new Field(0,"\\\"", "\"", "%d") {
       protected void fill(@Nullable String value, CreatingIterator iterator) {
         final SubmissionData data = iterator.createNext();

@@ -11,7 +11,7 @@ public class AnnotationLineParser
 {
   public final static String FIELDS_DELIMITER = " #|# ";
   public final static String FIELDS_DELIMITER_RE = " #\\|# ";
-  private static AnnotationLineInfo _cachedValues = new AnnotationLineInfo();
+  private static final AnnotationLineInfo _cachedValues = new AnnotationLineInfo();
 
   private AnnotationLineParser() {}
 

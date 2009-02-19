@@ -34,8 +34,8 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
 
   @NonNls private final static String NOT_A_VOB_OBJECT = "Not a vob object";
 
-  private Project project;
-  private TransparentVcs host;
+  private final Project project;
+  private final TransparentVcs host;
 
   public CCaseHistoryProvider( Project project )
   {
@@ -167,15 +167,15 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
 
   public class CCaseFileRevision implements VcsFileRevision
   {
-    private String version;
-    private String submitter;
-    private String changeCcaseDate;
-    private String comment;
-    private String action;
-    private String labels;
-    private int    order;
+    private final String version;
+    private final String submitter;
+    private final String changeCcaseDate;
+    private final String comment;
+    private final String action;
+    private final String labels;
+    private final int    order;
 
-    private String path;
+    private final String path;
     private byte[] content;
 
     public CCaseFileRevision( CCaseHistoryParser.SubmissionData data, String path )
@@ -280,8 +280,8 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
 
   private class CCaseRevisionNumber implements VcsRevisionNumber
   {
-    private String revision;
-    private int    order;
+    private final String revision;
+    private final int    order;
 
     public CCaseRevisionNumber( String revision, int order )
     {
