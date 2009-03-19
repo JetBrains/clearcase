@@ -73,7 +73,7 @@ public class SynchActivitiesAction extends SynchronousAction
       CCaseViewsManager.ActivityInfo info = viewsMgr.getActivityForName( changeList.getName() );
       if( info != null && info.isObsolete )
       {
-        changesMgr.removeChangeList( changeList );
+        changesMgr.removeChangeList( changeList.getName() );
       }
     }
   }

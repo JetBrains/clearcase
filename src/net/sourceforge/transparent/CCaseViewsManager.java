@@ -428,7 +428,7 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
         if( info.isObsolete )
         {
           if( !list.isDefault() )
-            mgr.removeChangeList( list );
+            mgr.removeChangeList( list.getName() );
           else
             defltListToDelete = list;
         }
@@ -445,7 +445,7 @@ public class CCaseViewsManager implements ProjectComponent, ChangeListDecorator,
     if( defltListToDelete != null && nonDefltList != null )
     {
       mgr.setDefaultChangeList( nonDefltList );
-      mgr.removeChangeList( defltListToDelete );
+      mgr.removeChangeList( defltListToDelete.getName() );
     }
   }
 
