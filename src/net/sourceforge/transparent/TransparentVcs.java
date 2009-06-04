@@ -165,8 +165,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public void initComponent()     {}
   public void disposeComponent()  {}
-  public void start() throws VcsException {}
-  public void shutdown() throws VcsException {}
 
   public void projectOpened()
   {
