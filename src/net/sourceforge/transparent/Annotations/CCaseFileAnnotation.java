@@ -1,8 +1,6 @@
 package net.sourceforge.transparent.Annotations;
 
-import com.intellij.openapi.vcs.annotate.AnnotationListener;
-import com.intellij.openapi.vcs.annotate.FileAnnotation;
-import com.intellij.openapi.vcs.annotate.LineAnnotationAspect;
+import com.intellij.openapi.vcs.annotate.*;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import org.jetbrains.annotations.Nullable;
@@ -109,8 +107,16 @@ public class CCaseFileAnnotation implements FileAnnotation
     return null;
   }
 
+  public VcsRevisionNumber originalRevision(int lineNumber) {
+    return null;
+  }
+
   @Nullable
   public List<VcsFileRevision> getRevisions() {
+    return null;
+  }
+
+  public AnnotationSourceSwitcher getAnnotationSourceSwitcher() {
     return null;
   }
 
