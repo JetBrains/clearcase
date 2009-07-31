@@ -3,6 +3,8 @@ package net.sourceforge.transparent.Annotations;
 import com.intellij.openapi.vcs.annotate.*;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileManager;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -18,6 +20,12 @@ public class CCaseFileAnnotation implements FileAnnotation
   private final StringBuffer myContentBuffer = new StringBuffer();
   private final List<LineInfo> myLineInfos = new ArrayList<LineInfo>();
   private final List<AnnotationListener> myListeners = new ArrayList<AnnotationListener>();
+  private VFSForAnnotationListener myListener;
+
+  public CCaseFileAnnotation(final VirtualFile file) {
+    myListener = new VFSForAnnotationListener(file, myListeners);
+    VirtualFileManager.getInstance().addVirtualFileListener(myListener);
+  }
 
   static class LineInfo
   {
@@ -80,7 +88,7 @@ public class CCaseFileAnnotation implements FileAnnotation
   }
 
   public void dispose() {
-//    myVcs.getSvnEntriesFileListener().removeListener(myListener);
+    VirtualFileManager.getInstance().removeVirtualFileListener(myListener);
   }
 
   public String getToolTip(int lineNumber)

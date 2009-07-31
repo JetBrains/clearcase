@@ -42,7 +42,7 @@ public class CCaseAnnotationProvider implements AnnotationProvider
     if( status == FileStatus.HIJACKED )
       canonicalName += "@@";
 
-    return runAnnotation( canonicalName );
+    return runAnnotation(file, canonicalName );
   }
 
   public FileAnnotation annotate( VirtualFile file, VcsFileRevision vcsRev ) throws VcsException
@@ -50,10 +50,10 @@ public class CCaseAnnotationProvider implements AnnotationProvider
     String canonicalName = VcsUtil.getCanonicalPath( file.getPath() );
     canonicalName += vcsRev.getRevisionNumber().asString();
 
-    return runAnnotation( canonicalName );
+    return runAnnotation(file, canonicalName );
   }
 
-  private static FileAnnotation runAnnotation( final String path ) throws VcsException
+  private static FileAnnotation runAnnotation(final VirtualFile file, final String path ) throws VcsException
   {
     @NonNls String format = "\"%Sd" + AnnotationLineParser.FIELDS_DELIMITER +
                             "%-16.16u" + AnnotationLineParser.FIELDS_DELIMITER +
@@ -64,7 +64,7 @@ public class CCaseAnnotationProvider implements AnnotationProvider
     if( output.contains( ERROR_SIG ) )
       throw new VcsException( ERROR_TEXT );
     
-    CCaseFileAnnotation annotation = new CCaseFileAnnotation();
+    CCaseFileAnnotation annotation = new CCaseFileAnnotation(file);
     String[] lines = LineTokenizer.tokenize( output, false );
 
     for( String line : lines )
