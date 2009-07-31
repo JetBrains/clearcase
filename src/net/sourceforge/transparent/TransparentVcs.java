@@ -133,7 +133,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public String getName()           {  return getDisplayName();  }
   public String getDisplayName()    {  return "ClearCase";  }
   public String getMenuItemText()   {  return super.getMenuItemText();  }
-  public Project getProject()       {  return myProject;   }
   public static boolean isCmdImpl() {  return true; }
 
   public VcsShowSettingOption      getCheckoutOptions()   {  return myCheckoutOptions;   }
