@@ -45,7 +45,7 @@ public class CCaseFileAnnotation implements FileAnnotation
     public String getAuthor()   {  return author;  }
   }
 
-  private final LineAnnotationAspect DATE_ASPECT = new LineAnnotationAspect()
+  private final LineAnnotationAspect DATE_ASPECT = new LineAnnotationAspectAdapter()
   {
     public String getValue( int lineNumber )
     {
@@ -56,7 +56,7 @@ public class CCaseFileAnnotation implements FileAnnotation
     }
   };
 
-  private final LineAnnotationAspect REVISION_ASPECT = new LineAnnotationAspect()
+  private final LineAnnotationAspect REVISION_ASPECT = new LineAnnotationAspectAdapter()
   {
     public String getValue(int lineNumber)
     {
@@ -67,7 +67,7 @@ public class CCaseFileAnnotation implements FileAnnotation
     }
   };
 
-  private final LineAnnotationAspect AUTHOR_ASPECT = new LineAnnotationAspect()
+  private final LineAnnotationAspect AUTHOR_ASPECT = new LineAnnotationAspectAdapter()
   {
     public String getValue(int lineNumber)
     {
