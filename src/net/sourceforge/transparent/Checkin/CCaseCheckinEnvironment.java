@@ -367,7 +367,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
       for( FilePath file : files )
       {
         String activity = viewsManager.getActivityOfViewOfFile( file );
-        String currentActivity = getChangeListName( file.getVirtualFile() );
+        String currentActivity = getChangeListName( file );
         if(( activity != null ) && !activity.equals( currentActivity ) )
         {
           host.changeActivityForLastVersion( file, activity, currentActivity, errors );
@@ -568,7 +568,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   }
 
   @Nullable
-  private String getChangeListName( @NotNull VirtualFile file )
+  private String getChangeListName( @NotNull FilePath file )
   {
     String changeListName = null;
 
