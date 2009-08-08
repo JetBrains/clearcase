@@ -51,6 +51,8 @@ import java.util.List;
 public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDOMExternalizable
 {
   public static final Logger LOG = Logger.getInstance("#net.sourceforge.transparent.TransparentVcs");
+  private static final String NAME = "ClearCase";
+  private static final VcsKey ourKey = createKey(NAME);
 
   @NonNls public static final String TEMPORARY_FILE_SUFFIX = ".deleteAndAdd";
   @NonNls public static final String CLEARTOOL_CMD = "cleartool";
@@ -116,7 +118,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public TransparentVcs( Project project )
   {
-    super( project );
+    super( project, NAME);
 
     removedFiles = new HashSet<String>();
     removedFolders = new HashSet<String>();
@@ -130,8 +132,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   @NotNull
   public String getComponentName()  {  return getName();   }
-  public String getName()           {  return getDisplayName();  }
-  public String getDisplayName()    {  return "ClearCase";  }
+  public String getDisplayName()    {  return NAME;  }
   public String getMenuItemText()   {  return super.getMenuItemText();  }
   public static boolean isCmdImpl() {  return true; }
 
@@ -1038,5 +1039,9 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       listElement.addContent( pathPair );
       element.addContent( listElement );
     }
+  }
+
+  public static VcsKey getKey() {
+    return ourKey;
   }
 }

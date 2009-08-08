@@ -601,7 +601,7 @@ public class CCaseChangeProvider implements ChangeProvider
       {
         FilePath path = VcsUtil.getFilePath( fileName );
         String activity = findActivityForFile( path, path );
-        builder.processChangeInList( new Change( null, new CurrentContentRevision( path ) ), activity );
+        builder.processChangeInList( new Change( null, new CurrentContentRevision( path ) ), activity, TransparentVcs.getKey());
       }
       else
       {
@@ -698,7 +698,7 @@ public class CCaseChangeProvider implements ChangeProvider
       String activity = findActivityForFile( refPath, currPath );
 
       CCaseContentRevision revision = ContentRevisionFactory.getRevision( refPath, project );
-      builder.processChangeInList( new Change( revision, new CurrentContentRevision( currPath ), FileStatus.MODIFIED ), activity );
+      builder.processChangeInList( new Change( revision, new CurrentContentRevision( currPath ), FileStatus.MODIFIED ), activity, TransparentVcs.getKey());
     }
   }
 
@@ -710,7 +710,7 @@ public class CCaseChangeProvider implements ChangeProvider
     String activity = findActivityForFile( refPath, currPath );
 
     CCaseContentRevision revision = ContentRevisionFactory.getRevision( refPath, project );
-    builder.processChangeInList( new Change( revision, new CurrentContentRevision( currPath ), status ), activity );
+    builder.processChangeInList( new Change( revision, new CurrentContentRevision( currPath ), status ), activity, TransparentVcs.getKey());
   }
 
   private void addRemovedFiles( final ChangelistBuilder builder )
@@ -732,7 +732,7 @@ public class CCaseChangeProvider implements ChangeProvider
     {
       FilePath refPath = VcsUtil.getFilePathForDeletedFile( path, true );
       String activity = findActivityForFile( refPath, refPath );
-      builder.processChangeInList( new Change( new CurrentContentRevision( refPath ), null, FileStatus.DELETED ), activity );
+      builder.processChangeInList( new Change( new CurrentContentRevision( refPath ), null, FileStatus.DELETED ), activity, TransparentVcs.getKey());
     }
 
     files.clear();
@@ -743,7 +743,7 @@ public class CCaseChangeProvider implements ChangeProvider
       CCaseContentRevision revision = ContentRevisionFactory.getRevision( refPath, project );
       String activity = findActivityForFile( refPath, refPath );
 
-      builder.processChangeInList( new Change( revision, null, FileStatus.DELETED ), activity );
+      builder.processChangeInList( new Change( revision, null, FileStatus.DELETED ), activity, TransparentVcs.getKey());
     }
   }
 
@@ -760,7 +760,7 @@ public class CCaseChangeProvider implements ChangeProvider
       final FilePath fp = VcsUtil.getFilePath( path );
       CCaseContentRevision revision = ContentRevisionFactory.getRevision( fp, project );
       String activity = findActivityForFile( fp, fp );
-      builder.processChangeInList( new Change( revision, new CurrentContentRevision( fp ), FileStatus.MERGED_WITH_CONFLICTS ), activity );
+      builder.processChangeInList( new Change( revision, new CurrentContentRevision( fp ), FileStatus.MERGED_WITH_CONFLICTS ), activity, TransparentVcs.getKey());
     }
   }
 
