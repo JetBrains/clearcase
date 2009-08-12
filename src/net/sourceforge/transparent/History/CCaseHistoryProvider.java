@@ -135,14 +135,9 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
 
     //  There may exist files for which we know nothing.
     ArrayList<VcsFileRevision> revisions = new ArrayList<VcsFileRevision>();
-    if( log.contains( NOT_A_VOB_OBJECT ))
-    {
-      List<VcsException> errors = new ArrayList<VcsException>();
-      errors.add( new VcsException( log ) );
-      AbstractVcsHelper.getInstance( project ).showErrors( errors, VcsBundle.message("message.title.could.not.load.file.history") );
-    }
-    else
-    {
+    if( log.contains( NOT_A_VOB_OBJECT )) {
+      throw new VcsException( log );
+    } else {
       ArrayList<CCaseHistoryParser.SubmissionData> changes = CCaseHistoryParser.parse( log );
       for( CCaseHistoryParser.SubmissionData change : changes )
       {
