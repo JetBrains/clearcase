@@ -12,6 +12,7 @@ import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.VcsKey;
 import com.intellij.openapi.vcs.update.*;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NonNls;
@@ -117,12 +118,13 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
       }
     }
 
+    final VcsKey vcsKey = TransparentVcs.getKey();
     for( String path : updated )
-      updatedFiles.getGroupById( FileGroup.UPDATED_ID ).add( rootPath + path );
+      updatedFiles.getGroupById( FileGroup.UPDATED_ID ).add(rootPath + path, vcsKey, null);
     for( String path : skipped )
-      updatedFiles.getGroupById( FileGroup.SKIPPED_ID ).add( rootPath + path );
+      updatedFiles.getGroupById( FileGroup.SKIPPED_ID ).add(rootPath + path, vcsKey, null);
     for( String path : deleted )
-      updatedFiles.getGroupById( FileGroup.REMOVED_FROM_REPOSITORY_ID ).add( rootPath + path );
+      updatedFiles.getGroupById( FileGroup.REMOVED_FROM_REPOSITORY_ID ).add(rootPath + path, vcsKey, null);
   }
 
   @Nullable
