@@ -18,8 +18,8 @@ import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.annotate.AnnotationProvider;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
-import com.intellij.openapi.vcs.changes.IgnoredFileBean;
 import com.intellij.openapi.vcs.changes.IgnoredBeanFactory;
+import com.intellij.openapi.vcs.changes.IgnoredFileBean;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vcs.checkin.CheckinHandlerFactory;
@@ -29,6 +29,8 @@ import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileListener;
+import com.intellij.ultimate.PluginVerifier;
+import com.intellij.ultimate.UltimateVerifier;
 import com.intellij.util.containers.HashSet;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.Annotations.CCaseAnnotationProvider;
@@ -116,9 +118,9 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   private VcsShowConfirmationOption removeConfirmation;
   private VirtualFileListener listener;
 
-  public TransparentVcs( Project project )
-  {
+  public TransparentVcs(Project project, UltimateVerifier verifier) {
     super( project, NAME);
+    PluginVerifier.verifyUltimatePlugin(verifier);
 
     removedFiles = new HashSet<String>();
     removedFolders = new HashSet<String>();
