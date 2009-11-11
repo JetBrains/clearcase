@@ -1,6 +1,7 @@
 package net.sourceforge.transparent;
 
 import com.intellij.openapi.util.text.LineTokenizer;
+import com.intellij.util.ArrayUtil;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
 
@@ -35,7 +36,7 @@ public class StatusMultipleProcessor
 
   public StatusMultipleProcessor( List<String> paths )
   {
-    files = paths.toArray( new String[ paths.size() ] );
+    files = ArrayUtil.toStringArray(paths);
   }
 
   public boolean isDeleted  ( String file )  {  return deletedFiles.contains( file.toLowerCase() );  }
@@ -68,7 +69,7 @@ public class StatusMultipleProcessor
         cmdLineLen += path.length() + 1;
       }
 
-      String[] aOptions = options.toArray( new String[ options.size() ]);
+      String[] aOptions = ArrayUtil.toStringArray(options);
       String out = TransparentVcs.cleartoolWithOutput( aOptions );
       try
       {

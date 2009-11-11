@@ -5,6 +5,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.history.*;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.ArrayUtil;
 import com.intellij.util.ui.ColumnInfo;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.TransparentVcs;
@@ -131,7 +132,7 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
     CCaseHistoryParser.fillParametersTail(commandParts);
     commandParts.add(path);
 
-    log = TransparentVcs.cleartoolWithOutput(commandParts.toArray(new String [commandParts.size()]));
+    log = TransparentVcs.cleartoolWithOutput(ArrayUtil.toStringArray(commandParts));
 
     //  There may exist files for which we know nothing.
     ArrayList<VcsFileRevision> revisions = new ArrayList<VcsFileRevision>();

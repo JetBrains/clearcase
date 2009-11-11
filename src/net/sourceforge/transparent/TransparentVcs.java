@@ -31,6 +31,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileListener;
 import com.intellij.ultimate.PluginVerifier;
 import com.intellij.ultimate.UltimateVerifier;
+import com.intellij.util.ArrayUtil;
 import com.intellij.util.containers.HashSet;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.Annotations.CCaseAnnotationProvider;
@@ -1020,7 +1021,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   {
     //  Sort elements of the list so that there is no perturbation in .ipr/.iml
     //  files in the case when no data has changed.
-    String[] sorted = files.toArray( new String[ files.size() ] );
+    String[] sorted = ArrayUtil.toStringArray(files);
     Arrays.sort( sorted );
 
     for( String file : sorted )

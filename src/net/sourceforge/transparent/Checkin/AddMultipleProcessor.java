@@ -1,6 +1,7 @@
 package net.sourceforge.transparent.Checkin;
 
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.util.ArrayUtil;
 import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
 
@@ -25,7 +26,7 @@ public class AddMultipleProcessor
 
   public AddMultipleProcessor( HashSet<String> paths, String comment )
   {
-    files = paths.toArray( new String[ paths.size() ] );
+    files = ArrayUtil.toStringArray(paths);
     this.comment = comment;
   }
 
@@ -57,7 +58,7 @@ public class AddMultipleProcessor
         cmdLineLen += path.length() + 1;
       }
 
-      String[] aOptions = options.toArray( new String[ options.size() ]);
+      String[] aOptions = ArrayUtil.toStringArray(options);
        TransparentVcs.cleartoolWithOutput( aOptions );
     }
   }

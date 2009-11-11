@@ -9,6 +9,7 @@ import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.CharsetToolkit;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.ArrayUtil;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.History.CCaseHistoryParser;
 import net.sourceforge.transparent.TransparentVcs;
@@ -125,7 +126,7 @@ public class CCaseContentRevision implements ContentRevision
             commandParts.add("lshistory");
             CCaseHistoryParser.fillParametersVersionOnly(commandParts);
             commandParts.add(file.getPath() + VERSION_SEPARATOR);
-            String log = TransparentVcs.cleartoolWithOutput( commandParts.toArray(new String[commandParts.size()]) );
+            String log = TransparentVcs.cleartoolWithOutput(ArrayUtil.toStringArray(commandParts));
             ArrayList<CCaseHistoryParser.SubmissionData> changes = CCaseHistoryParser.parse( log );
             if( changes.size() > 0 )
             {

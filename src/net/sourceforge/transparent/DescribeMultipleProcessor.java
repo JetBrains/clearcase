@@ -1,6 +1,7 @@
 package net.sourceforge.transparent;
 
 import com.intellij.openapi.util.text.LineTokenizer;
+import com.intellij.util.ArrayUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,7 +28,7 @@ public class DescribeMultipleProcessor
 
   public DescribeMultipleProcessor( List<String> paths )
   {
-    files = paths.toArray( new String[ paths.size() ] );
+    files = ArrayUtil.toStringArray(paths);
   }
 
   public void execute()
@@ -54,7 +55,7 @@ public class DescribeMultipleProcessor
         cmdLineLen += path.length() + 1;
       }
 
-      String[] aOptions = options.toArray( new String[ options.size() ]);
+      String[] aOptions = ArrayUtil.toStringArray(options);
       String out = TransparentVcs.cleartoolWithOutput( aOptions );
       parseCleartoolOutput( out, batchStartIndex );
       batchStartIndex = currFileIndex;
