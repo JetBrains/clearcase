@@ -301,7 +301,7 @@ public class CCaseViewsManager extends AbstractProjectComponent implements Chang
         list.add(warn);
       }
       AbstractVcsHelper.getInstance(myProject).showErrors(list, ERRORS_TAB_NAME);
-      StartupManager.getInstance(myProject).registerPostStartupActivity(new Runnable() {
+      StartupManager.getInstance(myProject).runWhenProjectIsInitialized(new Runnable() {
         public void run() {
           ToolWindowManager.getInstance(myProject).getToolWindow(ToolWindowId.MESSAGES_WINDOW).activate(null);
         }
