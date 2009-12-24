@@ -54,7 +54,7 @@ public abstract class VcsAction extends AnAction
   {
     List<VcsException> list = new ArrayList<VcsException>();
 
-    LocalHistoryAction a = LocalHistory.startAction(getProject(e), e.getPresentation().getText());
+    LocalHistoryAction a = LocalHistory.getInstance().startAction(e.getPresentation().getText());
 
     try {
       execute(e, list);
