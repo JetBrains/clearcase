@@ -1048,9 +1048,9 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     return ourKey;
   }
 
-  @Override
+  /*@Override
   public boolean isVersionedDirectory(VirtualFile dir) {
     // we do not use this filter
     return true;
-  }
+  }*/
 }
