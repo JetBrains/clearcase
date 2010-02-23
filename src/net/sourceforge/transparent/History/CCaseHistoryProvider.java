@@ -2,7 +2,10 @@ package net.sourceforge.transparent.History;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.*;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.FileStatus;
+import com.intellij.openapi.vcs.FileStatusManager;
+import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.*;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ArrayUtil;
@@ -93,14 +96,11 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
   @NonNls @Nullable
   public String getHelpId() {  return null;  }
 
-  @Nullable
-  public HistoryAsTreeProvider getTreeHistoryProvider() {  return null;   }
-
   public boolean supportsHistoryForDirectories() {
     return false;
   }
 
-  public AnAction[]   getAdditionalActions(final FileHistoryPanel panel) {  return AnAction.EMPTY_ARRAY;   }
+  public AnAction[]   getAdditionalActions(final Runnable refresher) {  return AnAction.EMPTY_ARRAY;   }
   public VcsDependentHistoryComponents getUICustomization(final VcsHistorySession session, JComponent forShortcutRegistration)  {  return VcsDependentHistoryComponents.createOnlyColumns(new ColumnInfo[] { CCASE_DATE, ACTION, LABEL });  }
 
   public VcsHistorySession createSessionFor( FilePath filePath ) throws VcsException
@@ -159,6 +159,12 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
     }
 
     return new CCaseHistorySession( revisions );
+  }
+
+  public void reportAppendableHistory(FilePath path, VcsAppendableHistorySessionPartner partner) throws VcsException {
+    // will implement it further
+    final VcsHistorySession session = createSessionFor(path);
+    partner.reportCreatedEmptySession((VcsAbstractHistorySession) session);
   }
 
   public class CCaseFileRevision implements VcsFileRevision
@@ -238,7 +244,7 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
     }
   }
 
-  private static class CCaseHistorySession extends VcsHistorySession
+  private static class CCaseHistorySession extends VcsAbstractHistorySession
   {
     public CCaseHistorySession( ArrayList<VcsFileRevision> revs )
     {
@@ -271,6 +277,10 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
         revision = VcsRevisionNumber.NULL;
       }
       return revision;
+    }
+
+    public HistoryAsTreeProvider getHistoryAsTreeProvider() {
+      return null;
     }
   }
 
