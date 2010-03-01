@@ -17,8 +17,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.Processor;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.*;
-import static net.sourceforge.transparent.TransparentVcs.MERGE_CONFLICT;
-import static net.sourceforge.transparent.TransparentVcs.SUCCESSFUL_CHECKOUT;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
@@ -26,6 +24,9 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+
+import static net.sourceforge.transparent.TransparentVcs.MERGE_CONFLICT;
+import static net.sourceforge.transparent.TransparentVcs.SUCCESSFUL_CHECKOUT;
 
 /**
  * Created by IntelliJ IDEA.
@@ -204,14 +205,14 @@ public class CCaseChangeProvider implements ChangeProvider
 
   private void collectCheckouts( HashSet<String> files )
   {
-    LOG.info( "---ChangeProvider - Checking status by analyzing the set of checked out files via LSCO.");
+    LOG.debug( "---ChangeProvider - Checking status by analyzing the set of checked out files via LSCO.");
 
     VirtualFile[] roots = ProjectLevelVcsManager.getInstance( project ).getRootsUnderVcs( host );
     for( VirtualFile root : roots )
     {
       String out = TransparentVcs.cleartoolOnLocalPathWithOutput( root.getPath(), LIST_CHECKOUTS_CMD, CURR_USER_ONLY_SWITCH,
                                                                                   CURR_VIEW_ONLY_SWITCH, SHORT_SWITCH, RECURSE_SWITCH );
-      LOG.info( out );
+      LOG.debug( out );
       
       String[] lines = LineTokenizer.tokenize( out, false );
       for( String line : lines )
@@ -231,7 +232,7 @@ public class CCaseChangeProvider implements ChangeProvider
         }
       }
     }
-    LOG.info( "---ChangeProvider - Total " + files.size() + " non-folder checkouts found by LSCO.");
+    LOG.debug( "---ChangeProvider - Total " + files.size() + " non-folder checkouts found by LSCO.");
   }
 
   /**
@@ -243,13 +244,13 @@ public class CCaseChangeProvider implements ChangeProvider
   {
     for( FilePath path : dirtyScope.getRecursivelyDirtyDirectories() )
     {
-      LOG.info( "-- ChangeProvider - Iterating over [content] root: " + path.getPath() );
+      LOG.debug( "-- ChangeProvider - Iterating over [content] root: " + path.getPath() );
       if( progress != null )
         progress.setText( COLLECT_MSG );
 
       collectWritableFiles( path );
 
-      LOG.info( "-- ChangeProvider - Total: " + filesWritable.size() + " writable files after the last root." );
+      LOG.debug( "-- ChangeProvider - Total: " + filesWritable.size() + " writable files after the last root." );
       if( progress != null )
         progress.setText( SEARCHNEW_MSG );
     }
@@ -347,7 +348,7 @@ public class CCaseChangeProvider implements ChangeProvider
 
   private void computeStatuses()
   {
-    LOG.info( "---ChangeProvider - " + filesIgnored.size() + " ignored files accumulated so far.");
+    LOG.debug( "---ChangeProvider - " + filesIgnored.size() + " ignored files accumulated so far.");
 
     if( filesWritable.size() < MAX_FILES_FOR_ITERATIVE_STATUS )
     {
@@ -393,12 +394,12 @@ public class CCaseChangeProvider implements ChangeProvider
       refNames.add( legalName );
     }
 
-    LOG.info( "ChangeProvider - Analyzing writables in batch mode using CLEARTOOL on " + writables.size() + " files." );
+    LOG.debug( "ChangeProvider - Analyzing writables in batch mode using CLEARTOOL on " + writables.size() + " files." );
 
     final List<String> newFiles = new ArrayList<String>();
     StatusMultipleProcessor processor = new StatusMultipleProcessor( refNames );
     processor.execute();
-    LOG.info( "ChangeProvider - \"CLEARTOOL LS\" batch command finished." );
+    LOG.debug( "ChangeProvider - \"CLEARTOOL LS\" batch command finished." );
 
     for( int i = 0; i < writableFiles.size(); i++ )
     {
@@ -549,12 +550,12 @@ public class CCaseChangeProvider implements ChangeProvider
 
     if( host.fileIsUnderVcs( fileParent ) && !processed.contains( fileParent.toLowerCase() ) )
     {
-      LOG.info( "ChangeProvider - Check potentially new folder" );
+      LOG.debug( "ChangeProvider - Check potentially new folder" );
       
       processed.add( fileParent.toLowerCase() );
       if( !host.fileExistsInVcs( refParentName ))
       {
-        LOG.info( "                 Folder [" + fileParent + "] is not in the repository" );
+        LOG.debug( "                 Folder [" + fileParent + "] is not in the repository" );
         newFolders.add( fileParent );
         analyzeParentFoldersForPresence( fileParent, newFolders, processed );
       }
@@ -934,16 +935,17 @@ public class CCaseChangeProvider implements ChangeProvider
 
   private static void logChangesContent( final VcsDirtyScope scope )
   {
-    LOG.info( "-- ChangeProvider: Dirty files: " + scope.getDirtyFiles().size() );
+    if (! LOG.isDebugEnabled()) return;
+    LOG.debug( "-- ChangeProvider: Dirty files: " + scope.getDirtyFiles().size() );
     if( scope.getDirtyFiles().size() > 0 )
-      LOG.info( " == " + extMasks( scope.getDirtyFiles() ) );
-    LOG.info( ", dirty recursive directories: " + scope.getRecursivelyDirtyDirectories().size() );
+      LOG.debug( " == " + extMasks( scope.getDirtyFiles() ) );
+    LOG.debug( ", dirty recursive directories: " + scope.getRecursivelyDirtyDirectories().size() );
 
     for( FilePath path : scope.getDirtyFiles() )
-      LOG.info( "                                " + path.getPath() );
-    LOG.info( "                                ---" );
+      LOG.debug( "                                " + path.getPath() );
+    LOG.debug( "                                ---" );
     for( FilePath path : scope.getRecursivelyDirtyDirectories() )
-      LOG.info( "                                " + path.getPath() );
+      LOG.debug( "                                " + path.getPath() );
   }
 
   private static String extMasks( Set<FilePath> scope )

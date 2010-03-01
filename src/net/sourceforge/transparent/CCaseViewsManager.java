@@ -280,9 +280,11 @@ public class CCaseViewsManager extends AbstractProjectComponent implements Chang
 
   // log result views list
   private static void logViewsByName(HashMap<String, ViewInfo> views) {
-    TransparentVcs.LOG.info(">>> Views list:");
-    for (String root : views.keySet()) {
-      TransparentVcs.LOG.info("\t\t" + root + " -> " + views.get(root).tag);
+    if (TransparentVcs.LOG.isDebugEnabled()) {
+      TransparentVcs.LOG.debug(">>> Views list:");
+      for (String root : views.keySet()) {
+        TransparentVcs.LOG.debug("\t\t" + root + " -> " + views.get(root).tag);
+      }
     }
   }
 
@@ -330,7 +332,7 @@ public class CCaseViewsManager extends AbstractProjectComponent implements Chang
         if (TransparentVcs.isServerDownMessage(output)) return;
 
         completedViews.add(info.tag);
-        if (!StringUtil.isEmptyOrSpaces(output)) TransparentVcs.LOG.info(output);
+        if (!StringUtil.isEmptyOrSpaces(output)) TransparentVcs.LOG.debug(output);
 
         //  Reset values so that we can always determine that we did not manage
         //  to correctly parse "lsactivity" command's output.
@@ -348,20 +350,26 @@ public class CCaseViewsManager extends AbstractProjectComponent implements Chang
       }
     }
 
-    TransparentVcs.LOG.info(">>> Default Activities Detected:");
+    logActivities();
+  }
+
+  private void logActivities() {
+    if (! TransparentVcs.LOG.isDebugEnabled()) return;
+
+    TransparentVcs.LOG.debug(">>> Default Activities Detected:");
     for (String actName : activitiesMap.keySet()) {
       ActivityInfo actInfo = activitiesMap.get(actName);
-      if (actInfo.activeInView != null) TransparentVcs.LOG.info(">>>\t\t[" + actName + "] -> [" + actInfo.activeInView + "]");
+      if (actInfo.activeInView != null) TransparentVcs.LOG.debug(">>>\t\t[" + actName + "] -> [" + actInfo.activeInView + "]");
     }
 
-    TransparentVcs.LOG.info("\n>>> Extracted Activities:");
+    TransparentVcs.LOG.debug("\n>>> Extracted Activities:");
     for (ViewInfo info : viewsMapByRoot.values()) {
       if (info.isUcm) {
         if (info.currentActivity != null) {
-          TransparentVcs.LOG.info(">>>\t" + info.tag + " -> " + info.currentActivity.publicName);
+          TransparentVcs.LOG.debug(">>>\t" + info.tag + " -> " + info.currentActivity.publicName);
         }
         else {
-          TransparentVcs.LOG.info(">>>\t" + info.tag + " has no default activity");
+          TransparentVcs.LOG.debug(">>>\t" + info.tag + " has no default activity");
         }
       }
     }
@@ -386,12 +394,13 @@ public class CCaseViewsManager extends AbstractProjectComponent implements Chang
         else {
           nonDefltList = list;
         }
-      }
+      } // todo a bug here
       else if (!info.isObsolete) {
         nonDefltList = gate == null ? mgr.addChangeList(info.publicName, null) : gate.addChangeList(info.publicName, null);
       }
     }
 
+    // todo sometimes obsolete activities are not removed
     if (defltListToDelete != null && nonDefltList != null) {
       mgr.setDefaultChangeList(nonDefltList);
       mgr.removeChangeList(defltListToDelete.getName());
