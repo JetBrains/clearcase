@@ -8,6 +8,8 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.InvalidDataException;
 import com.intellij.openapi.util.JDOMExternalizable;
 import com.intellij.openapi.util.Key;
@@ -1048,9 +1050,11 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     return ourKey;
   }
 
-  /*@Override
-  public boolean isVersionedDirectory(VirtualFile dir) {
-    // we do not use this filter
-    return true;
-  }*/
+  @Override
+  public void generalPreConfigurationStep() {
+    final int result = Messages.showYesNoDialog(myProject, "Use UCM model?", "Clear Case configuration", Messages.getQuestionIcon());
+
+    final CCaseConfig configuration = CCaseConfig.getInstance(myProject);
+    configuration.useUcmModel = result == DialogWrapper.OK_EXIT_CODE;
+  }
 }
