@@ -1,9 +1,9 @@
 package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.project.Project;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
@@ -26,7 +26,7 @@ public class VersionTreeAction extends AsynchronousAction
     TransparentVcs host = getHost( e );
     boolean isVisible = (host != null && host.getConfig() != null);
     e.getPresentation().setVisible( isVisible );
-    e.getPresentation().setEnabled( isVisible && !host.getConfig().isOffline &&
+    e.getPresentation().setEnabled( isVisible && !host.getConfig().isOffline() &&
                                     e.getPresentation().isEnabled() );
   }
 

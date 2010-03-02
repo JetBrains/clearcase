@@ -127,7 +127,7 @@ public class CCaseChangeProvider implements ChangeProvider
       //  Perform status computation only if we operate in the online mode.
       //  For offline mode just display the last valid state (for new and
       //  modified files, others are hijacked).
-      if( !config.isOffline )
+      if( !config.isOffline() )
       {
         if( isBatchUpdate && config.synchActivitiesOnRefresh )
         {
@@ -163,7 +163,7 @@ public class CCaseChangeProvider implements ChangeProvider
       if( TransparentVcs.isServerDownMessage( excMessage ))
       {
         message += "\n\nSwitching to the offline mode";
-        config.isOffline = true;
+        config.setOfflineMode(true);
       }
       else
       if( excMessage.contains( UNABLE_OPEN_VIEW_SSIG ) ||
@@ -195,7 +195,7 @@ public class CCaseChangeProvider implements ChangeProvider
    */
   private void showOptionalReminder()
   {
-    if( isBatchUpdate && isFirstShow && config.isOffline )
+    if( isBatchUpdate && isFirstShow && config.isOffline() )
     {
       ApplicationManager.getApplication().invokeLater( new Runnable() {
          public void run() {  Messages.showWarningDialog( project, REMINDER_TEXT, REMINDER_TITLE );  }

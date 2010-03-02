@@ -81,7 +81,7 @@ public class CCaseConfigurable implements Configurable
            || vcsConfig.checkoutReserved != myReservedCheckoutsCheckBox.isSelected()
            || vcsConfig.checkInUseHijack != myCheckOutForHijacked.isSelected()
            || vcsConfig.useUcmModel != myUseUCMModel.isSelected()
-           || vcsConfig.isOffline != myWorkOffline.isSelected()
+           || vcsConfig.isOffline() != myWorkOffline.isSelected()
            || vcsConfig.isHistoryResticted != myRestrictHistory.isSelected()
            || vcsConfig.getHistoryRevisionsMargin() != getMargin()
            || vcsConfig.useIdenticalSwitch != useIdenticalSwitch.isSelected()
@@ -129,7 +129,7 @@ public class CCaseConfigurable implements Configurable
     historyText.setEnabled( vcsConfig.isHistoryResticted );
 
     CCaseViewsManager mgr = CCaseViewsManager.getInstance( project );
-    myWorkOffline.setSelected( mgr.isAnySnapshotView() && vcsConfig.isOffline );
+    myWorkOffline.setSelected( mgr.isAnySnapshotView() && vcsConfig.isOffline() );
     myWorkOffline.setEnabled( mgr.isAnySnapshotView() );
 
     resetCheckInOutCheckboxes();

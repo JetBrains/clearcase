@@ -75,7 +75,7 @@ public class CCaseContentRevision implements ContentRevision
     {
       //  If we are in the offline mode, no cleartool commands are allowed,
       //  and the file conent is what we have currently in the VFS.
-      if( host.getConfig().isOffline )
+      if( host.getConfig().isOffline() )
       {
         if( file != null )
         {

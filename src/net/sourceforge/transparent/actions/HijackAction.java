@@ -1,10 +1,10 @@
 package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.project.Project;
 import net.sourceforge.transparent.CCaseEditFileProvider;
 import net.sourceforge.transparent.CCaseViewsManager;
 import net.sourceforge.transparent.TransparentVcs;
@@ -24,7 +24,7 @@ public class HijackAction extends SynchronousAction
     TransparentVcs host = getHost( e );
     boolean isVisible = (host != null && host.getConfig() != null);
     e.getPresentation().setVisible( isVisible );
-    e.getPresentation().setEnabled( isVisible && isEnabled && host.getConfig().isOffline );
+    e.getPresentation().setEnabled( isVisible && isEnabled && host.getConfig().isOffline() );
   }
 
   protected boolean isEnabled(VirtualFile file, final Project project)

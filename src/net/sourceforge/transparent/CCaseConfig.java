@@ -18,7 +18,7 @@ public class CCaseConfig extends AbstractProjectComponent implements JDOMExterna
   public boolean markExternalChangeAsUpToDate = true;
   public boolean checkInUseHijack = true;
   public boolean useUcmModel = true;
-  public boolean isOffline = false;
+  private boolean isOffline = false;
   public boolean synchOutside = false;
   public boolean isHistoryResticted = true;
   public boolean useIdenticalSwitch = true;
@@ -61,6 +61,10 @@ public class CCaseConfig extends AbstractProjectComponent implements JDOMExterna
         host.offlineModeChanged();
       }
     }
+  }
+
+  public boolean isOffline() {
+    return isOffline;
   }
 
   public void readExternal(Element element) throws InvalidDataException {

@@ -2,7 +2,6 @@ package net.sourceforge.transparent;
 
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.startup.StartupManager;
 import com.intellij.openapi.util.InvalidDataException;
 import com.intellij.openapi.util.JDOMExternalizable;
 import com.intellij.openapi.util.WriteExternalException;
@@ -11,8 +10,6 @@ import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.wm.ToolWindowId;
-import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.util.containers.HashSet;
@@ -198,22 +195,25 @@ public class CCaseViewsManager extends AbstractProjectComponent implements Chang
       }
     }
     catch (ClearCaseNoServerException e) {
+      TransparentVcs.LOG.info(e);
       String message = SERVER_UNAVAILABLE_MESSAGE + e.getMessage();
       AbstractVcsHelper.getInstance(myProject).showError(new VcsException(message), ERRORS_TAB_NAME);
 
-      config.isOffline = true;
+      config.setOfflineMode(true);
     }
     catch (ClearCaseException e) {
+      TransparentVcs.LOG.info(e);
       //  It is possible that some configuration paths point to an invalid
       //  or obsolete view.
       String message = FAILED_TO_INIT_VIEW_MESSAGE + e.getMessage();
       AbstractVcsHelper.getInstance(myProject).showError(new VcsException(message), ERRORS_TAB_NAME);
     }
     catch (RuntimeException e) {
+      TransparentVcs.LOG.info(e);
       String message = FAILED_TO_COLLECT_VIEW_MESSAGE + e.getMessage();
-      AbstractVcsHelper.getInstance(myProject).showError(new VcsException(message), ERRORS_TAB_NAME);
+      AbstractVcsHelper.getInstance(myProject).showError(new VcsException(message, e), ERRORS_TAB_NAME);
 
-      config.isOffline = true;
+      config.setOfflineMode(true);
     }
   }
 
@@ -303,11 +303,6 @@ public class CCaseViewsManager extends AbstractProjectComponent implements Chang
         list.add(warn);
       }
       AbstractVcsHelper.getInstance(myProject).showErrors(list, ERRORS_TAB_NAME);
-      StartupManager.getInstance(myProject).runWhenProjectIsInitialized(new Runnable() {
-        public void run() {
-          ToolWindowManager.getInstance(myProject).getToolWindow(ToolWindowId.MESSAGES_WINDOW).activate(null);
-        }
-      });
     }
   }
 
@@ -316,7 +311,7 @@ public class CCaseViewsManager extends AbstractProjectComponent implements Chang
    * associated with the view. Remember its status - normal, locked or obsolete.
    */
   public void extractViewActivities() {
-    if (CCaseConfig.getInstance(myProject).isOffline) return;
+    if (CCaseConfig.getInstance(myProject).isOffline()) return;
 
     //  Sometimes users configure content roots so that several of them correspond
     //  to the same view. Thus we should not repeat the command for the same view

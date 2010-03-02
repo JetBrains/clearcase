@@ -37,7 +37,7 @@ public class CheckOutAction extends SynchronousAction
     TransparentVcs host = getHost( e );
     boolean isVisible = (host != null && host.getConfig() != null);
     e.getPresentation().setVisible( isVisible );
-    e.getPresentation().setEnabled( isVisible && !host.getConfig().isOffline &&
+    e.getPresentation().setEnabled( isVisible && !host.getConfig().isOffline() &&
                                     e.getPresentation().isEnabled() );  
   }
 

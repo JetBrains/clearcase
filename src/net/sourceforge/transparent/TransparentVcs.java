@@ -152,11 +152,11 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public VcsHistoryProvider   getVcsHistoryProvider() {  return historyProvider;  }
   public AnnotationProvider   getAnnotationProvider() {  return annotationProvider;  }
   public CheckinEnvironment   getCheckinEnvironment() {
-    return ((config == null) || !config.isOffline) ? checkinEnvironment : null;
+    return ((config == null) || !config.isOffline()) ? checkinEnvironment : null;
   }
 
   public RollbackEnvironment getRollbackEnvironment() {
-    return ((config == null) || !config.isOffline) ? rollbackEnvironment : null;
+    return ((config == null) || !config.isOffline()) ? rollbackEnvironment : null;
   }
 
   public UpdateEnvironment  getUpdateEnvironment()
@@ -204,9 +204,9 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   {
     config = CCaseConfig.getInstance( myProject );
     config.setHost( this );
-    LOG.info( ">>> GetCOnfig().Offline == " + config.isOffline );
+    LOG.info( ">>> GetCOnfig().Offline == " + config.isOffline() );
 
-    if( !config.isOffline )
+    if( !config.isOffline() )
     {
       resetClearCaseFromConfiguration();
       CCaseViewsManager.getInstance( myProject ).reloadViews();
@@ -230,7 +230,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public void offlineModeChanged()
   {
-    if( !config.isOffline )
+    if( !config.isOffline() )
     {
       modifiedFiles.clear();
     }
@@ -327,7 +327,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     //  In the case we are offline, reply "NO" since we can not say definitely
     //  anything on the file status (and must not issue any CCase cleartool
     //  command).
-    if( config.isOffline )
+    if( config.isOffline() )
       return false;
 
     VirtualFile vfile = path.getVirtualFile();
@@ -412,7 +412,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     return file != null && modifiedFiles.contains( file );
   }
 
-  private boolean isCheckInToUseHijack() {  return config.isOffline || config.checkInUseHijack;  }
+  private boolean isCheckInToUseHijack() {  return config.isOffline() || config.checkInUseHijack;  }
 
   public Status getStatus( VirtualFile file ) {  return getClearCase().getStatus( new File( file.getPath() ) );   }
   public Status getStatus( File file )        {  return getClearCase().getStatus( file );   }
