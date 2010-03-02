@@ -173,18 +173,18 @@ public class CCaseChangeProvider implements ChangeProvider
       }
       
       final String msg = message;
-      LOG.info( message );
+      LOG.info(e);
       throw new VcsException(msg);
     }
     catch( RuntimeException e )
     {
       @NonNls final String message = FAIL_2_START_MSG + ": " + e.getMessage();
-      LOG.info( message );
+      LOG.info(e);
       throw new VcsException(message);
     }
     finally
     {
-      TransparentVcs.LOG.info( "-- EndChangeProvider| New: " + filesNew.size() + ", modified: " + filesChanged.size() +
+      TransparentVcs.LOG.debug( "-- EndChangeProvider| New: " + filesNew.size() + ", modified: " + filesChanged.size() +
                                ", hijacked:" + filesHijacked.size() + ", ignored: " + filesIgnored.size() );
     }
   }
@@ -228,6 +228,7 @@ public class CCaseChangeProvider implements ChangeProvider
           }
           catch( IOException e ){
             //  Nothing to do - we have no idea on what shit cleartool decided to return.
+            LOG.info(e);
           }
         }
       }
