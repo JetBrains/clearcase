@@ -95,7 +95,8 @@ public class CCaseConfigurable implements Configurable
 
   public void apply() throws ConfigurationException
   {
-    boolean need2ReloadActivities = (vcsConfig.useUcmModel != myUseUCMModel.isSelected()) && myUseUCMModel.isSelected();
+    final boolean ucmFlagChanged = vcsConfig.useUcmModel != myUseUCMModel.isSelected();
+    boolean need2ReloadActivities = ucmFlagChanged && myUseUCMModel.isSelected();
     vcsConfig.checkoutReserved = myReservedCheckoutsCheckBox.isSelected();
     vcsConfig.checkInUseHijack = myCheckOutForHijacked.isSelected();
     vcsConfig.useUcmModel = myUseUCMModel.isSelected();
@@ -105,6 +106,9 @@ public class CCaseConfigurable implements Configurable
     vcsConfig.useIdenticalSwitch = useIdenticalSwitch.isSelected();
     vcsConfig.synchActivitiesOnRefresh = synchActivitiesOnRefresh.isSelected();
 
+    if (ucmFlagChanged) {
+      TransparentVcs.getInstance(project).checkRootsForUCMMismatch();
+    }
     if( need2ReloadActivities )
     {
       CCaseViewsManager.getInstance( project ).extractViewActivities();

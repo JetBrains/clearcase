@@ -8,8 +8,6 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.DialogWrapper;
-import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.InvalidDataException;
 import com.intellij.openapi.util.JDOMExternalizable;
 import com.intellij.openapi.util.Key;
@@ -90,6 +88,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   @NonNls private static final String ALREADY_CHECKEDOUT_SIG = "already checked out";
   @NonNls private static final String NOT_A_VOB_OBJECT_SIG = "Not a vob object";
 
+  private final BaseOrUCM myBaseOrUCM;
+
   public static final Key<Boolean> SUCCESSFUL_CHECKOUT = new Key<Boolean>( "SUCCESSFUL_CHECKOUT" );
   public static final Key<Boolean> MERGE_CONFLICT = new Key<Boolean>( "MERGE_CONFLICT" );
 
@@ -121,6 +121,10 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   private VcsShowConfirmationOption removeConfirmation;
   private VirtualFileListener listener;
 
+  // a hack, honestly
+  private boolean myActivatePolicyCalculateUCM;
+  private static final boolean ourActivatePolicyCalculateUCMDefault = false;
+
   public TransparentVcs(Project project, UltimateVerifier verifier) {
     super( project, NAME);
     PluginVerifier.verifyUltimatePlugin(verifier);
@@ -133,6 +137,9 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     renamedFiles = new HashMap<String, String>();
     renamedFolders = new HashMap<String, String>();
     modifiedFiles = new HashSet<VirtualFile>();
+
+    myBaseOrUCM = new BaseOrUCM(this);
+    myActivatePolicyCalculateUCM = ourActivatePolicyCalculateUCMDefault;
   }
 
   @NotNull
@@ -219,6 +226,18 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     CommandProcessor.getInstance().addCommandListener( (CommandListener)listener );
 
     addIgnoredFiles();
+
+    if (myActivatePolicyCalculateUCM) {
+      final CCaseConfig configuration = CCaseConfig.getInstance(myProject);
+      configuration.useUcmModel = Boolean.TRUE.equals(myBaseOrUCM.isUCMByRoots());
+    } else {
+      checkRootsForUCMMismatch();
+    }
+    myActivatePolicyCalculateUCM = ourActivatePolicyCalculateUCMDefault;
+  }
+
+  public void checkRootsForUCMMismatch() {
+    myBaseOrUCM.checkRootsForUCMMismatch();
   }
 
   public void deactivate()
@@ -226,6 +245,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     LocalFileSystem.getInstance().removeVirtualFileListener( listener );
     CommandProcessor.getInstance().removeCommandListener( (CommandListener)listener );
     ContentRevisionFactory.detachListeners();
+    
+    checkRootsForUCMMismatch();
   }
 
   public void offlineModeChanged()
@@ -1052,9 +1073,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   @Override
   public void generalPreConfigurationStep() {
-    final int result = Messages.showYesNoDialog(myProject, "Use UCM model?", "Clear Case configuration", Messages.getQuestionIcon());
-
-    final CCaseConfig configuration = CCaseConfig.getInstance(myProject);
-    configuration.useUcmModel = result == DialogWrapper.OK_EXIT_CODE;
+    myActivatePolicyCalculateUCM = true;
   }
 }
