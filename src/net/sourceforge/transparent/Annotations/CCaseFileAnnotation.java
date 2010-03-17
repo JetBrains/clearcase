@@ -124,6 +124,10 @@ public class CCaseFileAnnotation implements FileAnnotation
     return null;
   }
 
+  public boolean revisionsNotEmpty() {
+    return false;
+  }
+
   public AnnotationSourceSwitcher getAnnotationSourceSwitcher() {
     return null;
   }
