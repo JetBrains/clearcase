@@ -15,6 +15,8 @@ import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.NullableFunction;
+import com.intellij.util.PairConsumer;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.CCaseViewsManager;
 import net.sourceforge.transparent.ClearCase;
@@ -59,7 +61,8 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     this.host = host;
   }
 
-  public RefreshableOnComponent createAdditionalOptionsPanel( CheckinProjectPanel panel )
+  public RefreshableOnComponent createAdditionalOptionsPanel(CheckinProjectPanel panel,
+                                                             PairConsumer<Object, Object> additionalDataConsumer)
   {
     @NonNls final JPanel additionalPanel = new JPanel();
     final JTextField scrNumber = new JTextField();
@@ -174,7 +177,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     return errors;
   }
 
-  public List<VcsException> commit(List<Change> changes, String preparedComment, Object parameters) {
+  public List<VcsException> commit(List<Change> changes, String preparedComment, @NotNull NullableFunction<Object, Object> parametersHolder) {
     return commit(changes, preparedComment);
   }
 
