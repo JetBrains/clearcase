@@ -61,8 +61,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     this.host = host;
   }
 
-  public RefreshableOnComponent createAdditionalOptionsPanel(CheckinProjectPanel panel,
-                                                             PairConsumer<Object, Object> additionalDataConsumer)
+  public RefreshableOnComponent createAdditionalOptionsPanel( CheckinProjectPanel panel, PairConsumer<Object, Object> additionalDataConsumer )
   {
     @NonNls final JPanel additionalPanel = new JPanel();
     final JTextField scrNumber = new JTextField();
@@ -131,7 +130,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     return true;
   }
 
-  public List<VcsException> commit( List<Change> changes, String comment )
+  public List<VcsException> commit(List<Change> changes, String comment, @NotNull NullableFunction<Object, Object> parametersHolder)
   {
     List<VcsException> errors = new ArrayList<VcsException>();
     HashSet<FilePath> processedFiles = new HashSet<FilePath>();
@@ -177,8 +176,8 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     return errors;
   }
 
-  public List<VcsException> commit(List<Change> changes, String preparedComment, @NotNull NullableFunction<Object, Object> parametersHolder) {
-    return commit(changes, preparedComment);
+  public List<VcsException> commit(List<Change> changes, String preparedComment) {
+    return commit(changes, preparedComment, NullableFunction.NULL);
   }
 
   /**
