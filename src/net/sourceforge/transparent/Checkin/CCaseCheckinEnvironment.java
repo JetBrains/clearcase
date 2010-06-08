@@ -9,6 +9,7 @@ import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.*;
@@ -449,7 +450,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
           //  deal with the simple rename, otherwise we process full-scaled
           //  file movement across folders (packages).
 
-          if( oldFile.getVirtualFileParent().getPath().equals( file.getVirtualFileParent().getPath() ))
+          if( Comparing.equal(oldFile.getParentPath(), file.getParentPath()) )
           {
             host.renameAndCheckInFile( oldFile.getIOFile(), file.getName(), comment, errors );
           }
