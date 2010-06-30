@@ -74,7 +74,7 @@ public class BaseOrUCM {
   }
 
   public static boolean isUCM(final VirtualFile vf) {
-    final String result = TransparentVcs.cleartoolOnLocalPathWithOutput(vf.getPath(), "lsproj", "-s");
+    final String result = TransparentVcs.cleartoolOnLocalPathWithOutput(vf.getPath(), "lsproj", "-s", "-cview");
     return (! StringUtil.isEmptyOrSpaces(result)) && (! result.startsWith(NOT_A_UCM_VOB));
   }
 
