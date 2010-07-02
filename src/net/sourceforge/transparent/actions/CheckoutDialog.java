@@ -6,6 +6,7 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.VcsConfiguration;
 import com.intellij.openapi.vcs.ui.Refreshable;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.util.ui.OptionsDialog;
 import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
@@ -61,7 +62,7 @@ public class CheckoutDialog extends OptionsDialog implements Refreshable
 
     JPanel commentArea = new JPanel(new BorderLayout());
     commentArea.add(new JLabel(myLabel), BorderLayout.NORTH);
-    commentArea.add(new JScrollPane(getCommentArea()), BorderLayout.CENTER);
+    commentArea.add(ScrollPaneFactory.createScrollPane(getCommentArea()), BorderLayout.CENTER);
 
     panel.add(commentArea, BorderLayout.CENTER);
 
