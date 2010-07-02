@@ -1075,4 +1075,9 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public void generalPreConfigurationStep() {
     myActivatePolicyCalculateUCM = true;
   }
+
+  @Override
+  public boolean areDirectoriesVersionedItems() {
+    return true;
+  }
 }
