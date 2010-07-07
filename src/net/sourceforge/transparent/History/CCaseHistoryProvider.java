@@ -246,7 +246,7 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
 
   private static class CCaseHistorySession extends VcsAbstractHistorySession
   {
-    public CCaseHistorySession( ArrayList<VcsFileRevision> revs )
+    public CCaseHistorySession( List<VcsFileRevision> revs )
     {
       super( revs );
     }
@@ -281,6 +281,11 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
 
     public HistoryAsTreeProvider getHistoryAsTreeProvider() {
       return null;
+    }
+
+    @Override
+    public VcsHistorySession copy() {
+      return new CCaseHistorySession(getRevisionList());
     }
   }
 
