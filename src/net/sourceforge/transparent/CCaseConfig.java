@@ -1,5 +1,6 @@
 package net.sourceforge.transparent;
 
+import com.intellij.lifecycle.PeriodicalTasksCloser;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.DefaultJDOMExternalizer;
@@ -39,7 +40,7 @@ public class CCaseConfig extends AbstractProjectComponent implements JDOMExterna
   }
 
   public static CCaseConfig getInstance(Project project) {
-    return project.getComponent(CCaseConfig.class);
+    return PeriodicalTasksCloser.getInstance().safeGetComponent(project, CCaseConfig.class);
   }
 
   public void setHost(TransparentVcs host) {

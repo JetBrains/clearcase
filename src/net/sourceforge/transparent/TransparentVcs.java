@@ -1,5 +1,6 @@
 package net.sourceforge.transparent;
 
+import com.intellij.lifecycle.PeriodicalTasksCloser;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.CommandListener;
 import com.intellij.openapi.command.CommandProcessor;
@@ -173,7 +174,9 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     return viewsMgr.isAnySnapshotView() ? updateEnvironment : null;
   }
 
-  public static TransparentVcs getInstance( Project project ) { return project.getComponent(TransparentVcs.class); }
+  public static TransparentVcs getInstance( Project project ) {
+    return PeriodicalTasksCloser.getInstance().safeGetComponent(project, TransparentVcs.class);
+  }
 
   public void initComponent()     {}
   public void disposeComponent()  {}
