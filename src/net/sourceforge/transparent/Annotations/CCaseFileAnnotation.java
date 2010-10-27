@@ -67,7 +67,7 @@ public class CCaseFileAnnotation implements FileAnnotation
     }
   };
 
-  private final LineAnnotationAspect AUTHOR_ASPECT = new CCAnnotationAspect()
+  private final LineAnnotationAspect AUTHOR_ASPECT = new CCAuthorAnnotationAspect()
   {
     public String getValue(int lineNumber)
     {
@@ -144,5 +144,8 @@ public class CCaseFileAnnotation implements FileAnnotation
     protected void showAffectedPaths(int lineNum) {
       //todo
     }
+  }
+
+  private abstract class CCAuthorAnnotationAspect extends CCAnnotationAspect implements MajorLineAnnotationAspect {
   }
 }
