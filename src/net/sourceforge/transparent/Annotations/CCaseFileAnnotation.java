@@ -45,7 +45,7 @@ public class CCaseFileAnnotation implements FileAnnotation
     public String getAuthor()   {  return author;  }
   }
 
-  private final LineAnnotationAspect DATE_ASPECT = new CCAnnotationAspect()
+  private final LineAnnotationAspect DATE_ASPECT = new CCAnnotationAspect(CCAnnotationAspect.DATE, true)
   {
     public String getValue( int lineNumber )
     {
@@ -56,7 +56,7 @@ public class CCaseFileAnnotation implements FileAnnotation
     }
   };
 
-  private final LineAnnotationAspect REVISION_ASPECT = new CCAnnotationAspect()
+  private final LineAnnotationAspect REVISION_ASPECT = new CCAnnotationAspect(CCAnnotationAspect.REVISION, false)
   {
     public String getValue(int lineNumber)
     {
@@ -67,7 +67,7 @@ public class CCaseFileAnnotation implements FileAnnotation
     }
   };
 
-  private final LineAnnotationAspect AUTHOR_ASPECT = new CCAuthorAnnotationAspect()
+  private final LineAnnotationAspect AUTHOR_ASPECT = new CCAnnotationAspect(CCAnnotationAspect.AUTHOR, true)
   {
     public String getValue(int lineNumber)
     {
@@ -140,12 +140,17 @@ public class CCaseFileAnnotation implements FileAnnotation
   }
 
   private abstract class CCAnnotationAspect extends LineAnnotationAspectAdapter {
+    protected CCAnnotationAspect() {
+      super();
+    }
+
+    protected CCAnnotationAspect(String id, boolean showByDefault) {
+      super(id, showByDefault);
+    }
+
     @Override
     protected void showAffectedPaths(int lineNum) {
       //todo
     }
-  }
-
-  private abstract class CCAuthorAnnotationAspect extends CCAnnotationAspect implements MajorLineAnnotationAspect {
   }
 }
