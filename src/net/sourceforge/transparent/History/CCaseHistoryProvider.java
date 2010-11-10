@@ -2,6 +2,7 @@ package net.sourceforge.transparent.History;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
@@ -213,7 +214,7 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
 
       try
       {
-        File tmpFile = File.createTempFile( TMP_FILE_NAME, EXT );
+        File tmpFile = FileUtil.createTempFile(TMP_FILE_NAME, EXT);
         tmpFile.deleteOnExit();
         File tmpDir = tmpFile.getParentFile();
         final File myTmpFile = new File( tmpDir, Long.toString( new Date().getTime()) );

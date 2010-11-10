@@ -2,6 +2,7 @@ package net.sourceforge.transparent.ChangeManagement;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
@@ -96,7 +97,7 @@ public class CCaseContentRevision implements ContentRevision
           //  "get -to <dest_file> <repository_file>@@<version>"
           //-------------------------------------------------------------------
 
-          File tmpFile = File.createTempFile( TMP_FILE_NAME, EXT );
+          File tmpFile = FileUtil.createTempFile(TMP_FILE_NAME, EXT);
           tmpFile.deleteOnExit();
           File tmpDir = tmpFile.getParentFile();
           File myTmpFile = new File( tmpDir, Long.toString( new Date().getTime()) );
