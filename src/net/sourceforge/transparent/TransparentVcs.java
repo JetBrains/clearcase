@@ -159,15 +159,15 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public EditFileProvider     getEditFileProvider()   {  return editProvider;     }
   public VcsHistoryProvider   getVcsHistoryProvider() {  return historyProvider;  }
   public AnnotationProvider   getAnnotationProvider() {  return annotationProvider;  }
-  public CheckinEnvironment   getCheckinEnvironment() {
+  public CheckinEnvironment   createCheckinEnvironment() {
     return ((config == null) || !config.isOffline()) ? checkinEnvironment : null;
   }
 
-  public RollbackEnvironment getRollbackEnvironment() {
+  public RollbackEnvironment createRollbackEnvironment() {
     return ((config == null) || !config.isOffline()) ? rollbackEnvironment : null;
   }
 
-  public UpdateEnvironment  getUpdateEnvironment()
+  public UpdateEnvironment  createUpdateEnvironment()
   {
     //  For dynamic views "Update project" action makes no sence.
     CCaseViewsManager viewsMgr = CCaseViewsManager.getInstance( myProject );
