@@ -56,6 +56,7 @@
     <ComponentRoamingType component="CCaseConfig" type="DISABLED"/>
     <ComponentRoamingType component="CCaseViewsManager" type="DISABLED"/>
     <vcs name="ClearCase" vcsClass="net.sourceforge.transparent.TransparentVcs" displayName="ClearCase"/>
+    <vcsCheckinHandlerFactory implementation="net.sourceforge.transparent.TransparentVcsCheckinHandlerFactory"/>
   </extensions>
 
 </idea-plugin>

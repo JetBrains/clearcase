@@ -22,8 +22,6 @@ import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vcs.changes.IgnoredBeanFactory;
 import com.intellij.openapi.vcs.changes.IgnoredFileBean;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
-import com.intellij.openapi.vcs.checkin.CheckinHandler;
-import com.intellij.openapi.vcs.checkin.CheckinHandlerFactory;
 import com.intellij.openapi.vcs.history.VcsHistoryProvider;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
@@ -38,7 +36,6 @@ import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.Annotations.CCaseAnnotationProvider;
 import net.sourceforge.transparent.ChangeManagement.CCaseChangeProvider;
 import net.sourceforge.transparent.Checkin.CCaseCheckinEnvironment;
-import net.sourceforge.transparent.Checkin.CCaseCheckinHandler;
 import net.sourceforge.transparent.Checkin.CCaseRollbackEnvironment;
 import net.sourceforge.transparent.History.CCaseHistoryProvider;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
@@ -195,11 +192,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     myCheckoutOptions = vcsManager.getStandardOption( VcsConfiguration.StandardOption.CHECKOUT, this );
     addConfirmation = vcsManager.getStandardConfirmation( VcsConfiguration.StandardConfirmation.ADD, this );
     removeConfirmation = vcsManager.getStandardConfirmation( VcsConfiguration.StandardConfirmation.REMOVE, this );
-
-    vcsManager.registerCheckinHandlerFactory( new CheckinHandlerFactory() {
-      @NotNull public CheckinHandler createHandler(final CheckinProjectPanel panel)
-      {  return new CCaseCheckinHandler( TransparentVcs.getInstance( myProject ), panel );  }
-    } );
   }
 
   public void projectClosed() {}
@@ -1020,7 +1012,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     writeElement( element, removedFiles, PERSISTENCY_REMOVED_FILE_TAG );
     writeElement( element, removedFolders, PERSISTENCY_REMOVED_FOLDER_TAG );
     writeElement( element, deletedFiles, PERSISTENCY_DELETED_FILE_TAG );
-    writeElement( element, deletedFolders, PERSISTENCY_DELETED_FOLDER_TAG );
+    writeElement(element, deletedFolders, PERSISTENCY_DELETED_FOLDER_TAG);
 
     HashSet<String> tmp = new HashSet<String>();
     for( VirtualFile file : newFiles )
