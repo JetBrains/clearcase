@@ -240,8 +240,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     LocalFileSystem.getInstance().removeVirtualFileListener( listener );
     CommandProcessor.getInstance().removeCommandListener( (CommandListener)listener );
     ContentRevisionFactory.detachListeners();
-    
-    checkRootsForUCMMismatch();
   }
 
   public void offlineModeChanged()
