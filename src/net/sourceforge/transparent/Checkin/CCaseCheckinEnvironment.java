@@ -4,7 +4,6 @@
 
 package net.sourceforge.transparent.Checkin;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -18,6 +17,7 @@ import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.NullableFunction;
 import com.intellij.util.PairConsumer;
+import com.intellij.util.WaitForProgressToShow;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.CCaseViewsManager;
 import net.sourceforge.transparent.ClearCase;
@@ -423,9 +423,11 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
         host.deletedFolders.remove( path );
 
         incrementProgress( fp.getPath() );
-        ApplicationManager.getApplication().invokeLater( new Runnable() {
-          public void run() { VcsDirtyScopeManager.getInstance( project ).fileDirty( fp );  }
-        });
+        WaitForProgressToShow.runOrInvokeLaterAboveProgress(new Runnable() {
+          public void run() {
+            VcsDirtyScopeManager.getInstance(project).fileDirty(fp);
+          }
+        }, null, project);
       }
     }
   }

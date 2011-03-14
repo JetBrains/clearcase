@@ -1,6 +1,5 @@
 package net.sourceforge.transparent.ChangeManagement;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
@@ -11,6 +10,7 @@ import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.CharsetToolkit;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ArrayUtil;
+import com.intellij.util.WaitForProgressToShow;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.History.CCaseHistoryParser;
 import net.sourceforge.transparent.TransparentVcs;
@@ -154,7 +154,11 @@ public class CCaseContentRevision implements ContentRevision
             //  other subsystems which are not related to the "ct get" command per se.
             if( out2.length() > 0 && !isKnownMessage( out2 ) )
             {
-              ApplicationManager.getApplication().invokeLater( new Runnable() { public void run() { VcsUtil.showErrorMessage( project, out2, TITLE ); } });
+              WaitForProgressToShow.runOrInvokeLaterAboveProgress(new Runnable() {
+                public void run() {
+                  VcsUtil.showErrorMessage(project, out2, TITLE);
+                }
+              }, null, project);
             }
             else
             {

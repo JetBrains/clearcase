@@ -4,7 +4,6 @@
 
 package net.sourceforge.transparent.ChangeManagement;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
@@ -15,6 +14,7 @@ import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.Processor;
+import com.intellij.util.WaitForProgressToShow;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.*;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
@@ -197,9 +197,9 @@ public class CCaseChangeProvider implements ChangeProvider
   {
     if( isBatchUpdate && isFirstShow && config.isOffline() )
     {
-      ApplicationManager.getApplication().invokeLater( new Runnable() {
+      WaitForProgressToShow.runOrInvokeLaterAboveProgress(new Runnable() {
          public void run() {  Messages.showWarningDialog( project, REMINDER_TEXT, REMINDER_TITLE );  }
-       });
+       }, null, project);
     }
   }
 
