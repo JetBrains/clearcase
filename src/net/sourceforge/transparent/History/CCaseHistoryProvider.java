@@ -14,6 +14,7 @@ import com.intellij.util.ui.ColumnInfo;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -29,8 +30,7 @@ import java.util.List;
  * User: lloix
  * Date: Jan 26, 2007
  */
-public class CCaseHistoryProvider implements VcsHistoryProvider
-{
+public class CCaseHistoryProvider implements VcsHistoryProvider , VcsCacheableHistorySessionFactory<Boolean, CCaseHistoryProvider.CCaseHistorySession> {
   @NonNls private final static String HISTORY_CMD = "lshistory";
   @NonNls private final static String LIMITED_SWITCH = "-last";
   @NonNls private final static String CCASE_DATE_COLUMN = "ClearCase Date";
@@ -245,7 +245,25 @@ public class CCaseHistoryProvider implements VcsHistoryProvider
     }
   }
 
-  private static class CCaseHistorySession extends VcsAbstractHistorySession
+  @Override
+  public FilePath getUsedFilePath(CCaseHistorySession session) {
+    return null;
+  }
+
+  @Override
+  public Boolean getAddinionallyCachedData(CCaseHistorySession session) {
+    return null;
+  }
+
+  @Override
+  public CCaseHistorySession createFromCachedData(@Nullable Boolean aBoolean,
+                                                  @NotNull List<VcsFileRevision> revisions,
+                                                  @NotNull FilePath filePath,
+                                                  @Nullable VcsRevisionNumber currentRevision) {
+    return new CCaseHistorySession(revisions);
+  }
+
+  static class CCaseHistorySession extends VcsAbstractHistorySession
   {
     public CCaseHistorySession( List<VcsFileRevision> revs )
     {
