@@ -21,6 +21,10 @@
         <implementation-class>net.sourceforge.transparent.CCaseViewsManager</implementation-class>
         <option name="workspace" value="true"/>
      </component>
+     <component>
+       <implementation-class>net.sourceforge.transparent.CCaseSharedConfig</implementation-class>
+       <option name="workspace" value="false"/>
+     </component>
    </project-components>
 
    <actions>

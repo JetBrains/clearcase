@@ -223,8 +223,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     addIgnoredFiles();
 
     if (myActivatePolicyCalculateUCM) {
-      final CCaseConfig configuration = CCaseConfig.getInstance(myProject);
-      configuration.useUcmModel = Boolean.TRUE.equals(myBaseOrUCM.isUCMByRoots());
+      final CCaseSharedConfig sharedConfig = CCaseSharedConfig.getInstance(myProject);
+      sharedConfig.setUcmMode(Boolean.TRUE.equals(myBaseOrUCM.isUCMByRoots()));
     } else {
       checkRootsForUCMMismatch();
     }

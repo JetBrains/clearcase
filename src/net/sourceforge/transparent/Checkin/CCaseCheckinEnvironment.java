@@ -19,6 +19,7 @@ import com.intellij.util.NullableFunction;
 import com.intellij.util.PairConsumer;
 import com.intellij.util.WaitForProgressToShow;
 import com.intellij.vcsUtil.VcsUtil;
+import net.sourceforge.transparent.CCaseSharedConfig;
 import net.sourceforge.transparent.CCaseViewsManager;
 import net.sourceforge.transparent.ClearCase;
 import net.sourceforge.transparent.TransparentVcs;
@@ -361,7 +362,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
    */
   private void setActivitiesForFiles( HashSet<FilePath> files, List<VcsException> errors )
   {
-    if( host.getConfig().useUcmModel )
+    if( CCaseSharedConfig.getInstance(project).isUseUcmModel() )
     {
       CCaseViewsManager viewsManager = CCaseViewsManager.getInstance( project );
 
@@ -468,7 +469,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
           host.checkinFile( file, comment, errors );
 
           CCaseViewsManager viewsManager = CCaseViewsManager.getInstance( project );
-          if( host.getConfig().useUcmModel && viewsManager.isUcmViewForFile( file ) )
+          if( CCaseSharedConfig.getInstance(project).isUseUcmModel() && viewsManager.isUcmViewForFile( file ) )
           {
             //  If the file was checked out using one view's activity but has then
             //  been moved to another changelist (activity) we must issue "chactivity"

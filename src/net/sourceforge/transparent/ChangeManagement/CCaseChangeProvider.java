@@ -70,6 +70,7 @@ public class CCaseChangeProvider implements ChangeProvider
   private final CCaseViewsManager myViewManager;
   private final TransparentVcs host;
   private CCaseConfig config;
+  private CCaseSharedConfig mySharedConfig;
   private ProgressIndicator progress;
   private boolean isBatchUpdate;
   private boolean isFirstShow;
@@ -111,6 +112,7 @@ public class CCaseChangeProvider implements ChangeProvider
       return;
     
     config = host.getConfig();
+    mySharedConfig = CCaseSharedConfig.getInstance(project);
     progress = progressIndicator;
     isBatchUpdate = isBatchUpdate( dirtyScope );
 
@@ -146,7 +148,7 @@ public class CCaseChangeProvider implements ChangeProvider
       //  For an UCM view we must determine the corresponding changes list name
       //  which is associated with the "activity" of the particular view.
       //-----------------------------------------------------------------------
-      if( config.useUcmModel )
+      if( mySharedConfig.isUseUcmModel() )
         setActivityInfoOnChangedFiles();
 
       addAddedFiles( builder );
@@ -899,7 +901,7 @@ public class CCaseChangeProvider implements ChangeProvider
     //  Computing the activity name (to be used as the Changelist name) is defined
     //  only if the "UCM" mode is checked on for the view. Otherwise IDEA's changelist
     //  preserve their local (IDE-wide) semantics.
-    if( config.useUcmModel && myViewManager.isUcmViewForFile( refPath ) )
+    if( mySharedConfig.isUseUcmModel() && myViewManager.isUcmViewForFile( refPath ) )
     {
       //  First check whether the file was checked out under IDEA, we've
       //  parsed the "co" output and extracted the name of the activity under

@@ -18,6 +18,8 @@ public class CCaseConfig extends AbstractProjectComponent implements JDOMExterna
   public boolean checkoutReserved = false;
   public boolean markExternalChangeAsUpToDate = true;
   public boolean checkInUseHijack = true;
+  /** @deprecated use {@link net.sourceforge.transparent.CCaseSharedConfig#isUseUcmModel()} instead
+   */
   public boolean useUcmModel = true;
   private boolean isOffline = false;
   public boolean synchOutside = false;

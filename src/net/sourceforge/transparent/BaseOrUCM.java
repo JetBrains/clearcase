@@ -37,8 +37,8 @@ public class BaseOrUCM {
       return;
     }
 
-    final CCaseConfig configuration = CCaseConfig.getInstance(myVcs.getProject());
-    final boolean useUcmModelConfig = configuration.useUcmModel;
+    final CCaseSharedConfig sharedConfig = CCaseSharedConfig.getInstance(myVcs.getProject());
+    final boolean useUcmModelConfig = sharedConfig.isUseUcmModel();
 
     MyNotification newNotification = null;
     if (useUcmModelConfig && (! isUCM)) {

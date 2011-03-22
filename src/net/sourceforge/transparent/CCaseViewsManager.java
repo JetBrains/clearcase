@@ -189,7 +189,7 @@ public class CCaseViewsManager extends AbstractProjectComponent implements Chang
       removeObsoleteViews(roots);
       logViewsByName(viewsMapByRoot);
 
-      if (config.useUcmModel) {
+      if (CCaseSharedConfig.getInstance(myProject).isUseUcmModel()) {
         extractViewActivities();
         checkViewsWithoutActions();
         synchActivities2ChangeLists(null);

@@ -32,6 +32,7 @@ public class CCaseConfigurable implements Configurable
   private JCheckBox synchActivitiesOnRefresh;
 
   private final Project project;
+  private CCaseSharedConfig mySharedConfig;
   private CCaseConfig vcsConfig;
 
   public CCaseConfigurable(Project project)
@@ -49,6 +50,7 @@ public class CCaseConfigurable implements Configurable
   public JComponent createComponent()
   {
     vcsConfig = CCaseConfig.getInstance(project);
+    mySharedConfig = CCaseSharedConfig.getInstance(project);
     myWorkOffline.addActionListener(new ActionListener() {
         public void actionPerformed(ActionEvent e) {  resetCheckInOutCheckboxes();  }
     });
@@ -80,7 +82,7 @@ public class CCaseConfigurable implements Configurable
     return hasScrTextChanged()
            || vcsConfig.checkoutReserved != myReservedCheckoutsCheckBox.isSelected()
            || vcsConfig.checkInUseHijack != myCheckOutForHijacked.isSelected()
-           || vcsConfig.useUcmModel != myUseUCMModel.isSelected()
+           || mySharedConfig.isUseUcmModel() != myUseUCMModel.isSelected()
            || vcsConfig.isOffline() != myWorkOffline.isSelected()
            || vcsConfig.isHistoryResticted != myRestrictHistory.isSelected()
            || vcsConfig.getHistoryRevisionsMargin() != getMargin()
@@ -95,11 +97,11 @@ public class CCaseConfigurable implements Configurable
 
   public void apply() throws ConfigurationException
   {
-    final boolean ucmFlagChanged = vcsConfig.useUcmModel != myUseUCMModel.isSelected();
+    final boolean ucmFlagChanged = mySharedConfig.isUseUcmModel() != myUseUCMModel.isSelected();
     boolean need2ReloadActivities = ucmFlagChanged && myUseUCMModel.isSelected();
     vcsConfig.checkoutReserved = myReservedCheckoutsCheckBox.isSelected();
     vcsConfig.checkInUseHijack = myCheckOutForHijacked.isSelected();
-    vcsConfig.useUcmModel = myUseUCMModel.isSelected();
+    mySharedConfig.setUcmMode(myUseUCMModel.isSelected());
     vcsConfig.setOfflineMode( myWorkOffline.isSelected() );
     vcsConfig.isHistoryResticted = myRestrictHistory.isSelected();
     vcsConfig.setHistoryRevisionsMargin( getMargin() );
@@ -124,7 +126,7 @@ public class CCaseConfigurable implements Configurable
     myReservedCheckoutsCheckBox.setSelected( vcsConfig.checkoutReserved );
     myCheckOutForHijacked.setSelected( vcsConfig.checkInUseHijack );
 
-    myUseUCMModel.setSelected( vcsConfig.useUcmModel );
+    myUseUCMModel.setSelected( mySharedConfig.isUseUcmModel() );
     useIdenticalSwitch.setSelected( vcsConfig.useIdenticalSwitch );
     synchActivitiesOnRefresh.setSelected( vcsConfig.synchActivitiesOnRefresh );
 
