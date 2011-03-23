@@ -267,26 +267,24 @@ public class CCaseChangeProvider implements ChangeProvider
   {
     for( FilePath path : dirtyScope.getDirtyFiles() )
     {
-      if( VcsUtil.isFileForVcs( path, project, host ) )
+      String fileName = path.getPath();
+      VirtualFile file = path.getVirtualFile();
+
+      //  make sure that:
+      //  - a file is a folder which exists (VFS has a valid ref to it)
+      //  - it is under out vcs and is not in the ignore list
+      if( path.isDirectory() && (file != null) )
       {
-        String fileName = path.getPath();
-        VirtualFile file = path.getVirtualFile();
-
-        //  make sure that:
-        //  - a file is a folder which exists (VFS has a valid ref to it)
-        //  - it is under out vcs and is not in the ignore list
-        if( path.isDirectory() && (file != null) )
+        if( host.isFileIgnored( file ))
+          filesIgnored.add( fileName );
+        else
         {
-          if( host.isFileIgnored( file ))
-            filesIgnored.add( fileName );
-          else
-          {
-            String refName = discoverOldName( fileName );
+          String refName = discoverOldName( fileName );
 
-            //  Check that folder physically exists.
-            if( !host.fileExistsInVcs( refName ))
-              filesNew.add( fileName );
-            else
+          //  Check that folder physically exists.
+          if( !host.fileExistsInVcs( refName ))
+            filesNew.add( fileName );
+          else
             //  NB: Do not put to the "Changed" list those folders which are under
             //      the renamed one since we will have troubles in checking such
             //      folders in (it is useless, BTW).
@@ -295,7 +293,6 @@ public class CCaseChangeProvider implements ChangeProvider
             //  Todo Inner rename.
             if( !refName.equals( fileName ) && !isUnderRenamedFolder( fileName ) )
               filesChanged.add( fileName );
-          }
         }
       }
     }
@@ -305,18 +302,15 @@ public class CCaseChangeProvider implements ChangeProvider
   {
     for( FilePath path : scope.getDirtyFiles() )
     {
-      if( VcsUtil.isFileForVcs( path, project, host ) )
-      {
-        String fileName = path.getPath();
-        VirtualFile file = path.getVirtualFile();
+      String fileName = path.getPath();
+      VirtualFile file = path.getVirtualFile();
 
-        if( host.isFileIgnored( file ))
-          filesIgnored.add( fileName );
-        else
+      if( host.isFileIgnored( file ))
+        filesIgnored.add( fileName );
+      else
 //        if( isFileCCaseProcessable( file ) && isProperNotification( path ) )
         if( isValidFile( file ) && isProperNotification( path ) )
           filesWritable.add( fileName );
-      }
     }
   }
 
