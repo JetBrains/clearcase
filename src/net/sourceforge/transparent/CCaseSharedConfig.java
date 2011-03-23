@@ -9,9 +9,9 @@ import com.intellij.openapi.project.Project;
  *         Time: 7:04 PM
  */
 @State(
-  name = "ClearCase",
-  storages = {@Storage(id = "ClearCase", file = "$PROJECT_FILE$"),
-    @Storage(id = "ClearCase", file = "$PROJECT_CONFIG_DIR$/vcs.xml", scheme = StorageScheme.DIRECTORY_BASED)})
+  name = "ClearCaseSharedConfig",
+  storages = {@Storage(id = "ClearCaseSharedConfig", file = "$PROJECT_FILE$"),
+    @Storage(id = "ClearCaseSharedConfig", file = "$PROJECT_CONFIG_DIR$/vcs.xml", scheme = StorageScheme.DIRECTORY_BASED)})
 public class CCaseSharedConfig extends AbstractProjectComponent implements PersistentStateComponent<CCaseSharedConfig.State> {
   private State myState;
 
