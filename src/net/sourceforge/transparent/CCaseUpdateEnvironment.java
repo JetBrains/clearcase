@@ -4,20 +4,23 @@
 
 package net.sourceforge.transparent;
 
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.util.text.LineTokenizer;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Ref;
+import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsKey;
+import com.intellij.openapi.vcs.changes.committed.AbstractCalledLater;
 import com.intellij.openapi.vcs.update.*;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NonNls;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -41,6 +44,11 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
   @NonNls private final static String PROGRESS_TEXT = "Synching with repository";
 
   @NonNls private final static String ERROR_MSG_SIG = "valid snapshot view path";
+  private final Project myProject;
+
+  public CCaseUpdateEnvironment(Project project) {
+    myProject = project;
+  }
 
   public void fillGroups( UpdatedFiles groups ) {}
 
@@ -50,8 +58,13 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
   {
     final ArrayList<VcsException> errors = new ArrayList<VcsException>();
 
-    progressIndicator.setText( PROGRESS_TEXT );
-    FileDocumentManager.getInstance().saveAllDocuments();
+    progressIndicator.setText(PROGRESS_TEXT);
+    new AbstractCalledLater(myProject, ModalityState.NON_MODAL) {
+      @Override
+      public void run() {
+        FileDocumentManager.getInstance().saveAllDocuments();
+      }
+    }.callMe();
 
     for( FilePath root : contentRoots )
     {
