@@ -2,6 +2,8 @@ package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
@@ -23,6 +25,7 @@ public class CheckOutAction extends SynchronousAction
   @NonNls private static final String CHECKOUT_HIJACKED_TITLE = "Check out hijacked file";
   @NonNls private static final String NOT_A_VOB_OBJECT_SIG = "Not a vob object";
   @NonNls private static final String IS_ALREADY_CHECKED_OUT_SIG = "is already checked out";
+  private int cnt;
 
   protected String getActionName( AnActionEvent e )
   {
@@ -51,32 +54,60 @@ public class CheckOutAction extends SynchronousAction
     return status == FileStatus.NOT_CHANGED || status == FileStatus.HIJACKED;
   }
 
-  protected void execute( AnActionEvent e, List<VcsException> errors )
+  protected void execute( AnActionEvent e, final List<VcsException> errors )
   {
-    Project project = e.getData(PlatformDataKeys.PROJECT);
+    cnt = 0;
+    final Project project = e.getData(PlatformDataKeys.PROJECT);
     String comment = "";
-    VirtualFile[] files = VcsUtil.getVirtualFiles( e );
+    final VirtualFile[] files = VcsUtil.getVirtualFiles( e );
 
     if( TransparentVcs.getInstance(project).getCheckoutOptions().getValue() )
     {
       CheckoutDialog dialog = ( files.length == 1 ) ?
-                                new CheckoutDialog( project, files[ 0 ] ) :
-                                new CheckoutDialog( project, files );
+                              new CheckoutDialog( project, files[ 0 ] ) :
+                              new CheckoutDialog( project, files );
       dialog.show();
       if( dialog.getExitCode() == CheckoutDialog.CANCEL_EXIT_CODE )
         return;
 
       comment = dialog.getComment();
     }
-
-    for( VirtualFile file : files )
-    {
-      performOnFile(project, file, comment, errors );
+    if (files.length == 0) return;
+    final ProgressManager pm = ProgressManager.getInstance();
+    final String finalComment = comment;
+    String title = "Checkout ";
+    if (files.length > 1) {
+      title += "files";
+    } else {
+      title += files[0].isDirectory() ? "directory" : "file";
     }
+    pm.runProcessWithProgressSynchronously(new Runnable() {
+        @Override
+        public void run() {
+          final ProgressIndicator indicator = pm.getProgressIndicator();
+          indicator.setIndeterminate(true);
+          for (VirtualFile file : files) {
+            performOnFile(project, file, finalComment, errors, indicator);
+          }
+        }
+      }, title, true, project);
   }
 
-  private void performOnFile(final Project project, VirtualFile file, String comment, List<VcsException> errors)
+  private void performOnFile(final Project project,
+                             VirtualFile file,
+                             String comment,
+                             List<VcsException> errors,
+                             ProgressIndicator indicator)
   {
+    if (indicator != null) {
+      indicator.checkCanceled();
+      final VirtualFile parent = file.getParent();
+      indicator.setText(
+        new StringBuilder().append("Processing: ").append(file.getName()).append(" (")
+          .append(parent == null ? (file.getPath()) : parent.getPath()).append(")").toString());
+      indicator.setText2("Processed: " + cnt + " files");
+      ++ cnt;
+    }
     if( isEnabled( file, project) )
     {
       VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance( project );
@@ -100,16 +131,20 @@ public class CheckOutAction extends SynchronousAction
           errors.add( vcsEx );
         }
       }
-      executeRecursively(project, file, comment, errors );
+      executeRecursively(project, file, comment, errors, indicator);
     }
   }
 
-  private void executeRecursively(final Project project, VirtualFile file, String comment, List<VcsException> errors)
+  private void executeRecursively(final Project project,
+                                  VirtualFile file,
+                                  String comment,
+                                  List<VcsException> errors,
+                                  ProgressIndicator indicator)
   {
     if( file.isDirectory() )
     {
       for( VirtualFile child : file.getChildren() )
-        performOnFile(project, child, comment, errors );
+        performOnFile(project, child, comment, errors, indicator);
     }
   }
 

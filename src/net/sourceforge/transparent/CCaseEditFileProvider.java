@@ -1,8 +1,9 @@
 package net.sourceforge.transparent;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.EditFileProvider;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
@@ -35,23 +36,45 @@ public class CCaseEditFileProvider implements EditFileProvider
 
   public String getRequestText() {  return REQUEST_TEXT;  }
 
-  public void editFiles( VirtualFile[] files )
-  {
-    List<VcsException> errors = new ArrayList<VcsException>();
-    ChangeListManager mgr = ChangeListManager.getInstance( host.getProject() );
-    for( VirtualFile file : files )
-    {
-      if( !mgr.isIgnoredFile( file ) )
-        checkOutOrHijackFile( file, errors );
-    }
+  public void editFiles( final VirtualFile[] files ) throws VcsException {
+    final List<VcsException> errors = new ArrayList<VcsException>();
+    final ChangeListManager mgr = ChangeListManager.getInstance( host.getProject() );
+
+    ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
+      @Override
+      public void run() {
+        int cnt = 0;
+        for( VirtualFile file : files )
+        {
+          final boolean ignoredFile = mgr.isIgnoredFile(file);
+          final ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
+          if (indicator != null) {
+            indicator.checkCanceled();
+            final VirtualFile parent = file.getParent();
+            indicator.setText2((ignoredFile ? "Ignored: " : "Checking out: ") + file.getName() +
+              " (" + (parent == null ? file.getPath() : parent.getPath()) + ")");
+            indicator.setFraction((double) cnt/files.length);
+          }
+          ++ cnt;
+          if(! ignoredFile) {
+            try {
+              checkOutOrHijackFile( file, errors );
+            }
+            catch (VcsException e) {
+              return;
+              // exit, exception already kept
+            }
+          }
+        }
+      }
+    }, "Checkout files", true, host.getProject());
     if( errors.size() > 0 )
     {
-      AbstractVcsHelper.getInstance( host.getProject() ).showErrors( errors, FAIL_DIALOG_TITLE );
+      throw errors.get(0);
     }
   }
 
-  private void checkOutOrHijackFile( VirtualFile file, List<VcsException> errors )
-  {
+  private void checkOutOrHijackFile( VirtualFile file, List<VcsException> errors ) throws VcsException {
     boolean toHijack = shouldHijackFile( file );
     try
     {
@@ -79,7 +102,9 @@ public class CCaseEditFileProvider implements EditFileProvider
     }
     catch( Throwable e )
     {
-      errors.add( new VcsException( e.getMessage() ));
+      final VcsException e1 = new VcsException(e.getMessage());
+      errors.add(e1);
+      throw e1;
     }
   }
 
