@@ -143,9 +143,9 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
 
   private boolean wasMovedRenamed(final VirtualFile file) {
     if (file.isDirectory()) {
-      return host.renamedFolders.containsValue(file.getPath());
+      return host.renamedFolders.containsKey(file.getPath());
     } else {
-      return host.renamedFiles.containsValue(file.getPath());
+      return host.renamedFiles.containsKey(file.getPath());
     }
   }
 
