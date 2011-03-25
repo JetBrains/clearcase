@@ -358,7 +358,8 @@ public class CCaseChangeProvider implements ChangeProvider {
                 filesIgnored.add( path );
               else
                 filesWritable.add( path );
-            } else if ((vFile != null) && vFile.isDirectory() && ! Boolean.TRUE.equals(vFile.getUserData(ourVersionedKey))) {
+            } else if ((vFile != null) && vFile.isDirectory() && ! Boolean.TRUE.equals(vFile.getUserData(ourVersionedKey)) &&
+                (! host.renamedFolders.containsKey(vFile.getPath()))) {
               myDirs.add(vFile);
             }
             return true;
@@ -652,6 +653,9 @@ public class CCaseChangeProvider implements ChangeProvider {
    */
   private void addChangedFiles( final ChangelistBuilder builder )
   {
+    filesChanged.removeAll(host.renamedFolders.keySet());
+    filesChanged.removeAll(host.renamedFiles.keySet());
+
     for( String fileName : filesChanged )
     {
       String validRefName = discoverOldName( fileName );
