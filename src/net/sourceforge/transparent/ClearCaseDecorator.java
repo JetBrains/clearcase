@@ -1,6 +1,7 @@
 package net.sourceforge.transparent;
 
 import java.io.File;
+import java.util.Set;
 
 public class ClearCaseDecorator implements ClearCase
 {
@@ -38,6 +39,11 @@ public class ClearCaseDecorator implements ClearCase
 
   public CheckedOutStatus getCheckedOutStatus(File file) {  return clearCase.getCheckedOutStatus(file);  }
   public String getCheckoutComment(File file) {  return clearCase.getCheckoutComment(file);  }
+
+  @Override
+  public Set<String> getUnversioned(File file) {
+    return clearCase.getUnversioned(file);
+  }
 
   public void cleartool(String cmd) {  clearCase.cleartool(cmd);  }
 }

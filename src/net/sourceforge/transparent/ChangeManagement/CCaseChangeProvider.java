@@ -81,6 +81,8 @@ public class CCaseChangeProvider implements ChangeProvider
   private final HashSet<String> filesHijacked = new HashSet<String>();
   private final HashSet<String> filesIgnored = new HashSet<String>();
   private final HashSet<String> filesMerge = new HashSet<String>();
+  private final ChangeListManager myChangeListManager;
+  private Set<VirtualFile> myDirs;
 
   public CCaseChangeProvider( Project project, TransparentVcs hostVcs )
   {
@@ -88,6 +90,8 @@ public class CCaseChangeProvider implements ChangeProvider
     myViewManager = CCaseViewsManager.getInstance(project);
     host = hostVcs;
     isFirstShow = true;
+    myChangeListManager = ChangeListManager.getInstance(this.project);
+    myDirs = new HashSet<VirtualFile>();
   }
 
   public boolean isModifiedDocumentTrackingRequired() { return false;  }
@@ -151,6 +155,7 @@ public class CCaseChangeProvider implements ChangeProvider
       if( mySharedConfig.isUseUcmModel() )
         setActivityInfoOnChangedFiles();
 
+      getUnversioned();
       addAddedFiles( builder );
       addChangedFiles( builder );
       addRemovedFiles( builder );
@@ -188,6 +193,15 @@ public class CCaseChangeProvider implements ChangeProvider
     {
       TransparentVcs.LOG.debug( "-- EndChangeProvider| New: " + filesNew.size() + ", modified: " + filesChanged.size() +
                                ", hijacked:" + filesHijacked.size() + ", ignored: " + filesIgnored.size() );
+    }
+  }
+
+  private void getUnversioned() {
+    for (VirtualFile dir : myDirs) {
+      final Status status = host.getStatus(dir);
+      if (Status.NOT_AN_ELEMENT.equals(status)) {
+        filesNew.add(dir.getPath());
+      }
     }
   }
 
@@ -251,7 +265,7 @@ public class CCaseChangeProvider implements ChangeProvider
       if( progress != null )
         progress.setText( COLLECT_MSG );
 
-      collectWritableFiles( path );
+      collectWritableFiles(path);
 
       LOG.debug( "-- ChangeProvider - Total: " + filesWritable.size() + " writable files after the last root." );
       if( progress != null )
@@ -305,11 +319,11 @@ public class CCaseChangeProvider implements ChangeProvider
       String fileName = path.getPath();
       VirtualFile file = path.getVirtualFile();
 
-      if( host.isFileIgnored( file ))
+      if( host.isFileIgnored(file))
         filesIgnored.add( fileName );
       else
 //        if( isFileCCaseProcessable( file ) && isProperNotification( path ) )
-        if( isValidFile( file ) && isProperNotification( path ) )
+        if( (file != null) && file.isWritable() && isProperNotification( path ) )
           filesWritable.add( fileName );
     }
   }
@@ -336,6 +350,8 @@ public class CCaseChangeProvider implements ChangeProvider
                 filesIgnored.add( path );
               else
                 filesWritable.add( path );
+            } else if ((vFile != null) && vFile.isDirectory()) {
+              myDirs.add(vFile);
             }
             return true;
           }
@@ -907,8 +923,7 @@ public class CCaseChangeProvider implements ChangeProvider
         //  if there is no such, then this file (change) is processed for the
         //  very first time and we need to find (or create) the appropriate
         //  change list for it.
-        ChangeListManager mgr = ChangeListManager.getInstance( project );
-        Change change = mgr.getChange( currPath );
+        Change change = myChangeListManager.getChange( currPath );
         if( change == null )
         {
           //  Possibly the change had been made outside.

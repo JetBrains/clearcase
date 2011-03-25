@@ -1,10 +1,12 @@
 package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FileStatus;
+import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.project.Project;
 import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
 
@@ -24,7 +26,12 @@ public class AddAction extends SynchronousAction
     //  Perform only moving the file into normal changelist with the
     //  proper status "ADDED". After that the file can be submitted into
     //  the repository via "Commit" dialog.
-    TransparentVcs.getInstance( project ).add2NewFile( file );
+    try {
+      TransparentVcs.getInstance( project ).add2NewFile( file );
+    }
+    catch (VcsException e) {
+      AbstractVcsHelper.getInstance(project).showError(e,  "Add File failure");
+    }
 
     VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance( project );
     mgr.fileDirty( file );

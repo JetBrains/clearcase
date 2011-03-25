@@ -6,6 +6,7 @@ import com.intellij.openapi.command.CommandListener;
 import com.intellij.openapi.command.CommandProcessor;
 import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.diff.impl.patch.formove.FilePathComparator;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
@@ -17,20 +18,19 @@ import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.annotate.AnnotationProvider;
-import com.intellij.openapi.vcs.changes.ChangeListManager;
-import com.intellij.openapi.vcs.changes.ChangeProvider;
-import com.intellij.openapi.vcs.changes.IgnoredBeanFactory;
-import com.intellij.openapi.vcs.changes.IgnoredFileBean;
+import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.history.VcsHistoryProvider;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileListener;
 import com.intellij.ultimate.PluginVerifier;
 import com.intellij.ultimate.UltimateVerifier;
 import com.intellij.util.ArrayUtil;
+import com.intellij.util.containers.Convertor;
 import com.intellij.util.containers.HashSet;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.Annotations.CCaseAnnotationProvider;
@@ -45,9 +45,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDOMExternalizable
 {
@@ -91,17 +89,17 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public static final Key<Boolean> SUCCESSFUL_CHECKOUT = new Key<Boolean>( "SUCCESSFUL_CHECKOUT" );
   public static final Key<Boolean> MERGE_CONFLICT = new Key<Boolean>( "MERGE_CONFLICT" );
 
-  public  HashSet<String> removedFiles;
-  public  HashSet<String> removedFolders;
-  private final HashSet<VirtualFile> newFiles;
-  public  HashMap<String, String> renamedFiles;
-  public  HashMap<String, String> renamedFolders;
-  public  HashSet<String> deletedFiles;
-  public  HashSet<String> deletedFolders;
+  public  Set<String> removedFiles;
+  public  Set<String> removedFolders;
+  private final Set<VirtualFile> newFiles;
+  public  Map<String, String> renamedFiles;
+  public  Map<String, String> renamedFolders;
+  public  Set<String> deletedFiles;
+  public  Set<String> deletedFolders;
 
   //  Used to keep a set of modified files when user switches to the
   //  offline mode. Empty and unused in online mode.
-  private final HashSet<VirtualFile> modifiedFiles;
+  private final Set<VirtualFile> modifiedFiles;
 
   private ClearCase clearcase;
   private CCaseConfig config;
@@ -127,14 +125,14 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     super( project, NAME);
     PluginVerifier.verifyUltimatePlugin(verifier);
 
-    removedFiles = new HashSet<String>();
-    removedFolders = new HashSet<String>();
-    newFiles = new HashSet<VirtualFile>();
-    deletedFiles = new HashSet<String>();
-    deletedFolders = new HashSet<String>();
-    renamedFiles = new HashMap<String, String>();
-    renamedFolders = new HashMap<String, String>();
-    modifiedFiles = new HashSet<VirtualFile>();
+    removedFiles = Collections.synchronizedSet(new HashSet<String>());
+    removedFolders = Collections.synchronizedSet(new HashSet<String>());
+    newFiles = Collections.synchronizedSet(new HashSet<VirtualFile>());
+    deletedFiles = Collections.synchronizedSet(new HashSet<String>());
+    deletedFolders = Collections.synchronizedSet(new HashSet<String>());
+    renamedFiles = Collections.synchronizedMap(new HashMap<String, String>());
+    renamedFolders = Collections.synchronizedMap(new HashMap<String, String>());
+    modifiedFiles = Collections.synchronizedSet(new HashSet<VirtualFile>());
 
     myBaseOrUCM = new BaseOrUCM(this);
     myActivatePolicyCalculateUCM = ourActivatePolicyCalculateUCMDefault;
@@ -404,21 +402,77 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public boolean isWasRenamed( String path )    {  return renamedFiles.containsValue( path );  }
   public boolean isNewOverRenamed( String path ){  return containsNew( path ) && isWasRenamed( path );  }
   public void    removeFolderFromDeleted( @NotNull String path ){
-    HashSet<String> folders = isFolderRemoved( path ) ? removedFolders : deletedFolders;
-    folders.remove( path );
+    Set<String> folders = isFolderRemoved( path ) ? removedFolders : deletedFolders;
+    folders.remove(path);
   }
 
-  public void add2NewFile( VirtualFile file )   {  newFiles.add( file );       }
-  public void deleteNewFile( VirtualFile file ) {  newFiles.remove( file );    }
+  public void add2NewFiles(final Collection<VirtualFile> files) throws VcsException {
+    final FilterDescendantVirtualFileConvertible<VirtualFile> filterDescendantVirtualFileConvertible =
+      new FilterDescendantVirtualFileConvertible<VirtualFile>(Convertor.SELF, FilePathComparator.getInstance());
+    final ArrayList<VirtualFile> highLevel = new ArrayList<VirtualFile>(files);
+    filterDescendantVirtualFileConvertible.doFilter(highLevel);
+    for (VirtualFile file : highLevel) {
+      add2NewFile(file);
+    }
+    newFiles.addAll(files);
+  }
+
+  public void add2NewFile( VirtualFile file ) throws VcsException {
+    addWithParents(file);
+  }
+
+  private void addWithParents(VirtualFile file) throws VcsException {
+    final VcsDirtyScopeManager vcsDirtyScopeManager = VcsDirtyScopeManager.getInstance(myProject);
+    VirtualFile current = file;
+    final VirtualFile vcsRootFor = ProjectLevelVcsManager.getInstance(myProject).getVcsRootFor(file);
+    if (vcsRootFor == null) {
+      throw new VcsException("Can not find VCS root for " + file.getPath());
+    }
+    while (current != null) {
+      if (newFiles.contains(current)) return;
+      final Status status = getStatus(current);
+      if (Status.NOT_AN_ELEMENT.equals(status)) {
+        newFiles.add(current);
+        if (current.isDirectory()) {
+          vcsDirtyScopeManager.dirDirtyRecursively(current);
+        }
+      } else {
+        return;
+      }
+      if (current.equals(vcsRootFor)) return;
+      current = current.getParent();
+    }
+  }
+
+  public Set<VirtualFile> getUnversioned(final File under) {
+    final LocalFileSystem lfs = LocalFileSystem.getInstance();
+    final VirtualFile base = lfs.refreshAndFindFileByIoFile(under);
+    if (base == null) Collections.emptySet();
+
+    final Set<String> unversioned = clearcase.getUnversioned(under);
+    if (unversioned.isEmpty()) return Collections.emptySet();
+    final Set<VirtualFile> result = new HashSet<VirtualFile>();
+    for (String s : unversioned) {
+      final VirtualFile relativeFile = VfsUtil.findRelativeFile(s, base);
+      if (relativeFile != null) {
+        result.add(relativeFile);
+      }
+    }
+    return result;
+  }
+
+  public void deleteNewFile( VirtualFile file ) {
+    newFiles.remove( file );
+  }
   public boolean containsNew( VirtualFile file ){  return newFiles.contains( file );   }
   public boolean containsNew( String path )
   {
-    VirtualFile file = VcsUtil.getVirtualFile( path );
+    VirtualFile file = VcsUtil.getVirtualFile(new File(path) );
     return file != null && newFiles.contains( file );   
   }
 
   public boolean containsModified( VirtualFile file ) {  return modifiedFiles.contains( file ); }
-  public void    add2ModifiedFile( VirtualFile file ) {  modifiedFiles.add( file ); }
+  public void    add2ModifiedFile( VirtualFile file ) {  modifiedFiles.add(file); }
   public void    clearModifiedList()                  {  modifiedFiles.clear();     }
   public boolean containsModified( String path )
   {
@@ -526,7 +580,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   {
     try
     {
-      getClearCase().undoCheckOut( ioFile );
+      getClearCase().undoCheckOut(ioFile);
     }
     catch( Throwable e )
     {
@@ -573,7 +627,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     try
     {
       getClearCase().add( ioFile, comment);
-      getClearCase().checkIn( ioFile, comment);
+      getClearCase().checkIn(ioFile, comment);
     }
     catch( ClearCaseException ccExc )
     {
@@ -826,13 +880,13 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     return error;
   }
 
-  public Status  getFileStatus( VirtualFile file ) {  return getFileStatus( new File(file.getPresentableUrl() ));  }
+  public Status  getFileStatus( VirtualFile file ) {  return getFileStatus(new File(file.getPresentableUrl()));  }
   public Status  getFileStatus( File file )        {  return getClearCase().getStatus( file );  }
 
   public static CheckedOutStatus getCheckedOutStatus( File file )
   {
     @NonNls Runner runner = new Runner();
-    runner.run( new String[] { CLEARTOOL_CMD, "lscheckout", "-fmt", "%Rf", "-directory", file.getAbsolutePath() }, true );
+    runner.run(new String[]{CLEARTOOL_CMD, "lscheckout", "-fmt", "%Rf", "-directory", file.getAbsolutePath()}, true);
 
     if (!runner.isSuccessfull())
       return CheckedOutStatus.NOT_CHECKED_OUT;
@@ -849,7 +903,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public static String getCheckoutComment(File file)
   {
     @NonNls Runner runner = new Runner();
-    runner.run( new String[] { CLEARTOOL_CMD, "lscheckout", "-fmt", "%c", "-directory", file.getAbsolutePath() }, true );
+    runner.run(new String[]{CLEARTOOL_CMD, "lscheckout", "-fmt", "%c", "-directory", file.getAbsolutePath()}, true);
 
     String output = runner.getOutput();
 
@@ -865,7 +919,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public static void cleartool(@NonNls String... subcmd) throws ClearCaseException
   {
     String[] cmd = Runner.getCommand( CLEARTOOL_CMD, subcmd );
-    LOG.debug( "|" + Runner.getCommandLine( cmd ) );
+    LOG.debug("|" + Runner.getCommandLine(cmd));
 
     try { Runner.runAsynchronously( cmd ); }
     catch (IOException e) {  throw new ClearCaseException(e.getMessage());  }
@@ -887,7 +941,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public static String cleartoolWithOutput(@NonNls String... subcmd)
   {
     Runner runner = new Runner();
-    runner.run( Runner.getCommand( CLEARTOOL_CMD, subcmd ), true );
+    runner.run(Runner.getCommand(CLEARTOOL_CMD, subcmd), true);
     return runner.getOutput();
   }
 
@@ -895,7 +949,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   {
     Runner runner = new Runner();
     runner.workingDir = path;
-    runner.run( Runner.getCommand( CLEARTOOL_CMD, subcmd ), true );
+    runner.run(Runner.getCommand(CLEARTOOL_CMD, subcmd), true);
     return runner.getOutput();
   }
 
@@ -903,7 +957,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   {
     VcsException vcsE = new VcsException( e );
     vcsE.setVirtualFile( file );
-    errors.add( vcsE );
+    errors.add(vcsE);
   }
 
   private static void handleException( Throwable e, File file, List<VcsException> errors )
@@ -955,7 +1009,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     readRenamedElements( element, renamedFolders, PERSISTENCY_RENAMED_FOLDER_TAG, true );
   }
 
-  private static void convertStringSet2VFileSet( final HashSet<String> set, HashSet<VirtualFile> vSet )
+  private static void convertStringSet2VFileSet( final Set<String> set, Set<VirtualFile> vSet )
   {
     vSet.clear();
     for( String path : set ){
@@ -964,7 +1018,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     }
   }
 
-  private static void readElements( final Element element, HashSet<String> list, String tag, boolean isExist )
+  private static void readElements( final Element element, Set<String> list, String tag, boolean isExist )
   {
     List files = element.getChildren( tag );
     for (Object cclObj : files)
@@ -981,7 +1035,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     }
   }
 
-  public static void readRenamedElements( final Element element, HashMap<String, String> list,
+  public static void readRenamedElements( final Element element, Map<String, String> list,
                                           String tag, boolean isExist )
   {
     List files = element.getChildren( tag );
@@ -1033,12 +1087,12 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     writePairedElement( element, renamedFolders, PERSISTENCY_RENAMED_FOLDER_TAG );
   }
 
-  private static void writeElement( final Element element, HashSet<String> files, String tag )
+  private static void writeElement( final Element element, Set<String> files, String tag )
   {
     //  Sort elements of the list so that there is no perturbation in .ipr/.iml
     //  files in the case when no data has changed.
     String[] sorted = ArrayUtil.toStringArray(files);
-    Arrays.sort( sorted );
+    Arrays.sort(sorted);
 
     for( String file : sorted )
     {
@@ -1048,7 +1102,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     }
   }
 
-  public static void writePairedElement( final Element element, HashMap<String, String> files, String tag )
+  public static void writePairedElement( final Element element, Map<String, String> files, String tag )
   {
     for( String file : files.keySet() )
     {
@@ -1072,5 +1126,13 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   @Override
   public boolean areDirectoriesVersionedItems() {
     return true;
+  }
+
+  public void reportAdded(final VirtualFile dir, final Collection<VirtualFile> addTo) {
+    for (VirtualFile newFile : newFiles) {
+      if (newFile != null && newFile.isValid() && VfsUtil.isAncestor(dir,  newFile, false)) {
+        addTo.add(newFile);
+      }
+    }
   }
 }

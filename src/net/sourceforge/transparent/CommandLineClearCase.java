@@ -10,7 +10,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 public class CommandLineClearCase implements ClearCase
 {
@@ -181,15 +184,39 @@ public class CommandLineClearCase implements ClearCase
 
   public boolean isCheckedOut(File file) {  return getStatus(file) == Status.CHECKED_OUT;  }
 
+  public Set<String> getUnversioned(final File file) {
+    String fileName = VcsUtil.getCanonicalPath( file );
+
+    Runner runner = cleartool( new String[] { "ls", "-recurse", "-view_only", fileName }, true );
+    String output = runner.getOutput();
+    if( !runner.isSuccessfull() )
+      throw new ClearCaseException( output == null ? "" : output);
+    if( output == null ) return Collections.emptySet();
+    final String[] lines = StringUtil.splitByLines(output);
+    final Set<String> result = new HashSet<String>();
+    for (String line : lines) {
+      final Status status = parseLine(line);
+      if (Status.NOT_AN_ELEMENT.equals(status)) {
+        result.add(line);
+      }
+    }
+    return result;
+  }
+
   public Status getStatus( File file )
   {
     String fileName = VcsUtil.getCanonicalPath( file );
 
     Runner runner = cleartool( new String[] { "ls", "-directory", fileName }, true );
     String output = runner.getOutput();
+    if( !runner.isSuccessfull() )
+      throw new ClearCaseException( output == null ? "" : output);
     if( output == null )
       output = "";
+    return parseLine(output);
+  }
 
+  private Status parseLine(String output) {
     //  Check message "Pathname is not withing a VOB:..." first because it comes
     //  along with Failure exit code for cleartool command, and we may return
     //  with ClearCaseException without giving useful information.
@@ -203,9 +230,6 @@ public class CommandLineClearCase implements ClearCase
     //      potential failure in synching VirtualFile via VFS?
     if( output.indexOf( UNABLE_TO_ACCESS ) != -1 && output.indexOf( NO_SUCH_FILE_OR_DIR ) != -1 )
       return Status.NOT_AN_ELEMENT;
-
-    if( !runner.isSuccessfull() )
-      throw new ClearCaseException( output );
 
     if( output.indexOf( VERSIONED_SIG ) == -1 )
       return Status.NOT_AN_ELEMENT;

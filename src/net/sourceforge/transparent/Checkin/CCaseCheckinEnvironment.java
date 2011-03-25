@@ -282,10 +282,10 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
       if( VcsUtil.isChangeForNew( change ) )
       {
         FilePath filePath = change.getAfterRevision().getFile();
-        if( filePath.isDirectory() )
+        if( filePath.isDirectory() ) {
           folders.add( filePath );
-        else
-        {
+          analyzeParent( filePath, folders );
+        } else {
           files.add( filePath );
           analyzeParent( filePath, folders );
         }
@@ -514,21 +514,18 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
 
   public List<VcsException> scheduleUnversionedFilesForAddition( List<VirtualFile> files )
   {
-    for( VirtualFile file : files )
-    {
-      host.add2NewFile( file );
-      VcsUtil.markFileAsDirty( project, file );
-
-      //  Extend status change to all parent folders if they are not
-      //  included into the context of the menu action.
-      extendStatus( file );
-    }
-    // Keep intentionally empty.
-    return new ArrayList<VcsException>();
+    final ArrayList<VcsException> vcsExceptions = new ArrayList<VcsException>();
+      try {
+        host.add2NewFiles(files);
+      }
+      catch (VcsException e) {
+        vcsExceptions.add(e);
+      }
+    VcsDirtyScopeManager.getInstance(project).filesDirty(files, null);
+    return vcsExceptions;
   }
 
-  private void extendStatus( VirtualFile file )
-  {
+  private void extendStatus( VirtualFile file ) throws VcsException {
     FileStatusManager mgr = FileStatusManager.getInstance( project );
     VirtualFile parent = file.getParent();
 

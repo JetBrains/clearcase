@@ -6,13 +6,14 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.*;
-import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.actions.VcsContextFactory;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
+import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.*;
 import com.intellij.vcsUtil.VcsUtil;
 import org.jetbrains.annotations.NonNls;
 
+import java.io.File;
 import java.util.*;
 
 /**
@@ -26,10 +27,12 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
   private int commandLevel;
   private final List<VirtualFile> filesAdded = new ArrayList<VirtualFile>();
   private final List<FilePath> filesDeleted = new ArrayList<FilePath>();
+  private final ChangeListManager myChangeListManager;
 
   public VFSListener(Project project) {
     this.project = project;
     host = TransparentVcs.getInstance(project);
+    myChangeListManager = ChangeListManager.getInstance(this.project);
   }
 
   public void fileCreated(VirtualFileEvent event) {
@@ -40,16 +43,11 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
     if (!VcsUtil.isFileForVcs(file, project, host)) {
       return;
     }
-
     //  In the case when the project content is synchronized over the
     //  occasionally removed files.
     //  NB: These structures must be updated even in the case of refresh events
     //      (lines below).
-    String path = file.getPath();
-    host.removedFiles.remove(path);
-    host.removedFolders.remove(path);
-    host.deletedFiles.remove(path);
-    host.deletedFolders.remove(path);
+    removeFromOldLists(file);
 
     if (event.isFromRefresh()) return;
 
@@ -59,11 +57,52 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
       //  will be marked as unknown automatically.
       VirtualFile parent = file.getParent();
       if (parent != null) {
-        FileStatus status = ChangeListManager.getInstance(project).getStatus(parent);
+        FileStatus status = myChangeListManager.getStatus(parent);
         if (status != FileStatus.UNKNOWN) {
           filesAdded.add(file);
         }
       }
+    }
+  }
+
+  private void removeFromOldLists(final VirtualFile file) {
+    String path = file.getPath();
+    host.removedFiles.remove(path);
+    host.removedFolders.remove(path);
+    host.deletedFiles.remove(path);
+    host.deletedFolders.remove(path);
+  }
+
+  private void toBeCreated(VirtualFileEvent event, VirtualFile newFile) {
+    //  In the case when the project content is synchronized over the
+    //  occasionally removed files.
+    //  NB: These structures must be updated even in the case of refresh events
+    //      (lines below).
+    final LinkedList<VirtualFile> queue = new LinkedList<VirtualFile>();
+    queue.add(newFile);
+
+    while (! queue.isEmpty()) {
+      final VirtualFile file = queue.removeFirst();
+      removeFromOldLists(file);
+
+      if (! event.isFromRefresh()) {
+        if (isFileProcessable(file)) {
+          if (file.equals(newFile)) {
+            final VirtualFile parent = file.getParent();
+            if (parent != null && isVersioned(parent)) {
+              filesAdded.add(file);
+            } else {
+              return; // do not add children
+            }
+          } else {
+            filesAdded.add(file);
+          }
+        } else {
+          return; // ignored recursively
+        }
+      }
+
+      queue.addAll(Arrays.asList(file.getChildren()));
     }
   }
 
@@ -74,18 +113,39 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
   }
 
   private void performDeleteFile(final VirtualFile file) {
-    //  Do not ask anything if file is not versioned yet
-    FileStatus status = FileStatusManager.getInstance(project).getStatus(file);
-    if (status == FileStatus.UNKNOWN || status == FileStatus.IGNORED) {
+    final LinkedList<VirtualFile> queue = new LinkedList<VirtualFile>();
+    queue.add(file);
+    while (! queue.isEmpty()) {
+      final VirtualFile current = queue.removeFirst();
+      host.deleteNewFile(current);
+      queue.addAll(Arrays.asList(current.getChildren()));
+    }
+    final Status status = host.getStatus(file);
+    if (Status.NOT_AN_ELEMENT.equals(status)) return;
+    if (isFileProcessable(file)) {
+      FilePath path = VcsContextFactory.SERVICE.getInstance().createFilePathOnDeleted(new File(file.getPath()), file.isDirectory());
+      filesDeleted.add(path);
+    }
+  }
+
+  @Override
+  public void fileMoved(VirtualFileMoveEvent event) {
+    super.fileMoved(event);
+    if (isIgnoredEvent(event)) {
       return;
     }
 
-    if (status == FileStatus.ADDED) {
-      host.deleteNewFile(file);
+    final VirtualFile file = event.getFile();
+    if (file.getParent() != null && ! wasMovedRenamed(file)) {
+      toBeCreated(event, file);
     }
-    else if (isFileProcessable(file)) {
-      FilePath path = VcsContextFactory.SERVICE.getInstance().createFilePathOn(file);
-      filesDeleted.add(path);
+  }
+
+  private boolean wasMovedRenamed(final VirtualFile file) {
+    if (file.isDirectory()) {
+      return host.renamedFolders.containsValue(file.getPath());
+    } else {
+      return host.renamedFiles.containsValue(file.getPath());
     }
   }
 
@@ -101,7 +161,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
     //  If the file is moved into Vss-versioned module, then it is a simple
     //  movement. Otherwise (move into non-versioned module), mark it
     //  "for removal" in the current, versioned module.
-    if (VcsUtil.isFileForVcs(newName, project, host)) {
+    if (VcsUtil.isFileForVcs(newName, project, host) && isExistingVersioned(file) && isVersioned(event.getNewParent())) {
       storeRenameOrMoveInfo(file.isDirectory() ? host.renamedFolders : host.renamedFiles, oldName, newName);
 
       //  Clear the cache of the content revisions for this file.
@@ -112,6 +172,14 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
     else {
       performDeleteFile(file);
     }
+  }
+
+  private boolean isExistingVersioned(final VirtualFile file) {
+    return (! Status.NOT_AN_ELEMENT.equals(host.getStatus(file)));
+  }
+
+  private boolean isVersioned(final VirtualFile file) {
+    return host.containsNew(file) || (! Status.NOT_AN_ELEMENT.equals(host.getStatus(file)));
   }
 
   public void beforePropertyChange(VirtualFilePropertyEvent event) {
@@ -152,7 +220,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
     }
   }
 
-  private static void storeRenameOrMoveInfo(HashMap<String, String> store, String oldName, String newName) {
+  private static void storeRenameOrMoveInfo(Map<String, String> store, String oldName, String newName) {
     //  Newer name must refer to the oldest name in the chain of renamings
     String prevName = store.get(oldName);
     if (prevName == null) {
@@ -215,20 +283,49 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
         }
 
         if (!filesAdded.isEmpty()) {
-          executeAdd();
+          try {
+            executeAdd();
+          }
+          catch (VcsException e) {
+            AbstractVcsHelper.getInstance(project).showError(e,  "Add File failure");
+          }
         }
 
         if (!filesDeleted.isEmpty()) {
           executeDelete();
         }
 
+        reportDirty();
         filesAdded.clear();
         filesDeleted.clear();
       }
     }
   }
 
-  private void executeAdd() {
+  private void reportDirty() {
+    final Set<VirtualFile> files = new HashSet<VirtualFile>();
+    final Set<VirtualFile> dirs = new HashSet<VirtualFile>();
+    for (VirtualFile virtualFile : filesAdded) {
+      if (virtualFile.isDirectory()) {
+        dirs.add(virtualFile);
+      } else {
+        files.add(virtualFile);
+      }
+    }
+    /*for (FilePath path : filesDeleted) {
+      final VirtualFile parent = path.getVirtualFileParent();
+      if (parent != null) {
+        if (parent.isDirectory()) {
+          dirs.add(parent);
+        } else {
+          files.add(parent);
+        }
+      }
+    }*/
+    VcsDirtyScopeManager.getInstance(project).filesDirty(files, dirs);
+  }
+
+  private void executeAdd() throws VcsException {
     @NonNls final String TITLE = "Add file(s)";
     @NonNls final String MESSAGE = "Do you want to schedule the following file for addition to ClearCase?\n{0}";
 
@@ -251,7 +348,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
     }
   }
 
-  private void performAdding(Collection<VirtualFile> files) {
+  private void performAdding(Collection<VirtualFile> files) throws VcsException {
     for (VirtualFile file : files) {
       String path = file.getPath();
 
@@ -296,7 +393,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
     }
   }
 
-  private void markFileRemoval(final Collection<FilePath> paths, HashSet<String> folders, HashSet<String> files) {
+  private void markFileRemoval(final Collection<FilePath> paths, Set<String> folders, Set<String> files) {
     final ArrayList<FilePath> allpaths = new ArrayList<FilePath>(paths);
     for (FilePath fpath : allpaths) {
       String path = fpath.getPath();
@@ -326,7 +423,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
     removeRecordFrom(host.deletedFolders, path);
   }
 
-  private static void removeRecordFrom(HashSet<String> set, String path) {
+  private static void removeRecordFrom(Set<String> set, String path) {
     for (Iterator<String> it = set.iterator(); it.hasNext();) {
       String strFile = it.next();
       if (strFile.startsWith(path)) {
@@ -335,7 +432,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
     }
   }
 
-  private static boolean isUnderDeletedFolder(HashSet<String> folders, String path) {
+  private static boolean isUnderDeletedFolder(Set<String> folders, String path) {
     for (String folder : folders) {
       if (path.toLowerCase().startsWith(folder.toLowerCase())) {
         return true;

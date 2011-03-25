@@ -6,6 +6,7 @@
 package net.sourceforge.transparent;
 
 import java.io.File;
+import java.util.Set;
 
 // Referenced classes of package net.sourceforge.transparent:
 //            Status, CheckedOutStatus
@@ -28,4 +29,6 @@ public interface ClearCase
     void cleartool(String s);
     CheckedOutStatus getCheckedOutStatus(File file);
     String getCheckoutComment(File file);
+
+    Set<String> getUnversioned(final File file);
 }
