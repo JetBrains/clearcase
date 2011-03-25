@@ -17,7 +17,11 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsKey;
 import com.intellij.openapi.vcs.changes.committed.AbstractCalledLater;
 import com.intellij.openapi.vcs.update.*;
+import com.intellij.openapi.vfs.VfsUtil;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.Processor;
 import com.intellij.vcsUtil.VcsUtil;
+import net.sourceforge.transparent.ChangeManagement.CCaseChangeProvider;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -56,6 +60,18 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
   public UpdateSession updateDirectories(@NotNull FilePath[] contentRoots, UpdatedFiles updatedFiles, ProgressIndicator progressIndicator,
                                          @NotNull final Ref<SequentialUpdatesContext> context) throws ProcessCanceledException
   {
+    for (FilePath contentRoot : contentRoots) {
+      final VirtualFile vf = contentRoot.getVirtualFile();
+      if (vf != null) {
+        VfsUtil.processFilesRecursively(vf, new Processor<VirtualFile>() {
+          @Override
+          public boolean process(VirtualFile virtualFile) {
+            virtualFile.putUserData(CCaseChangeProvider.ourVersionedKey, null);
+            return true;
+          }
+        });
+      }
+    }
     final ArrayList<VcsException> errors = new ArrayList<VcsException>();
 
     progressIndicator.setText(PROGRESS_TEXT);

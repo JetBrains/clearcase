@@ -8,6 +8,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.*;
@@ -33,8 +34,8 @@ import static net.sourceforge.transparent.TransparentVcs.SUCCESSFUL_CHECKOUT;
  * User: lloix
  * Date: Dec 6, 2006
  */
-public class CCaseChangeProvider implements ChangeProvider
-{
+public class CCaseChangeProvider implements ChangeProvider {
+  public static final Key<Object> ourVersionedKey = new Key<Object>("CCASE_VERSIONED");
   @NonNls private final static String REMINDER_TITLE = "Reminder";
   @NonNls private final static String REMINDER_TEXT = "Project started with ClearCase configured to be in the Offline mode.";
 
@@ -101,6 +102,7 @@ public class CCaseChangeProvider implements ChangeProvider
 
   public void getChanges(final VcsDirtyScope dirtyScope, final ChangelistBuilder builder, final ProgressIndicator progressIndicator,
                          final ChangeListManagerGate addGate) throws VcsException {
+    myDirs.clear();
     //-------------------------------------------------------------------------
     //  Protect ourselves from the calls which come during the unsafe project
     //  phases like unload or reload.
@@ -201,6 +203,9 @@ public class CCaseChangeProvider implements ChangeProvider
       final Status status = host.getStatus(dir);
       if (Status.NOT_AN_ELEMENT.equals(status)) {
         filesNew.add(dir.getPath());
+        dir.putUserData(ourVersionedKey, null);
+      } else {
+        dir.putUserData(ourVersionedKey, Boolean.TRUE);
       }
     }
   }
@@ -350,7 +355,7 @@ public class CCaseChangeProvider implements ChangeProvider
                 filesIgnored.add( path );
               else
                 filesWritable.add( path );
-            } else if ((vFile != null) && vFile.isDirectory()) {
+            } else if ((vFile != null) && vFile.isDirectory() && ! Boolean.TRUE.equals(vFile.getUserData(ourVersionedKey))) {
               myDirs.add(vFile);
             }
             return true;
