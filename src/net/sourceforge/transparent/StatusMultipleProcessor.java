@@ -21,6 +21,7 @@ public class StatusMultipleProcessor
   @NonNls private static final String VERSIONED_SIG = "@@";
   @NonNls private static final String HIJACKED_SIG = "[hijacked]";
   @NonNls private static final String CHECKEDOUT_SIG = "Rule: CHECKEDOUT";
+  @NonNls private static final String LOCALLY_DELETED = "[loaded but missing]";
   @NonNls private final static String CHECKEDOUT_REMOVED_SIG = "checkedout but removed";
 
   @NonNls private final static String WARNING_TO_SKIP_SIG = "Warning: "; 
@@ -29,6 +30,7 @@ public class StatusMultipleProcessor
 
   private final String[] files;
 
+  private HashSet<String> locallyDeleted;
   private HashSet<String> deletedFiles;
   private HashSet<String> nonexistingFiles;
   private HashSet<String> checkoutFiles;
@@ -39,6 +41,7 @@ public class StatusMultipleProcessor
     files = ArrayUtil.toStringArray(paths);
   }
 
+  public boolean isLocallyDeleted  ( String file )  {  return locallyDeleted.contains( file.toLowerCase() );  }
   public boolean isDeleted  ( String file )  {  return deletedFiles.contains( file.toLowerCase() );  }
   public boolean isNonexist ( String file )  {  return nonexistingFiles.contains( file.toLowerCase() );  }
   public boolean isCheckedout( String file ) {  return checkoutFiles.contains( file.toLowerCase() );  }
@@ -50,6 +53,7 @@ public class StatusMultipleProcessor
     nonexistingFiles = new HashSet<String>();
     checkoutFiles = new HashSet<String>();
     hijackedFiles = new HashSet<String>();
+    locallyDeleted = new HashSet<String>();
 
     int currFileIndex = 0;
     int batchStartIndex = 0;
@@ -104,21 +108,24 @@ public class StatusMultipleProcessor
     {
       if( line.indexOf( WARNING_TO_SKIP_SIG ) == -1 )
       {
-        if( line.indexOf( VERSIONED_SIG ) == -1) {
-          nonexistingFiles.add( files[ startIndex + shiftIndex ].toLowerCase() );
-        }
-        else
-        if( line.indexOf( CHECKEDOUT_SIG ) != -1 || line.indexOf( CHECKEDOUT_REMOVED_SIG ) != -1) {
-          checkoutFiles.add( files[ startIndex + shiftIndex ].toLowerCase() );
-        }
-        else
-        if( line.indexOf( HIJACKED_SIG ) != -1 )
-          hijackedFiles.add( files[ startIndex + shiftIndex ].toLowerCase() );
+        final int versIdx = line.indexOf(VERSIONED_SIG);
+        if( versIdx == -1) {
+          nonexistingFiles.add(line.toLowerCase().replace('\\', '/'));
+        } else if( line.indexOf( CHECKEDOUT_SIG ) != -1 || line.indexOf( CHECKEDOUT_REMOVED_SIG ) != -1) {
+          checkoutFiles.add(filePathFromLine(line, versIdx));
+        } else if (line.indexOf(LOCALLY_DELETED) != -1) {
+          locallyDeleted.add(filePathFromLine(line, versIdx));
+        } else if( line.indexOf( HIJACKED_SIG ) != -1 )
+          hijackedFiles.add(filePathFromLine(line, versIdx));
 
         //  inc it only in the case of "known" line format. Assume that information
         //  about files is printed in the order of input parameters (silly?).
         shiftIndex++;
       }
     }
+  }
+
+  private String filePathFromLine(String line, int versIdx) {
+    return line.substring(0, versIdx).toLowerCase().replace('\\', '/');
   }
 }

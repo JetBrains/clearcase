@@ -11,6 +11,7 @@ import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.*;
 import com.intellij.vcsUtil.VcsUtil;
+import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
 
 import java.io.File;
@@ -107,8 +108,13 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
   }
 
   public void beforeFileDeletion(VirtualFileEvent event) {
-    if (!isIgnoredEvent(event)) {
-      performDeleteFile(event.getFile());
+    try {
+      if (!isIgnoredEvent(event)) {
+        performDeleteFile(event.getFile());
+      }
+    }
+    catch (ClearCaseException e) {
+      AbstractVcsHelper.getInstance(project).showError(new VcsException(e), "File deletion");
     }
   }
 
@@ -139,6 +145,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
     if (file.getParent() != null && ! wasMovedRenamed(file)) {
       toBeCreated(event, file);
     }
+    VcsDirtyScopeManager.getInstance(project).dirDirtyRecursively(event.getFile());
   }
 
   private boolean wasMovedRenamed(final VirtualFile file) {

@@ -85,6 +85,7 @@ public class CCaseChangeProvider implements ChangeProvider {
   private final HashSet<String> filesHijacked = new HashSet<String>();
   private final HashSet<String> filesIgnored = new HashSet<String>();
   private final HashSet<String> filesMerge = new HashSet<String>();
+  private final HashSet<String> filesLocallyDeleted = new HashSet<String>();
   private final ChangeListManager myChangeListManager;
   private Set<VirtualFile> myDirs;
 
@@ -161,6 +162,7 @@ public class CCaseChangeProvider implements ChangeProvider {
         setActivityInfoOnChangedFiles();
 
       getUnversioned();
+      addLocallyDeletedFiles(builder);
       addAddedFiles( builder );
       addChangedFiles( builder );
       addRemovedFiles( builder );
@@ -203,6 +205,7 @@ public class CCaseChangeProvider implements ChangeProvider {
 
   private void getUnversioned() {
     for (VirtualFile dir : myDirs) {
+      if (host.renamedFolders.containsKey(dir.getPath())) continue;
       final Status status = host.getStatus(dir);
       if (Status.NOT_AN_ELEMENT.equals(status)) {
         filesNew.add(dir.getPath());
@@ -350,14 +353,14 @@ public class CCaseChangeProvider implements ChangeProvider {
         {
           public boolean process(final FilePath file)
           {
-            String path = file.getPath();
+            String path = file.getPath().replace('\\', '/');
             VirtualFile vFile = file.getVirtualFile();
             if( isValidFile( vFile ) )
             {
               if( host.isFileIgnored( vFile ) )
-                filesIgnored.add( path );
+                filesIgnored.add(path);
               else
-                filesWritable.add( path );
+                filesWritable.add(path);
             } else if ((vFile != null) && vFile.isDirectory() && ! Boolean.TRUE.equals(vFile.getUserData(ourVersionedKey)) &&
                 (! host.renamedFolders.containsKey(vFile.getPath()))) {
               myDirs.add(vFile);
@@ -411,8 +414,8 @@ public class CCaseChangeProvider implements ChangeProvider {
     List<String> refNames = new ArrayList<String>();
     for( String file : writableFiles )
     {
-      String legalName = discoverOldName( file );
-      refNames.add( legalName );
+      String legalName = discoverOldName(file).replace('\\', '/');
+      refNames.add(legalName);
     }
 
     LOG.debug( "ChangeProvider - Analyzing writables in batch mode using CLEARTOOL on " + writables.size() + " files." );
@@ -422,16 +425,28 @@ public class CCaseChangeProvider implements ChangeProvider {
     processor.execute();
     LOG.debug( "ChangeProvider - \"CLEARTOOL LS\" batch command finished." );
 
-    for( int i = 0; i < writableFiles.size(); i++ )
-    {
-      if( processor.isNonexist( refNames.get( i ) ))
+    for( int i = 0; i < writableFiles.size(); i++ ) {
+      if( processor.isNonexist( refNames.get( i ) )) {
         newFiles.add( writableFiles.get( i ) );
-      else
-      if( processor.isCheckedout( refNames.get( i ) ))
-        filesChanged.add( writableFiles.get( i ) );
-      else
-      if( processor.isHijacked( refNames.get( i ) ))
-        filesHijacked.add( writableFiles.get( i ) );
+      } else {
+        final String file = refNames.get(i);
+        if( processor.isCheckedout(file)) {
+          filesChanged.add( writableFiles.get( i ) );
+        } else if( processor.isHijacked( file )) {
+          filesHijacked.add( writableFiles.get( i ) );
+        } else if (processor.isLocallyDeleted(file)) {
+          if (! host.renamedFiles.containsKey(file)) {
+            final String renamedFolder = getUnderRenamedFolder(file);
+            if (renamedFolder != null && ! renamedFolder.equals(file)) {
+              host.renamedFiles.put(writableFiles.get(i), file);
+              filesChanged.add(writableFiles.get(i));
+              continue;
+            }
+
+            filesLocallyDeleted.add(file);
+          }
+        }
+      }
     }
 
     if( isBatchUpdate )
@@ -557,6 +572,13 @@ public class CCaseChangeProvider implements ChangeProvider {
     }
   }
 
+  private void addLocallyDeletedFiles(final ChangelistBuilder builder) {
+    for (String file : filesLocallyDeleted) {
+      FilePath path = VcsUtil.getFilePath(file);
+      builder.processLocallyDeletedFile(path);
+    }
+  }
+
   /**
    * File is either:
    * - "new" - it is not contained in the repository, but host contains
@@ -654,7 +676,7 @@ public class CCaseChangeProvider implements ChangeProvider {
   private void addChangedFiles( final ChangelistBuilder builder )
   {
     filesChanged.removeAll(host.renamedFolders.keySet());
-    filesChanged.removeAll(host.renamedFiles.keySet());
+    //filesChanged.removeAll(host.renamedFiles.keySet());
 
     for( String fileName : filesChanged )
     {
@@ -807,14 +829,12 @@ public class CCaseChangeProvider implements ChangeProvider {
   
   private String discoverOldName( String file )
   {
-    String canonicName = VcsUtil.getCanonicalLocalPath( file );
-    String oldName = host.renamedFiles.get( canonicName );
-    if( oldName == null )
-    {
-      oldName = host.renamedFolders.get( canonicName );
-      if( oldName == null )
-      {
-        oldName = findInRenamedParentFolder( file );
+    String canonicName = VcsUtil.getCanonicalLocalPath(file);
+    String oldName = host.renamedFiles.get(canonicName);
+    if( oldName == null ) {
+      oldName = host.renamedFolders.get(canonicName);
+      if(oldName == null) {
+        oldName = findInRenamedParentFolder(file);
         if( oldName == null )
           oldName = file;
         else
@@ -846,14 +866,18 @@ public class CCaseChangeProvider implements ChangeProvider {
     return fileInOldFolder;
   }
 
-  private boolean isUnderRenamedFolder( String fileName )
-  {
+  private boolean isUnderRenamedFolder( String fileName ) {
+    return getUnderRenamedFolder(fileName) != null;
+  }
+
+  @Nullable
+  private String getUnderRenamedFolder(String fileName) {
     for( String folder : host.renamedFolders.keySet() )
     {
       if( fileName.startsWith( folder ) )
-        return true;
+        return folder;
     }
-    return false;
+    return null;
   }
 
   /*
