@@ -11,7 +11,10 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.openapi.vcs.*;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.FileStatus;
+import com.intellij.openapi.vcs.ProjectLevelVcsManager;
+import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.Processor;
@@ -402,7 +405,6 @@ public class CCaseChangeProvider implements ChangeProvider {
     //  2. Guess file status given its previous file status.
     //-------------------------------------------------------------------------
     List<String> writableFiles = filterOutMarkedFiles( writables );
-    writableFiles = filterOutGuessedFiles( writableFiles );
 
     //-------------------------------------------------------------------------
     List<String> refNames = new ArrayList<String>();
@@ -478,52 +480,6 @@ public class CCaseChangeProvider implements ChangeProvider {
       else
       {
         files.add( path );
-      }
-    }
-    return files;
-  }
-
-  /**
-   * Trying to guess the new file status out of its previous one. During
-   * these simple steps use the following heuristics:
-   * - if the file has previously the status "MODIFIED: since it passed the
-   *   "isProperNotification" predicate then it is not a deleted file; thus
-   *   the only possible current status is again "MODIFIED".
-   * - if the file has previously the status "ADDED" or "UNVERSIONED": it can
-   *   keep the same status, or follow "ADDED"->"UNVERTIONED" or
-   *   "UNVERSIONED"->"ADDED" pathway; since we do not support "keep checked out
-   *   after checkin" then it cannot get status "MODIFIED". Since the distinction
-   *   between "ADDED" or "UNVERSIONED" is done later, we can save this file in
-   *   "new files" list.
-   */
-  private List<String> filterOutGuessedFiles( List<String> list )
-  {
-    ArrayList<String> files = new ArrayList<String>();
-    for( String file : list )
-    {
-      boolean guessed = false;
-      VirtualFile vfile = VcsUtil.getVirtualFile( file );
-      if( vfile != null )
-      {
-        FileStatus status = FileStatusManager.getInstance( project).getStatus( vfile );
-        /*
-        if( status == FileStatus.MODIFIED )
-        {
-          filesChanged.add( file );
-          guessed = true;
-        }
-        else
-        if( status == FileStatus.ADDED || status == FileStatus.UNKNOWN )
-        {
-          filesNew.add( file );
-          guessed = true;
-        }
-        */
-      }
-      
-      if( !guessed )
-      {
-        files.add( file );
       }
     }
     return files;
