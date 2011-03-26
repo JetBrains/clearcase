@@ -30,7 +30,7 @@ import java.util.List;
  * User: lloix
  * Date: Jan 26, 2007
  */
-public class CCaseHistoryProvider implements VcsHistoryProvider , VcsCacheableHistorySessionFactory<Boolean, CCaseHistoryProvider.CCaseHistorySession> {
+public class CCaseHistoryProvider implements VcsHistoryProvider {
   @NonNls private final static String HISTORY_CMD = "lshistory";
   @NonNls private final static String LIMITED_SWITCH = "-last";
   @NonNls private final static String CCASE_DATE_COLUMN = "ClearCase Date";
@@ -245,17 +245,14 @@ public class CCaseHistoryProvider implements VcsHistoryProvider , VcsCacheableHi
     }
   }
 
-  @Override
   public FilePath getUsedFilePath(CCaseHistorySession session) {
     return null;
   }
 
-  @Override
   public Boolean getAddinionallyCachedData(CCaseHistorySession session) {
     return null;
   }
 
-  @Override
   public CCaseHistorySession createFromCachedData(@Nullable Boolean aBoolean,
                                                   @NotNull List<VcsFileRevision> revisions,
                                                   @NotNull FilePath filePath,
