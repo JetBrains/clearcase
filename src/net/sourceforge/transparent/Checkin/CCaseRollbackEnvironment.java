@@ -168,14 +168,16 @@ public class CCaseRollbackEnvironment implements RollbackEnvironment
     for( Change change : changes )
     {
       if( !VcsUtil.isChangeForNew( change ) &&
-          !VcsUtil.isChangeForDeleted( change ) &&
-          !VcsUtil.isChangeForFolder( change ) )
+          !VcsUtil.isChangeForDeleted(change))
       {
+        final boolean isRenameChange = VcsUtil.isRenameChange(change);
+        if (VcsUtil.isChangeForFolder(change) && isRenameChange) continue;
+
         FilePath filePath = change.getAfterRevision().getFile();
         String path = filePath.getPath();
         listener.accept(change);
 
-        if( VcsUtil.isRenameChange( change ) )
+        if(isRenameChange)
         {
           //  Track two different cases:
           //  - we delete the file which is already in the repository.

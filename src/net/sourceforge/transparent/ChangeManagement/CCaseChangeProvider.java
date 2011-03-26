@@ -120,7 +120,7 @@ public class CCaseChangeProvider implements ChangeProvider {
     //  content roots configured.
     if( ProjectLevelVcsManager.getInstance( project ).getDirectoryMappings( host ).size() == 0 )
       return;
-    
+
     config = host.getConfig();
     mySharedConfig = CCaseSharedConfig.getInstance(project);
     progress = progressIndicator;
@@ -139,17 +139,13 @@ public class CCaseChangeProvider implements ChangeProvider {
       //  Perform status computation only if we operate in the online mode.
       //  For offline mode just display the last valid state (for new and
       //  modified files, others are hijacked).
-      if( !config.isOffline() )
-      {
-        if( isBatchUpdate && config.synchActivitiesOnRefresh )
-        {
+      if(! config.isOffline() ) {
+        if(isBatchUpdate && config.synchActivitiesOnRefresh) {
           myViewManager.extractViewActivities();
           myViewManager.synchActivities2ChangeLists(addGate);
         }
         computeStatuses();
-      }
-      else
-      {
+      } else {
         restoreStatusesFromCached();
       }
       processStatusExceptions();
@@ -158,10 +154,12 @@ public class CCaseChangeProvider implements ChangeProvider {
       //  For an UCM view we must determine the corresponding changes list name
       //  which is associated with the "activity" of the particular view.
       //-----------------------------------------------------------------------
-      if( mySharedConfig.isUseUcmModel() )
+      if(mySharedConfig.isUseUcmModel()) {
         setActivityInfoOnChangedFiles();
+      }
 
       getUnversioned();
+      addCheckedOutFolders();
       addLocallyDeletedFiles(builder);
       addAddedFiles( builder );
       addChangedFiles( builder );
@@ -185,7 +183,7 @@ public class CCaseChangeProvider implements ChangeProvider {
       {
         message = FAIL_2_START_VIEW_MSG + excMessage;
       }
-      
+
       final String msg = message;
       LOG.info(e);
       throw new VcsException(msg);
@@ -199,7 +197,20 @@ public class CCaseChangeProvider implements ChangeProvider {
     finally
     {
       TransparentVcs.LOG.debug( "-- EndChangeProvider| New: " + filesNew.size() + ", modified: " + filesChanged.size() +
-                               ", hijacked:" + filesHijacked.size() + ", ignored: " + filesIgnored.size() );
+                                ", hijacked:" + filesHijacked.size() + ", ignored: " + filesIgnored.size() );
+    }
+  }
+
+  private void addCheckedOutFolders() {
+    final Set<String> checkedOutFolders = new HashSet<String>(host.getCheckedOutFolders());
+    for (String dir : checkedOutFolders) {
+      if (host.renamedFolders.containsKey(dir)) continue;
+      final Status status = host.getStatus(new File(dir));
+      if (Status.HIJACKED.equals(status) || Status.CHECKED_OUT.equals(status)) {
+        filesChanged.add(dir);
+      } else {
+        host.undoCheckout(dir);
+      }
     }
   }
 
@@ -212,6 +223,9 @@ public class CCaseChangeProvider implements ChangeProvider {
         dir.putUserData(ourVersionedKey, null);
       } else {
         dir.putUserData(ourVersionedKey, Boolean.TRUE);
+        if (Status.HIJACKED.equals(status) || Status.CHECKED_OUT.equals(status)) {
+          filesChanged.add(dir.getPath());
+        }
       }
     }
   }
@@ -225,8 +239,8 @@ public class CCaseChangeProvider implements ChangeProvider {
     if( isBatchUpdate && isFirstShow && config.isOffline() )
     {
       WaitForProgressToShow.runOrInvokeLaterAboveProgress(new Runnable() {
-         public void run() {  Messages.showWarningDialog( project, REMINDER_TEXT, REMINDER_TITLE );  }
-       }, null, project);
+          public void run() {  Messages.showWarningDialog( project, REMINDER_TEXT, REMINDER_TITLE );  }
+        }, null, project);
     }
   }
 
@@ -238,15 +252,15 @@ public class CCaseChangeProvider implements ChangeProvider {
     for( VirtualFile root : roots )
     {
       String out = TransparentVcs.cleartoolOnLocalPathWithOutput( root.getPath(), LIST_CHECKOUTS_CMD, CURR_USER_ONLY_SWITCH,
-                                                                                  CURR_VIEW_ONLY_SWITCH, SHORT_SWITCH, RECURSE_SWITCH );
+                                                                  CURR_VIEW_ONLY_SWITCH, SHORT_SWITCH, RECURSE_SWITCH );
       LOG.debug( out );
-      
+
       String[] lines = LineTokenizer.tokenize( out, false );
       for( String line : lines )
       {
         String fileName = root.getPath() + "/" + VcsUtil.getCanonicalLocalPath( line );
         File file = new File( fileName );
-        if( file.exists() && !file.isDirectory() )
+        if(file.exists())
         {
           try
           {
@@ -350,24 +364,24 @@ public class CCaseChangeProvider implements ChangeProvider {
     if( vf != null )
     {
       ProjectLevelVcsManager.getInstance(project).iterateVcsRoot( vf, new Processor<FilePath>()
+      {
+        public boolean process(final FilePath file)
         {
-          public boolean process(final FilePath file)
+          String path = file.getPath().replace('\\', '/');
+          VirtualFile vFile = file.getVirtualFile();
+          if( isValidFile( vFile ) )
           {
-            String path = file.getPath().replace('\\', '/');
-            VirtualFile vFile = file.getVirtualFile();
-            if( isValidFile( vFile ) )
-            {
-              if( host.isFileIgnored( vFile ) )
-                filesIgnored.add(path);
-              else
-                filesWritable.add(path);
-            } else if ((vFile != null) && vFile.isDirectory() && ! Boolean.TRUE.equals(vFile.getUserData(ourVersionedKey)) &&
-                (! host.renamedFolders.containsKey(vFile.getPath()))) {
-              myDirs.add(vFile);
-            }
-            return true;
+            if( host.isFileIgnored( vFile ) )
+              filesIgnored.add(path);
+            else
+              filesWritable.add(path);
+          } else if ((vFile != null) && vFile.isDirectory() && ! Boolean.TRUE.equals(vFile.getUserData(ourVersionedKey)) &&
+                     (! host.renamedFolders.containsKey(vFile.getPath()))) {
+            myDirs.add(vFile);
           }
-        } );
+          return true;
+        }
+      } );
     }
   }
 
@@ -530,7 +544,7 @@ public class CCaseChangeProvider implements ChangeProvider {
    * For a given file which is known to be new, check also its direct parent
    * folder for presence in the VSS repository, and then all its indirect parent
    * folders until we reach project boundaries or find the existing folder.
-  */
+   */
   private void analyzeParentFoldersForPresence( String file, List<String> newFolders,
                                                 HashSet<String> processed )
   {
@@ -541,7 +555,7 @@ public class CCaseChangeProvider implements ChangeProvider {
     if( host.fileIsUnderVcs( fileParent ) && !processed.contains( fileParent.toLowerCase() ) )
     {
       LOG.debug( "ChangeProvider - Check potentially new folder" );
-      
+
       processed.add( fileParent.toLowerCase() );
       if( !host.fileExistsInVcs( refParentName ))
       {
@@ -792,7 +806,7 @@ public class CCaseChangeProvider implements ChangeProvider {
     //  Check the case when the file is deleted - its FilePath's VirtualFile
     //  component is null and thus new name is empty.
     return newParent.equals( oldParent ) &&
-          ( newName.equals( oldName ) || (StringUtil.isEmpty( newName ) && StringUtil.isEmpty( oldName ) ) );
+           ( newName.equals( oldName ) || (StringUtil.isEmpty( newName ) && StringUtil.isEmpty( oldName ) ) );
   }
 
   private void initInternals()
@@ -826,7 +840,7 @@ public class CCaseChangeProvider implements ChangeProvider {
     }
     return isBatch;
   }
-  
+
   private String discoverOldName( String file )
   {
     String canonicName = VcsUtil.getCanonicalLocalPath(file);

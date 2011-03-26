@@ -60,6 +60,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   @NonNls private static final String PERSISTENCY_REMOVED_FOLDER_TAG = "ClearCasePersistencyRemovedFolder";
   @NonNls private static final String PERSISTENCY_RENAMED_FILE_TAG = "ClearCasePersistencyRenamedFile";
   @NonNls private static final String PERSISTENCY_RENAMED_FOLDER_TAG = "ClearCasePersistencyRenamedFolder";
+  @NonNls private static final String PERSISTENCY_CHECKED_OUT_FOLDER_TAG = "ClearCasePersistencyCheckedOutFolder";
   @NonNls private static final String PERSISTENCY_NEW_FILE_TAG = "ClearCasePersistencyNewFile";
   @NonNls private static final String PERSISTENCY_MODIFIED_FILE_TAG = "ClearCasePersistencyModifiedFile";
   @NonNls private static final String PERSISTENCY_DELETED_FILE_TAG = "ClearCasePersistencyDeletedFile";
@@ -96,6 +97,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public  Map<String, String> renamedFolders;
   public  Set<String> deletedFiles;
   public  Set<String> deletedFolders;
+  public  Set<String> checkedOutFolders;
 
   //  Used to keep a set of modified files when user switches to the
   //  offline mode. Empty and unused in online mode.
@@ -132,6 +134,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     deletedFolders = Collections.synchronizedSet(new HashSet<String>());
     renamedFiles = Collections.synchronizedMap(new HashMap<String, String>());
     renamedFolders = Collections.synchronizedMap(new HashMap<String, String>());
+    checkedOutFolders = Collections.synchronizedSet(new java.util.HashSet<String>());
     modifiedFiles = Collections.synchronizedSet(new HashSet<VirtualFile>());
 
     myBaseOrUCM = new BaseOrUCM(this);
@@ -395,6 +398,19 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   {
     ChangeListManager mgr = ChangeListManager.getInstance( myProject );
     return (file != null) && mgr.isIgnoredFile( file );
+  }
+
+  public Set<String> getCheckedOutFolders() {
+    return checkedOutFolders;
+  }
+
+  public void folderCheckedOut(final String path) {
+    checkedOutFolders.add(path);
+  }
+
+  // also when turns out is checked out no more
+  public void undoCheckout(final String path) {
+    checkedOutFolders.remove(path);
   }
 
   public boolean isFolderRemoved( String path ) {  return removedFolders.contains( path );  }
@@ -1007,6 +1023,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
     readRenamedElements( element, renamedFiles, PERSISTENCY_RENAMED_FILE_TAG, true );
     readRenamedElements( element, renamedFolders, PERSISTENCY_RENAMED_FOLDER_TAG, true );
+    readElements(element, checkedOutFolders, PERSISTENCY_CHECKED_OUT_FOLDER_TAG, true);
   }
 
   private static void convertStringSet2VFileSet( final Set<String> set, Set<VirtualFile> vSet )
@@ -1085,6 +1102,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
     writePairedElement( element, renamedFiles, PERSISTENCY_RENAMED_FILE_TAG );
     writePairedElement( element, renamedFolders, PERSISTENCY_RENAMED_FOLDER_TAG );
+    writeElement(element, checkedOutFolders, PERSISTENCY_CHECKED_OUT_FOLDER_TAG);
   }
 
   private static void writeElement( final Element element, Set<String> files, String tag )

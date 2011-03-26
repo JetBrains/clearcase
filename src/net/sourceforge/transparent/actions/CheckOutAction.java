@@ -150,10 +150,12 @@ public class CheckOutAction extends SynchronousAction
 
   protected static void perform(VirtualFile file, String comment, final Project project) throws VcsException
   {
+    final TransparentVcs vcs = TransparentVcs.getInstance(project);
     //  Checkout command can be issued for a folder - we do not support this as
     //  the separate operation.
-    if( file.isDirectory() )
-      return;
+    if( file.isDirectory() ) {
+      vcs.folderCheckedOut(file.getPath());
+    }
 
     FileStatus status = getFileStatus( project, file );
     if( status == FileStatus.UNKNOWN || status == FileStatus.MODIFIED )
@@ -170,7 +172,7 @@ public class CheckOutAction extends SynchronousAction
 
     try
     {
-      TransparentVcs.getInstance(project).checkoutFile( file, keepHijack, comment );
+      vcs.checkoutFile(file, keepHijack, comment);
 
       //  Assign the special marker to the file indicating that there is no need
       //  to run <cleartool> command on the file - it is known to be modified
