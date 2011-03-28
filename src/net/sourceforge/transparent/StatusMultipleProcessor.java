@@ -54,8 +54,7 @@ public class StatusMultipleProcessor
     if (out.contains(WARNING_TO_SKIP_SIG)) return null;
     final int idxVer = out.indexOf(VERSIONED_SIG);
     if (idxVer == -1) return null;
-    final int start = idxVer + VERSIONED_SIG.length();
-    return new String(out.substring(start, out.indexOf(' ', start)));
+    return new String(out.substring(idxVer, out.indexOf(' ', idxVer)));
   }
 
   public void execute()

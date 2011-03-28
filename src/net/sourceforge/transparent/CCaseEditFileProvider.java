@@ -4,13 +4,16 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.EditFileProvider;
+import com.intellij.openapi.vcs.VcsConfiguration;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.io.ReadOnlyAttributeUtil;
 import net.sourceforge.transparent.actions.CheckoutDialog;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,6 +43,8 @@ public class CCaseEditFileProvider implements EditFileProvider
     final List<VcsException> errors = new ArrayList<VcsException>();
     final ChangeListManager mgr = ChangeListManager.getInstance( host.getProject() );
 
+    final String comment = getEditComment(files);
+    if (comment == null) return;  // was cancelled
     ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
       @Override
       public void run() {
@@ -58,7 +63,7 @@ public class CCaseEditFileProvider implements EditFileProvider
           ++ cnt;
           if(! ignoredFile) {
             try {
-              checkOutOrHijackFile( file, errors );
+              checkOutOrHijackFile( file, errors , comment);
             }
             catch (VcsException e) {
               return;
@@ -74,34 +79,47 @@ public class CCaseEditFileProvider implements EditFileProvider
     }
   }
 
-  private void checkOutOrHijackFile( VirtualFile file, List<VcsException> errors ) throws VcsException {
-    boolean toHijack = shouldHijackFile( file );
-    try
-    {
-      if( toHijack )
-        hijackFile( file );
-      else
-      {
-        CCaseViewsManager mgr = CCaseViewsManager.getInstance( host.getProject() );
+  @Nullable
+  private String getEditComment(final VirtualFile[] files) {
+    CCaseViewsManager mgr = CCaseViewsManager.getInstance( host.getProject() );
+
+    boolean askComment = host.getCheckoutOptions().getValue();
+    if (! askComment && CCaseSharedConfig.getInstance(host.getProject()).isUseUcmModel()) {
+      for (VirtualFile file : files) {
+        if (shouldHijackFile(file)) continue;
         boolean isUcmView = mgr.isUcmViewForFile( file );
         boolean hasActivity = (mgr.getActivityOfViewOfFile( file ) != null);
-        boolean needToSetActivity = (isUcmView && !hasActivity);
-
-        String comment = "";
-        if( host.getCheckoutOptions().getValue() || needToSetActivity )
-        {
-          CheckoutDialog dialog = new CheckoutDialog( host.getProject(), file );
-          dialog.show();
-          if( dialog.getExitCode() == CheckoutDialog.CANCEL_EXIT_CODE )
-            return;
-
-          comment = dialog.getComment();
-        }
-        host.checkoutFile( file, false, comment );
+        askComment = (isUcmView && ! hasActivity);
+        if (askComment) break;
       }
     }
-    catch( Throwable e )
-    {
+
+    String comment = "";
+    if(askComment) {
+      CheckoutDialog dialog = ( files.length == 1 ) ?
+                              new CheckoutDialog( host.getProject(), files[ 0 ] ) :
+                              new CheckoutDialog( host.getProject(), files );
+      dialog.show();
+      if( dialog.getExitCode() == CheckoutDialog.CANCEL_EXIT_CODE )
+        return null;
+
+      comment = dialog.getComment();
+    }
+    if (! StringUtil.isEmptyOrSpaces(comment)) {
+      VcsConfiguration.getInstance(host.getProject()).saveCommitMessage(comment);
+    }
+    return comment;
+  }
+
+  private void checkOutOrHijackFile(VirtualFile file, List<VcsException> errors, String comment) throws VcsException {
+    boolean toHijack = shouldHijackFile( file );
+    try {
+      if(toHijack) {
+        hijackFile(file);
+      } else {
+        host.checkoutFile(file, false, comment);
+      }
+    } catch( Throwable e ) {
       final VcsException e1 = new VcsException(e.getMessage());
       errors.add(e1);
       throw e1;

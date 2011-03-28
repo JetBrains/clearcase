@@ -11,6 +11,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ArrayUtil;
 import com.intellij.util.Consumer;
 import com.intellij.util.ui.ColumnInfo;
+import net.sourceforge.transparent.StatusMultipleProcessor;
 import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -155,7 +156,7 @@ public class CCaseHistoryProvider implements VcsHistoryProvider, VcsCacheableHis
       }
     }
 
-    return new CCaseHistorySession( revisions );
+    return new CCaseHistorySession(revisions, filePath);
   }
 
   public static void historyGetter(final Project project, final FilePath filePath, final int maxCnt,
@@ -221,14 +222,17 @@ public class CCaseHistoryProvider implements VcsHistoryProvider, VcsCacheableHis
                                                   @NotNull List<VcsFileRevision> revisions,
                                                   @NotNull FilePath filePath,
                                                   @Nullable VcsRevisionNumber currentRevision) {
-    return new CCaseHistorySession(revisions);
+    return new CCaseHistorySession(revisions, filePath);
   }
 
   static class CCaseHistorySession extends VcsAbstractHistorySession
   {
-    public CCaseHistorySession( List<VcsFileRevision> revs )
+    private final FilePath myPath;
+
+    public CCaseHistorySession( List<VcsFileRevision> revs, final FilePath path )
     {
-      super( revs );
+      super( revs , currentRevisionImpl(path, revs));
+      myPath = path;
     }
 
     public boolean isContentAvailable(VcsFileRevision revision)
@@ -238,13 +242,26 @@ public class CCaseHistoryProvider implements VcsHistoryProvider, VcsCacheableHis
              !(CCaseHistoryParser.CREATE_ELEM_COMMAND_SIG.equals(((CCaseFileRevision)revision).getAction())); 
     }
 
-    protected VcsRevisionNumber calcCurrentRevisionNumber()
-    {
+    protected VcsRevisionNumber calcCurrentRevisionNumber() {
+      return currentRevisionImpl(myPath, getRevisionList());
+    }
+
+    private static VcsRevisionNumber currentRevisionImpl(final FilePath filePath, final List<VcsFileRevision> list) {
+      final String currentRevision = StatusMultipleProcessor.getCurrentRevision(filePath.getPath());
+      if (currentRevision != null) {
+        for (VcsFileRevision revision : list) {
+          if (revision.getRevisionNumber().asString().equals(currentRevision)) {
+            return revision.getRevisionNumber();
+          }
+        }
+        return new CCaseRevisionNumber(currentRevision, 0);
+      }
+
       VcsRevisionNumber revision;
       try
       {
         int maxRevision = 0;
-        for( VcsFileRevision rev : getRevisionList() )
+        for( VcsFileRevision rev : list )
         {
           maxRevision = Math.max( maxRevision, ((CCaseFileRevision)rev).getOrder() );
         }
@@ -259,13 +276,19 @@ public class CCaseHistoryProvider implements VcsHistoryProvider, VcsCacheableHis
       return revision;
     }
 
+    @Override
+    public boolean isCurrentRevision(VcsRevisionNumber rev) {
+      final VcsRevisionNumber cachedRevision = getCachedRevision();
+      return cachedRevision != null && cachedRevision.asString().equals(rev.asString());
+    }
+
     public HistoryAsTreeProvider getHistoryAsTreeProvider() {
       return null;
     }
 
     @Override
     public VcsHistorySession copy() {
-      return new CCaseHistorySession(getRevisionList());
+      return new CCaseHistorySession(getRevisionList(), myPath);
     }
   }
 }
