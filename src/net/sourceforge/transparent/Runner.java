@@ -129,14 +129,15 @@ public class Runner
           LOG.info( "CCAse runtime exception (started in [" + workingDir + "]: " + e.getMessage(), e );
         else
           LOG.info( "CCAse runtime exception :" + e.getMessage(), e );
-
-        throw e;
+        // this exception will be caught
+        throw new ClearCaseException(e.getMessage());
       } catch (Exception e) {
         if( StringUtil.isNotEmpty( workingDir ) )
           LOG.info( "CCAse exception: (started in [" + workingDir + "]: " + e.getMessage(), e );
         else
           LOG.info( "CCAse exception: " + e.getMessage(), e );
-        throw new RuntimeException(e.getMessage());
+        // this exception will be caught
+        throw new ClearCaseException(e.getMessage());
       }
    }
 
