@@ -163,7 +163,7 @@ public class CCaseContentRevision implements ContentRevision
             else
             {
               byte[] byteContent = VcsUtil.getFileByteContent( myTmpFile );
-              content = CharsetToolkit.bytesToString(byteContent);
+              content = file == null ? CharsetToolkit.bytesToString(byteContent) : CharsetToolkit.bytesToString(byteContent, file.getCharset());
               myTmpFile.delete();
             }
           }
