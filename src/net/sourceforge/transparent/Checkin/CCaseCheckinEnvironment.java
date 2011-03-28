@@ -9,6 +9,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Comparing;
+import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.*;
@@ -136,7 +137,9 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   {
     List<VcsException> errors = new ArrayList<VcsException>();
     HashSet<FilePath> processedFiles = new HashSet<FilePath>();
-    comment = comment.replace( "\"", "\\\"" );
+    if (! SystemInfo.isWindows) {
+      comment = comment.replace( "\"", "\\\"");
+    }
 
     clearTemporaryStatuses( changes );
     storeChangeListName( changes );
