@@ -4,6 +4,7 @@ import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.util.ArrayUtil;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -46,6 +47,16 @@ public class StatusMultipleProcessor
   public boolean isNonexist ( String file )  {  return nonexistingFiles.contains( file.toLowerCase() );  }
   public boolean isCheckedout( String file ) {  return checkoutFiles.contains( file.toLowerCase() );  }
   public boolean isHijacked ( String file )  {  return hijackedFiles.contains( file.toLowerCase() );  }
+
+  @Nullable
+  public static String getCurrentRevision(final String path) {
+    final String out = TransparentVcs.cleartoolWithOutput(STATUS_COMMAND, DIR_SWITCH, path);
+    if (out.contains(WARNING_TO_SKIP_SIG)) return null;
+    final int idxVer = out.indexOf(VERSIONED_SIG);
+    if (idxVer == -1) return null;
+    final int start = idxVer + VERSIONED_SIG.length();
+    return new String(out.substring(start, out.indexOf(' ', start)));
+  }
 
   public void execute()
   {

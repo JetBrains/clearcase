@@ -40,14 +40,19 @@ public class CCaseContentRevision implements ContentRevision
   private final Project       project;
   private String        myServerContent;
   private final TransparentVcs host;
+  private String myVersion;
 
-  public CCaseContentRevision( FilePath path, Project proj )
-  {
+  public CCaseContentRevision(FilePath path, Project proj) {
+    this(path, proj, null);
+  }
+
+  public CCaseContentRevision(FilePath path, Project proj, final String version) {
     revisionPath = path;
     project = proj;
 
     host = TransparentVcs.getInstance( proj );
     file = path.getVirtualFile();
+    myVersion = version;
   }
 
   @NotNull
@@ -102,52 +107,15 @@ public class CCaseContentRevision implements ContentRevision
           File tmpDir = tmpFile.getParentFile();
           File myTmpFile = new File( tmpDir, Long.toString( new Date().getTime()) );
 
-          String version = null;
-          FileStatusManager mgr = FileStatusManager.getInstance( project );
+          FileStatusManager mgr = FileStatusManager.getInstance(project);
 
-          if( file == null )
-          {
-            String out = TransparentVcs.cleartoolWithOutput( "describe", revisionPath.getPath() );
-            version = parseLastRepositoryVersion( out );
-          }
-          else
-          //---------------------------------------------------------------------
-          //  We need to explicitely distinguish between normal (checked out)
-          //  files and hijacked files - CCase treats the latter as "private files"
-          //  (with respect to the view) and the "Describe" command does not
-          //  return VOB-object-specific information. "History" command also
-          //  does not work for this file if only we did not specify "@@" at
-          //  the end, explicitely telling that we are interesting in the
-          //  repository object. In this case we need only to extract the version
-          //  identifier latest in the hitory (first record).
-          //---------------------------------------------------------------------
-          if( mgr.getStatus( file ) == FileStatus.HIJACKED )
-          {
-            final List<String> commandParts = new ArrayList<String>();
-            commandParts.add("lshistory");
-            CCaseHistoryParser.fillParametersVersionOnly(commandParts);
-            commandParts.add(file.getPath() + VERSION_SEPARATOR);
-            String log = TransparentVcs.cleartoolWithOutput(ArrayUtil.toStringArray(commandParts));
-            ArrayList<CCaseHistoryParser.SubmissionData> changes = CCaseHistoryParser.parse( log );
-            if( changes.size() > 0 )
-            {
-              version = changes.get( 0 ).version;
-
-              //  do not forget to strip "@@"
-              if( version.startsWith( VERSION_SEPARATOR ))
-                version = version.substring( 2 );
-            }
-          }
-          else
-          {
-            String out = TransparentVcs.cleartoolWithOutput( "describe", file.getPath() );
-            version = parseLastRepositoryVersion( out );
+          if (myVersion == null) {
+            detectVersion(mgr);
           }
 
-          if( version != null )
-          {
+          if(myVersion != null) {
             String path = VcsUtil.getCanonicalLocalPath(revisionPath.getPath());
-            final String out2 = TransparentVcs.cleartoolWithOutput( "get", "-to", myTmpFile.getPath(), path + VERSION_SEPARATOR + version );
+            final String out2 = TransparentVcs.cleartoolWithOutput( "get", "-to", myTmpFile.getPath(), path + VERSION_SEPARATOR + myVersion);
 
             //  We expect that properly finished command produce no (error or
             //  warning) output. The only messages allowed are the warnings from
@@ -176,6 +144,42 @@ public class CCaseContentRevision implements ContentRevision
     }
 
     return content;
+  }
+
+  private void detectVersion(FileStatusManager mgr) {
+    if(file == null) {
+      String out = TransparentVcs.cleartoolWithOutput("describe", revisionPath.getPath());
+      myVersion = parseLastRepositoryVersion( out );
+    } else {
+      //---------------------------------------------------------------------
+      //  We need to explicitely distinguish between normal (checked out)
+      //  files and hijacked files - CCase treats the latter as "private files"
+      //  (with respect to the view) and the "Describe" command does not
+      //  return VOB-object-specific information. "History" command also
+      //  does not work for this file if only we did not specify "@@" at
+      //  the end, explicitely telling that we are interesting in the
+      //  repository object. In this case we need only to extract the version
+      //  identifier latest in the hitory (first record).
+      //---------------------------------------------------------------------
+      if( mgr.getStatus( file ) == FileStatus.HIJACKED ) {
+        final List<String> commandParts = new ArrayList<String>();
+        commandParts.add("lshistory");
+        CCaseHistoryParser.fillParametersVersionOnly(commandParts);
+        commandParts.add(file.getPath() + VERSION_SEPARATOR);
+        String log = TransparentVcs.cleartoolWithOutput(ArrayUtil.toStringArray(commandParts));
+        ArrayList<CCaseHistoryParser.SubmissionData> changes = CCaseHistoryParser.parse( log );
+        if(changes.size() > 0) {
+          myVersion = changes.get( 0 ).version;
+
+          //  do not forget to strip "@@"
+          if( myVersion.startsWith( VERSION_SEPARATOR ))
+            myVersion = myVersion.substring( 2 );
+        }
+      } else {
+        String out = TransparentVcs.cleartoolWithOutput( "describe", file.getPath() );
+        myVersion = parseLastRepositoryVersion( out );
+      }
+    }
   }
 
   private static boolean isKnownMessage( final String message )

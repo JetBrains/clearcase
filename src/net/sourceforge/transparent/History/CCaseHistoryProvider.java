@@ -2,7 +2,6 @@ package net.sourceforge.transparent.History;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
@@ -10,19 +9,16 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.*;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ArrayUtil;
+import com.intellij.util.Consumer;
 import com.intellij.util.ui.ColumnInfo;
-import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -30,7 +26,7 @@ import java.util.List;
  * User: lloix
  * Date: Jan 26, 2007
  */
-public class CCaseHistoryProvider implements VcsHistoryProvider {
+public class CCaseHistoryProvider implements VcsHistoryProvider, VcsCacheableHistorySessionFactory<Boolean, CCaseHistoryProvider.CCaseHistorySession> {
   @NonNls private final static String HISTORY_CMD = "lshistory";
   @NonNls private final static String LIMITED_SWITCH = "-last";
   @NonNls private final static String CCASE_DATE_COLUMN = "ClearCase Date";
@@ -149,7 +145,7 @@ public class CCaseHistoryProvider implements VcsHistoryProvider {
         //  time information delimited by '.'). Just skip this record.
         try
         {
-          VcsFileRevision rev = new CCaseFileRevision( change, path );
+          VcsFileRevision rev = new CCaseFileRevision(change, path, project);
           revisions.add( rev );
         }
         catch( NullPointerException e)
@@ -162,87 +158,55 @@ public class CCaseHistoryProvider implements VcsHistoryProvider {
     return new CCaseHistorySession( revisions );
   }
 
+  public static void historyGetter(final Project project, final FilePath filePath, final int maxCnt,
+                                   final Consumer<CCaseHistoryParser.SubmissionData> consumer) throws VcsException {
+    final TransparentVcs host = TransparentVcs.getInstance(project);
+    String log;
+    String path = filePath.getPath();
+    if(host.renamedFiles.containsKey( path ) )
+      path = host.renamedFiles.get( path );
+
+    //  Cleartool can not handle history for hijacked files. Thus we have to
+    //  construct "versioned" path, which directly points to the vob-object.
+    VirtualFile vfile = filePath.getVirtualFile();
+    if( vfile != null )
+    {
+      FileStatus status = FileStatusManager.getInstance( project ).getStatus( vfile );
+      if( status == FileStatus.HIJACKED )
+      {
+        path += "@@";
+      }
+    }
+
+    final List<String> commandParts = new ArrayList<String>();
+    commandParts.add(HISTORY_CMD);
+    if (maxCnt > 0) {
+      commandParts.add(LIMITED_SWITCH);
+      commandParts.add(String.valueOf(maxCnt));
+    } else if (host.getConfig().isHistoryResticted) {
+      int margin = host.getConfig().getHistoryRevisionsMargin();
+      commandParts.add(LIMITED_SWITCH);
+      commandParts.add(String.valueOf( margin ));
+    }
+    CCaseHistoryParser.fillParametersTail(commandParts);
+    commandParts.add(path);
+
+    log = TransparentVcs.cleartoolWithOutput(ArrayUtil.toStringArray(commandParts));
+
+    if( log.contains( NOT_A_VOB_OBJECT )) {
+      throw new VcsException( log );
+    } else {
+      ArrayList<CCaseHistoryParser.SubmissionData> changes = CCaseHistoryParser.parse( log );
+      for (CCaseHistoryParser.SubmissionData change : changes) {
+        consumer.consume(change);
+      }
+    }
+  }
+
   public void reportAppendableHistory(FilePath path, VcsAppendableHistorySessionPartner partner) throws VcsException {
     // will implement it further
     final VcsHistorySession session = createSessionFor(path);
     partner.reportCreatedEmptySession((VcsAbstractHistorySession) session);
-  }
-
-  public class CCaseFileRevision implements VcsFileRevision
-  {
-    private final String version;
-    private final String submitter;
-    private final String changeCcaseDate;
-    private final String comment;
-    private final String action;
-    private final String labels;
-    private final int    order;
-
-    private final String path;
-    private byte[] content;
-
-    public CCaseFileRevision( CCaseHistoryParser.SubmissionData data, String path )
-    {
-      version = data.version;
-      submitter = data.submitter;
-      comment = data.comment;
-      action = data.action;
-      labels = data.labels;
-      order = data.order;
-      changeCcaseDate = data.changeDate;
-
-      this.path = path;
-    }
-
-    public byte[] getContent()      { return content;    }
-    public String getBranchName()   { return null;       }
-    public Date   getRevisionDate() { return null; }
-    public String getChangeCcaseDate() { return changeCcaseDate; }
-    public String getAuthor()       { return submitter;  }
-    public String getCommitMessage(){ return comment;    }
-    public int    getOrder()        { return order;      }
-    public String getAction()       { return action;     }
-    public String getLabels()       { return labels;     }
-
-    public VcsRevisionNumber getRevisionNumber() {  return new CCaseRevisionNumber( version, order );  }
-
-    public void loadContent()
-    {
-      @NonNls final String TMP_FILE_NAME = "idea_ccase";
-      @NonNls final String EXT = ".tmp";
-      @NonNls final String TITLE = "Can not issue Get command";
-
-      try
-      {
-        File tmpFile = FileUtil.createTempFile(TMP_FILE_NAME, EXT);
-        tmpFile.deleteOnExit();
-        File tmpDir = tmpFile.getParentFile();
-        final File myTmpFile = new File( tmpDir, Long.toString( new Date().getTime()) );
-        myTmpFile.deleteOnExit();
-
-        final String out = TransparentVcs.cleartoolWithOutput( "get", "-to", myTmpFile.getPath(), path + version );
-
-        //  We expect that properly finished command produce no (error or
-        //  warning) output.
-        if( out.length() > 0 )
-        {
-          VcsUtil.showErrorMessage( project, out, TITLE );
-        }
-        else
-        {
-          content = VcsUtil.getFileByteContent( myTmpFile );
-        }
-      }
-      catch( IOException e )
-      {
-        content = null;
-      }
-    }
-
-    public int compareTo( Object revision )
-    {
-      return getRevisionNumber().compareTo( ((CCaseFileRevision)revision).getRevisionNumber() );
-    }
   }
 
   public FilePath getUsedFilePath(CCaseHistorySession session) {
@@ -302,32 +266,6 @@ public class CCaseHistoryProvider implements VcsHistoryProvider {
     @Override
     public VcsHistorySession copy() {
       return new CCaseHistorySession(getRevisionList());
-    }
-  }
-
-  private class CCaseRevisionNumber implements VcsRevisionNumber
-  {
-    private final String revision;
-    private final int    order;
-
-    public CCaseRevisionNumber( String revision, int order )
-    {
-      this.revision = revision;
-      this.order = order;
-    }
-
-    public String asString() { return revision;  }
-
-    public int compareTo( VcsRevisionNumber revisionNumber )
-    {
-      CCaseRevisionNumber rev = (CCaseRevisionNumber)revisionNumber;
-      if( order > rev.order )
-        return -1;
-      else
-      if( order < rev.order )
-        return 1;
-      else
-        return 0;
     }
   }
 }

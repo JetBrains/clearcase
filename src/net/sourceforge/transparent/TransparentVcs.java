@@ -20,6 +20,7 @@ import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.annotate.AnnotationProvider;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
+import com.intellij.openapi.vcs.diff.DiffProvider;
 import com.intellij.openapi.vcs.history.VcsHistoryProvider;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
@@ -37,6 +38,7 @@ import net.sourceforge.transparent.Annotations.CCaseAnnotationProvider;
 import net.sourceforge.transparent.ChangeManagement.CCaseChangeProvider;
 import net.sourceforge.transparent.Checkin.CCaseCheckinEnvironment;
 import net.sourceforge.transparent.Checkin.CCaseRollbackEnvironment;
+import net.sourceforge.transparent.History.CCaseDiffProvider;
 import net.sourceforge.transparent.History.CCaseHistoryProvider;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jdom.Element;
@@ -106,6 +108,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   private ClearCase clearcase;
   private CCaseConfig config;
 
+  private CCaseDiffProvider myDiffProvider;
   private CCaseCheckinEnvironment checkinEnvironment;
   private CCaseRollbackEnvironment rollbackEnvironment;
   private CCaseUpdateEnvironment updateEnvironment;
@@ -188,6 +191,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     editProvider = new CCaseEditFileProvider( this );
     historyProvider = new CCaseHistoryProvider( myProject );
     annotationProvider = new CCaseAnnotationProvider( myProject, this );
+    myDiffProvider = new CCaseDiffProvider(myProject);
 
     final ProjectLevelVcsManager vcsManager = ProjectLevelVcsManager.getInstance( myProject );
     myCheckoutOptions = vcsManager.getStandardOption( VcsConfiguration.StandardOption.CHECKOUT, this );
@@ -1152,5 +1156,10 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
         addTo.add(newFile);
       }
     }
+  }
+
+  @Override
+  public DiffProvider getDiffProvider() {
+    return myDiffProvider;
   }
 }
