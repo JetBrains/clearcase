@@ -25,8 +25,8 @@ public class ClearCaseDecorator implements ClearCase
 
   public void checkIn(File file, String comment) {  clearCase.checkIn(file, comment);  }
 
-  public void checkOut(File file, boolean isReserved, String comment) {
-    clearCase.checkOut(file, isReserved, comment);
+  public void checkOut(File file, boolean isReserved, String comment, boolean noData) {
+    clearCase.checkOut(file, isReserved, comment, noData);
   }
 
   public void add(File file, String comment)    {  clearCase.add(file, comment);     }

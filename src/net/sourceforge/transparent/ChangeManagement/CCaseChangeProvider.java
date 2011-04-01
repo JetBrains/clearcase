@@ -318,7 +318,7 @@ public class CCaseChangeProvider implements ChangeProvider {
           filesIgnored.add( fileName );
         else
         {
-          String refName = discoverOldName( fileName );
+          String refName = host.discoverOldName( fileName );
 
           //  Check that folder physically exists.
           if( !host.fileExistsInVcs( refName ))
@@ -428,7 +428,7 @@ public class CCaseChangeProvider implements ChangeProvider {
     List<String> refNames = new ArrayList<String>();
     for( String file : writableFiles )
     {
-      String legalName = discoverOldName(file).replace('\\', '/');
+      String legalName = host.discoverOldName(file).replace('\\', '/');
       refNames.add(legalName);
     }
 
@@ -550,7 +550,7 @@ public class CCaseChangeProvider implements ChangeProvider {
   {
     String fileParent = new File( file ).getParentFile().getPath();
     String fileParentNorm = VcsUtil.getCanonicalLocalPath( fileParent );
-    String refParentName = discoverOldName( fileParentNorm );
+    String refParentName = host.discoverOldName( fileParentNorm );
 
     if( host.fileIsUnderVcs( fileParent ) && !processed.contains( fileParent.toLowerCase() ) )
     {
@@ -606,7 +606,7 @@ public class CCaseChangeProvider implements ChangeProvider {
     {
       //  In the case of file rename or parent folder rename we should
       //  refer to the list of new files by the
-      String refName = discoverOldName( fileName );
+      String refName = host.discoverOldName( fileName );
 
       //  New file could be added AFTER and BEFORE e.g. the package rename.
       if( host.containsNew( fileName ) || host.containsNew( refName ))
@@ -647,7 +647,7 @@ public class CCaseChangeProvider implements ChangeProvider {
     List<String> refFilesToCheck = new ArrayList<String>();
     for( String fileName : files )
     {
-      refFilesToCheck.add( discoverOldName( fileName ) );
+      refFilesToCheck.add(host.discoverOldName( fileName ));
     }
 
     DescribeMultipleProcessor processor = new DescribeMultipleProcessor( refFilesToCheck );
@@ -694,13 +694,13 @@ public class CCaseChangeProvider implements ChangeProvider {
 
     for( String fileName : filesChanged )
     {
-      String validRefName = discoverOldName( fileName );
+      String validRefName = host.discoverOldName( fileName );
       add2ChangeList( builder, FileStatus.MODIFIED, fileName, validRefName );
     }
 
     for( String fileName : filesHijacked )
     {
-      String validRefName = discoverOldName( fileName );
+      String validRefName = host.discoverOldName( fileName );
       add2ChangeList( builder, FileStatus.HIJACKED, fileName, validRefName );
     }
 
@@ -811,6 +811,7 @@ public class CCaseChangeProvider implements ChangeProvider {
 
   private void initInternals()
   {
+    filesLocallyDeleted.clear();
     filesWritable.clear();
     filesNew.clear();
     filesChanged.clear();
@@ -839,45 +840,6 @@ public class CCaseChangeProvider implements ChangeProvider {
       }
     }
     return isBatch;
-  }
-
-  private String discoverOldName( String file )
-  {
-    String canonicName = VcsUtil.getCanonicalLocalPath(file);
-    String oldName = host.renamedFiles.get(canonicName);
-    if( oldName == null ) {
-      oldName = host.renamedFolders.get(canonicName);
-      if(oldName == null) {
-        oldName = findInRenamedParentFolder(file);
-        if( oldName == null )
-          oldName = file;
-        else
-        {
-          //  Idiosynchrasic check - whether a RENAMED file is found under the
-          //  renamed folder?
-          String checkRenamed = host.renamedFiles.get( oldName );
-          if( checkRenamed != null )
-            oldName = checkRenamed;
-        }
-      }
-    }
-
-    return oldName;
-  }
-
-  private String findInRenamedParentFolder( String name )
-  {
-    String fileInOldFolder = name;
-    for( String folder : host.renamedFolders.keySet() )
-    {
-      String oldFolderName = host.renamedFolders.get( folder );
-      if( name.startsWith( folder ) )
-      {
-        fileInOldFolder = oldFolderName + name.substring( folder.length() );
-        break;
-      }
-    }
-    return fileInOldFolder;
   }
 
   private boolean isUnderRenamedFolder( String fileName ) {

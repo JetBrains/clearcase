@@ -10,14 +10,15 @@ import com.intellij.openapi.vcs.VcsConfiguration;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.WaitForProgressToShow;
 import com.intellij.util.io.ReadOnlyAttributeUtil;
 import net.sourceforge.transparent.actions.CheckoutDialog;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -43,7 +44,8 @@ public class CCaseEditFileProvider implements EditFileProvider
     final List<VcsException> errors = new ArrayList<VcsException>();
     final ChangeListManager mgr = ChangeListManager.getInstance( host.getProject() );
 
-    final String comment = getEditComment(files);
+    final CurrentStatusHelper statusHelper = preProcessFiles(files);
+    final String comment = getEditComment(files, statusHelper);
     if (comment == null) return;  // was cancelled
     ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
       @Override
@@ -63,7 +65,7 @@ public class CCaseEditFileProvider implements EditFileProvider
           ++ cnt;
           if(! ignoredFile) {
             try {
-              checkOutOrHijackFile( file, errors , comment);
+              statusHelper.checkOutOrHijackFile(file, errors, comment);
             }
             catch (VcsException e) {
               return;
@@ -80,13 +82,13 @@ public class CCaseEditFileProvider implements EditFileProvider
   }
 
   @Nullable
-  private String getEditComment(final VirtualFile[] files) {
+  private String getEditComment(final VirtualFile[] files, CurrentStatusHelper statusHelper) {
     CCaseViewsManager mgr = CCaseViewsManager.getInstance( host.getProject() );
 
     boolean askComment = host.getCheckoutOptions().getValue();
     if (! askComment && CCaseSharedConfig.getInstance(host.getProject()).isUseUcmModel()) {
       for (VirtualFile file : files) {
-        if (shouldHijackFile(file)) continue;
+        if (statusHelper.shouldHijack(file)) continue;
         boolean isUcmView = mgr.isUcmViewForFile( file );
         boolean hasActivity = (mgr.getActivityOfViewOfFile( file ) != null);
         askComment = (isUcmView && ! hasActivity);
@@ -111,29 +113,96 @@ public class CCaseEditFileProvider implements EditFileProvider
     return comment;
   }
 
-  private void checkOutOrHijackFile(VirtualFile file, List<VcsException> errors, String comment) throws VcsException {
-    boolean toHijack = shouldHijackFile( file );
-    try {
-      if(toHijack) {
-        hijackFile(file);
-      } else {
-        host.checkoutFile(file, false, comment);
-      }
-    } catch( Throwable e ) {
-      final VcsException e1 = new VcsException(e.getMessage());
-      errors.add(e1);
-      throw e1;
-    }
-  }
-
   public static void hijackFile( final VirtualFile file ) throws VcsException
   {
-    ApplicationManager.getApplication().runWriteAction( new Runnable() { public void run(){
-      try {   ReadOnlyAttributeUtil.setReadOnlyAttribute( file, false );  }
-      catch( IOException e ) {
-        Messages.showErrorDialog( FAIL_RO_TEXT + file.getName(), FAIL_DIALOG_TITLE );
+    WaitForProgressToShow.runOrInvokeAndWaitAboveProgress(new Runnable() {
+      @Override
+      public void run() {
+        ApplicationManager.getApplication().runWriteAction(new Runnable() {
+          public void run() {
+            try {
+              ReadOnlyAttributeUtil.setReadOnlyAttribute(file, false);
+            }
+            catch (IOException e) {
+              Messages.showErrorDialog(FAIL_RO_TEXT + file.getName(), FAIL_DIALOG_TITLE);
+            }
+          }
+        });
       }
-    } });
+    });
+  }
+
+  private CurrentStatusHelper preProcessFiles(final VirtualFile[] files) {
+    final CurrentStatusHelper csh = new CurrentStatusHelper(host);
+    for (VirtualFile file : files) {
+      final String oldName = host.discoverOldName(file.getPath());
+      if (oldName != null) {
+        csh.addRenamed(file, oldName);
+        if (host.getConfig().isOffline()) {
+          csh.shouldHijack(file);
+          continue;
+        }
+        final Status oldStatus = host.getStatusSafely(new File(oldName));
+        if (Status.NOT_AN_ELEMENT.equals(oldStatus)) {
+          csh.shouldHijack(file);
+        }
+      } else {
+        if (shouldHijackFile(file)) {
+          csh.shouldHijack(file);
+        }
+      }
+    }
+    return csh;
+  }
+
+  private static class CurrentStatusHelper {
+    private final Map<VirtualFile, String> myRenamedMap;
+    private final Set<VirtualFile> myShouldHijackFiles;
+    private final TransparentVcs host;
+
+    CurrentStatusHelper(final TransparentVcs host) {
+      this.host = host;
+      myRenamedMap = new HashMap<VirtualFile, String>();
+      myShouldHijackFiles = new HashSet<VirtualFile>();
+    }
+
+    public void addRenamed(final VirtualFile file, final String oldName) {
+      myRenamedMap.put(file, oldName);
+    }
+
+    public void unversioned(final VirtualFile file) {
+      myShouldHijackFiles.add(file);
+    }
+
+    public String getOldName(final VirtualFile file) {
+      return myRenamedMap.get(file);
+    }
+
+    public boolean shouldHijack(final VirtualFile file) {
+      return myShouldHijackFiles.contains(file);
+    }
+
+    public void checkOutOrHijackFile(VirtualFile file, List<VcsException> errors, String comment) throws VcsException {
+      boolean toHijack = shouldHijack(file);
+      try {
+        if(toHijack) {
+          hijackFile(file);
+        } else {
+          final String oldName = myRenamedMap.get(file);
+          if (oldName != null) {
+            final File oldFile = new File(oldName);
+            host.checkoutFile(oldFile, false, comment, true, true);
+            hijackFile(file);
+          } else {
+            host.checkoutFile(file, false, comment);
+          }
+        }
+      } catch( Throwable e ) {
+        final VcsException e1 = new VcsException(e.getMessage());
+        errors.add(e1);
+        throw e1;
+      }
+    }
   }
 
   private boolean shouldHijackFile( VirtualFile file )

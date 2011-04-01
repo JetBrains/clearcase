@@ -16,7 +16,7 @@ public interface ClearCase
     String getName();
 
     void checkIn(File file, String s);
-    void checkOut(File file, boolean flag, String comment);
+    void checkOut(File file, boolean flag, String comment, boolean noData);
     void undoCheckOut(File file);
     void add(File file, String s);
     void delete(File file, String s);

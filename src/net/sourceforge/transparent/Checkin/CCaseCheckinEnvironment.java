@@ -18,7 +18,6 @@ import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.NullableFunction;
 import com.intellij.util.PairConsumer;
-import com.intellij.util.WaitForProgressToShow;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.CCaseSharedConfig;
 import net.sourceforge.transparent.CCaseViewsManager;
@@ -310,7 +309,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
       FilePath parentFolder = folder.getParentPath();
       try
       {
-        host.checkoutFile( parentFolder.getIOFile(), false, comment, true );
+        host.checkoutFile( parentFolder.getIOFile(), false, comment, true, false);
         checkedOutFolders.add( parentFolder );
         incrementProgress( CHECKOUT_FOLDER + parentFolder.getName() );
       }
@@ -332,7 +331,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
       {
         try
         {
-          host.checkoutFile( folder.getIOFile(), false, comment, true );
+          host.checkoutFile( folder.getIOFile(), false, comment, true, false);
           checkedOutFolders.add( folder );
         }
         catch( VcsException e ) {  errors.add( e );  }

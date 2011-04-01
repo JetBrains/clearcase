@@ -3,6 +3,7 @@ package net.sourceforge.transparent;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.ui.components.panels.OpaquePanel;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
@@ -10,10 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class CommandLineClearCase implements ClearCase
 {
@@ -70,7 +68,7 @@ public class CommandLineClearCase implements ClearCase
     }
   }
 
-  public void checkOut( File file, boolean isReserved, String comment )
+  public void checkOut(File file, boolean isReserved, String comment, boolean noData)
   {
     @NonNls String[] params;
     String canonName;
@@ -79,11 +77,23 @@ public class CommandLineClearCase implements ClearCase
     catch (IOException e) {
       canonName = file.getAbsolutePath();
     }
-    
-    if( StringUtil.isNotEmpty( comment ) )
-      params = new String[] {  "co", "-c", quote(comment), isReserved ? "-reserved" : "-unreserved", "-nq", canonName };
-    else
-      params = new String[] {  "co", "-nc", isReserved ? "-reserved" : "-unreserved", "-nq", canonName };
+
+    final List<String> commandLine = new ArrayList<String>();
+    commandLine.add("co");
+    if (StringUtil.isNotEmpty(comment)) {
+      commandLine.add("-c");
+      commandLine.add(quote(comment));
+    } else {
+      commandLine.add("-nc");
+    }
+    commandLine.add(isReserved ? "-reserved" : "-unreserved");
+    if (noData) {
+      commandLine.add("-ndata");
+    }
+    commandLine.add("-nq");
+    commandLine.add(canonName);
+
+    params = commandLine.toArray(new String[commandLine.size()]);
 
     Runner runner = cleartool( params, true );
     if( !runner.isSuccessfull() )

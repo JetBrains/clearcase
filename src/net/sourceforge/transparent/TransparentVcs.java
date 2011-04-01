@@ -360,7 +360,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       //    read-only files) have no status at all.
 
       FileStatus status = FileStatusManager.getInstance(myProject).getStatus( vfile );
-      if( status == FileStatus.MODIFIED || status == FileStatus.HIJACKED )
+      if( status == FileStatus.MODIFIED || status == FileStatus.HIJACKED || FileStatus.NOT_CHANGED == status)
         return true;
       else
       if( status == FileStatus.UNKNOWN || status == FileStatus.ADDED )
@@ -553,7 +553,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     return checkoutFile( ioFile, keepHijacked, comment );
   }
 
-  public void checkoutFile( File file, boolean keepHijacked, String comment, boolean allowCheckedOut ) throws VcsException {
+  public void checkoutFile(File file, boolean keepHijacked, String comment, boolean allowCheckedOut, boolean noData) throws VcsException {
     if (checkedOutFolders.contains(VcsUtil.getCanonicalLocalPath(file.getPath()))) {
       if (! allowCheckedOut) {
         throw new VcsException("File " + file.getPath() + " is already checked out");
@@ -561,7 +561,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       return;
     }
     if(allowCheckedOut) {
-      VcsException error = tryToCheckout( file, comment );
+      VcsException error = tryToCheckout( file, comment, noData);
       if( error != null )
         throw error;
     } else {
@@ -577,7 +577,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       newFile = new File( ioFile.getParentFile().getAbsolutePath(), ioFile.getName() + HIJACKED_EXT );
       ioFile.renameTo( newFile );
     }
-    getClearCase().checkOut( ioFile, config.checkoutReserved, comment );
+    getClearCase().checkOut( ioFile, config.checkoutReserved, comment, false);
     if( newFile != null )
     {
       ioFile.delete();
@@ -621,7 +621,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       if( StringUtil.isEmpty( comment ) )
         comment = "Initial Checkin";
 
-      VcsException error = tryToCheckout( ioParent, parentComment );
+      VcsException error = tryToCheckout( ioParent, parentComment, false);
       if( error != null )
       {
         error.setVirtualFile( file );
@@ -677,7 +677,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
             String parentComment = addToComment( comment, deleteComment );
 
 
-            VcsException error = tryToCheckout( ioParent, parentComment );
+            VcsException error = tryToCheckout( ioParent, parentComment, false);
             if( error != null )
             {
               errors.add( error );
@@ -724,7 +724,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
             if( !oldFile.isDirectory() )
               checkinFile( oldFile, modComment, errors );
 
-            getClearCase().checkOut( ioParent, config.checkoutReserved, modComment );
+            getClearCase().checkOut( ioParent, config.checkoutReserved, modComment, false);
             getClearCase().move( oldFile, newFile, modComment );
             getClearCase().checkIn( ioParent, modComment );
           }
@@ -764,10 +764,10 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
             VcsException error;
             try
             {
-              error = tryToCheckout( newFile.getParentFile(), modComment );
+              error = tryToCheckout( newFile.getParentFile(), modComment, false);
               if( error != null )
                 throw error;
-              error = tryToCheckout( oldFile.getParentFile(), modComment );
+              error = tryToCheckout( oldFile.getParentFile(), modComment, false);
               if( error != null )
                 throw error;
 
@@ -884,12 +884,12 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
    * manually or as the result of the previously failed operation.
    * Ignore the error "... is already checked out..." and store all others. 
    */
-  private VcsException tryToCheckout( File file, String comment )
+  private VcsException tryToCheckout(File file, String comment, boolean noData)
   {
     VcsException error = null;
     try
     {
-      getClearCase().checkOut( file, config.checkoutReserved, comment );
+      getClearCase().checkOut( file, config.checkoutReserved, comment, noData);
     }
     catch( ClearCaseException ccExc )
     {
@@ -1179,5 +1179,44 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     } catch (ClearCaseException e) {
       return Status.NOT_AN_ELEMENT;
     }
+  }
+
+  public String discoverOldName( String file )
+  {
+    String canonicName = VcsUtil.getCanonicalLocalPath(file);
+    String oldName = renamedFiles.get(canonicName);
+    if( oldName == null ) {
+      oldName = renamedFolders.get(canonicName);
+      if(oldName == null) {
+        oldName = findInRenamedParentFolder(file);
+        if( oldName == null )
+          oldName = file;
+        else
+        {
+          //  Idiosynchrasic check - whether a RENAMED file is found under the
+          //  renamed folder?
+          String checkRenamed = renamedFiles.get( oldName );
+          if( checkRenamed != null )
+            oldName = checkRenamed;
+        }
+      }
+    }
+
+    return oldName;
+  }
+
+  private String findInRenamedParentFolder( String name )
+  {
+    String fileInOldFolder = name;
+    for( String folder : renamedFolders.keySet() )
+    {
+      String oldFolderName = renamedFolders.get( folder );
+      if( name.startsWith( folder ) )
+      {
+        fileInOldFolder = oldFolderName + name.substring( folder.length() );
+        break;
+      }
+    }
+    return fileInOldFolder;
   }
 }
