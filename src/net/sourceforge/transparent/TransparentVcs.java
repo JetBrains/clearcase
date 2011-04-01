@@ -553,16 +553,18 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     return checkoutFile( ioFile, keepHijacked, comment );
   }
 
-  public void checkoutFile( File file, boolean keepHijacked, String comment, boolean allowCheckedOut ) throws VcsException
-  {
-    if( allowCheckedOut )
-    {
+  public void checkoutFile( File file, boolean keepHijacked, String comment, boolean allowCheckedOut ) throws VcsException {
+    if (checkedOutFolders.contains(VcsUtil.getCanonicalLocalPath(file.getPath()))) {
+      if (! allowCheckedOut) {
+        throw new VcsException("File " + file.getPath() + " is already checked out");
+      }
+      return;
+    }
+    if(allowCheckedOut) {
       VcsException error = tryToCheckout( file, comment );
       if( error != null )
         throw error;
-    }
-    else
-    {
+    } else {
       checkoutFile( file, keepHijacked, comment );
     }
   }
@@ -1161,5 +1163,21 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   @Override
   public DiffProvider getDiffProvider() {
     return myDiffProvider;
+  }
+
+  public Status getStatusSafely(final VirtualFile file) {
+    try {
+      return getStatus(file);
+    } catch (ClearCaseException e) {
+      return Status.NOT_AN_ELEMENT;
+    }
+  }
+
+  public Status getStatusSafely(final File file) {
+    try {
+      return getClearCase().getStatus(file);
+    } catch (ClearCaseException e) {
+      return Status.NOT_AN_ELEMENT;
+    }
   }
 }

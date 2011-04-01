@@ -11,6 +11,7 @@ import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.rollback.RollbackProgressListener;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
+import net.sourceforge.transparent.Status;
 import net.sourceforge.transparent.TransparentVcs;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
@@ -199,11 +200,12 @@ public class CCaseRollbackEnvironment implements RollbackEnvironment
         }
         else
         {
-          FileStatus status = FileStatusManager.getInstance( project ).getStatus( filePath.getVirtualFile() );
-          if( status != FileStatus.HIJACKED )
+          final Status fileStatus = host.getStatusSafely(filePath.getIOFile());
+          if (! Status.HIJACKED.equals(fileStatus)) {
             host.undoCheckoutFile( filePath.getVirtualFile(), errors );
-          else
+          } else {
             updateFile( path, errors );
+          }
         }
         processedFiles.add( filePath );
       }

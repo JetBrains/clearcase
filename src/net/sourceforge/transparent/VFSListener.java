@@ -126,7 +126,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
       host.deleteNewFile(current);
       queue.addAll(Arrays.asList(current.getChildren()));
     }
-    final Status status = getStatusSafely(file);
+    final Status status = host.getStatusSafely(file);
     if (Status.NOT_AN_ELEMENT.equals(status)) return;
     if (isFileProcessable(file)) {
       FilePath path = VcsContextFactory.SERVICE.getInstance().createFilePathOnDeleted(new File(file.getPath()), file.isDirectory());
@@ -181,20 +181,12 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
     }
   }
 
-  private Status getStatusSafely(final VirtualFile file) {
-    try {
-      return host.getStatus(file);
-    } catch (ClearCaseException e) {
-      return Status.NOT_AN_ELEMENT;
-    }
-  }
-
   private boolean isExistingVersioned(final VirtualFile file) {
-    return (! Status.NOT_AN_ELEMENT.equals(getStatusSafely(file)));
+    return (! Status.NOT_AN_ELEMENT.equals(host.getStatusSafely(file)));
   }
 
   private boolean isVersioned(final VirtualFile file) {
-    return host.containsNew(file) || (! Status.NOT_AN_ELEMENT.equals(getStatusSafely(file)));
+    return host.containsNew(file) || (! Status.NOT_AN_ELEMENT.equals(host.getStatusSafely(file)));
   }
 
   public void beforePropertyChange(VirtualFilePropertyEvent event) {

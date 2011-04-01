@@ -427,11 +427,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
         host.deletedFolders.remove( path );
 
         incrementProgress( fp.getPath() );
-        WaitForProgressToShow.runOrInvokeLaterAboveProgress(new Runnable() {
-          public void run() {
-            VcsDirtyScopeManager.getInstance(project).fileDirty(fp);
-          }
-        }, null, project);
+        VcsDirtyScopeManager.getInstance(project).fileDirty(fp);
       }
     }
   }
