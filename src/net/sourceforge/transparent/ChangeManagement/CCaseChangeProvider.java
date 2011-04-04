@@ -455,7 +455,7 @@ public class CCaseChangeProvider implements ChangeProvider {
               host.renamedFiles.put(writableFiles.get(i), file);
               filesChanged.add(writableFiles.get(i));
               continue;
-            } if (! host.renamedFolders.containsKey(file)) {
+            } if (! host.renamedFolders.containsValue(file)) {
               filesLocallyDeleted.add(file);
             }
           }
