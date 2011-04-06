@@ -10,10 +10,7 @@ import com.intellij.openapi.diff.impl.patch.formove.FilePathComparator;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.InvalidDataException;
-import com.intellij.openapi.util.JDOMExternalizable;
-import com.intellij.openapi.util.Key;
-import com.intellij.openapi.util.WriteExternalException;
+import com.intellij.openapi.util.*;
 import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.*;
@@ -95,7 +92,9 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public  Set<String> removedFiles;
   public  Set<String> removedFolders;
   private final Set<VirtualFile> newFiles;
+  // newName -> oldName
   public  Map<String, String> renamedFiles;
+  // newName -> oldName
   public  Map<String, String> renamedFolders;
   public  Set<String> deletedFiles;
   public  Set<String> deletedFolders;
@@ -724,7 +723,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
             if( !oldFile.isDirectory() )
               checkinFile( oldFile, modComment, errors );
 
-            getClearCase().checkOut( ioParent, config.checkoutReserved, modComment, false);
+            getClearCase().checkOut( ioParent, config.checkoutReserved, modComment, true);
+            //getClearCase().checkOut( oldFile, config.checkoutReserved, modComment, false);
             getClearCase().move( oldFile, newFile, modComment );
             getClearCase().checkIn( ioParent, modComment );
           }
@@ -1179,6 +1179,24 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     } catch (ClearCaseException e) {
       return Status.NOT_AN_ELEMENT;
     }
+  }
+
+  public String discoverNewName(final String oldName) {
+    String canonicName = VcsUtil.getCanonicalLocalPath(oldName);
+    if (renamedFiles.containsValue(canonicName)) {
+      for (Map.Entry<String, String> entry : renamedFiles.entrySet()) {
+        if (Comparing.equal(entry.getValue(), canonicName)) {
+          return entry.getKey();
+        }
+      }
+    } else {
+      for (Map.Entry<String, String> entry : renamedFolders.entrySet()) {
+        if (canonicName.startsWith(entry.getValue())) {
+          return entry.getKey() + canonicName.substring(entry.getValue().length());
+        }
+      }
+    }
+    return oldName;
   }
 
   public String discoverOldName( String file )

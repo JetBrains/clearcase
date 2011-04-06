@@ -6,6 +6,7 @@ import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -19,6 +20,8 @@ public class StatusMultipleProcessor
 {
   @NonNls private static final String STATUS_COMMAND = "ls";
   @NonNls private static final String DIR_SWITCH = "-directory";
+  @NonNls private static final String RECURSE_SWITCH = "-recurse";
+  @NonNls private static final String VIEW_ONLY = "-view_only";
   @NonNls private static final String VERSIONED_SIG = "@@";
   @NonNls private static final String HIJACKED_SIG = "[hijacked]";
   @NonNls private static final String CHECKEDOUT_SIG = "Rule: CHECKEDOUT";
@@ -30,6 +33,8 @@ public class StatusMultipleProcessor
   private static final int  CMDLINE_MAX_LENGTH = 512;
 
   private final String[] files;
+  private boolean myRecursive;
+  private boolean myViewOnly;
 
   private HashSet<String> locallyDeleted;
   private HashSet<String> deletedFiles;
@@ -42,11 +47,21 @@ public class StatusMultipleProcessor
     files = ArrayUtil.toStringArray(paths);
   }
 
-  public boolean isLocallyDeleted  ( String file )  {  return locallyDeleted.contains( file.toLowerCase() );  }
-  public boolean isDeleted  ( String file )  {  return deletedFiles.contains( file.toLowerCase() );  }
-  public boolean isNonexist ( String file )  {  return nonexistingFiles.contains( file.toLowerCase() );  }
-  public boolean isCheckedout( String file ) {  return checkoutFiles.contains( file.toLowerCase() );  }
-  public boolean isHijacked ( String file )  {  return hijackedFiles.contains( file.toLowerCase() );  }
+  public HashSet<String> getLocallyDeleted() {
+    return locallyDeleted;
+  }
+
+  public HashSet<String> getUnversioned() {
+    return nonexistingFiles;
+  }
+
+  public HashSet<String> getCheckoutFiles() {
+    return checkoutFiles;
+  }
+
+  public HashSet<String> getHijackedFiles() {
+    return hijackedFiles;
+  }
 
   @Nullable
   public static String getCurrentRevision(final String path) {
@@ -71,10 +86,22 @@ public class StatusMultipleProcessor
     LinkedList<String> options = new LinkedList<String>();
     while( currFileIndex < files.length )
     {
-      cmdLineLen = STATUS_COMMAND.length() + DIR_SWITCH.length();
-
+      cmdLineLen = 0;
       options.clear();
-      options.add( STATUS_COMMAND );
+
+      options.add(STATUS_COMMAND);
+      cmdLineLen += STATUS_COMMAND.length() + 1;
+      if (myRecursive) {
+        options.add(RECURSE_SWITCH);
+        cmdLineLen += RECURSE_SWITCH.length() + 1;
+      } else {
+        options.add(DIR_SWITCH);
+        cmdLineLen += DIR_SWITCH.length() + 1;
+      }
+      if (myViewOnly) {
+        options.add(VIEW_ONLY);
+        cmdLineLen += VIEW_ONLY.length() + 1;
+      }
 
       while( currFileIndex < files.length && cmdLineLen < CMDLINE_MAX_LENGTH )
       {
@@ -120,10 +147,11 @@ public class StatusMultipleProcessor
       {
         final int versIdx = line.indexOf(VERSIONED_SIG);
         if( versIdx == -1) {
-          nonexistingFiles.add(line.toLowerCase().replace('\\', '/'));
-        } else if( line.indexOf( CHECKEDOUT_SIG ) != -1 || line.indexOf( CHECKEDOUT_REMOVED_SIG ) != -1) {
+          nonexistingFiles.add(line.replace('\\', '/'));
+        } else if( line.indexOf( CHECKEDOUT_SIG ) != -1) {
           checkoutFiles.add(filePathFromLine(line, versIdx));
-        } else if (line.indexOf(LOCALLY_DELETED) != -1) {
+          // todo verify what below
+        } else if (line.indexOf(LOCALLY_DELETED) != -1 || line.indexOf( CHECKEDOUT_REMOVED_SIG ) != -1) {
           locallyDeleted.add(filePathFromLine(line, versIdx));
         } else if( line.indexOf( HIJACKED_SIG ) != -1 )
           hijackedFiles.add(filePathFromLine(line, versIdx));
@@ -136,6 +164,14 @@ public class StatusMultipleProcessor
   }
 
   private String filePathFromLine(String line, int versIdx) {
-    return line.substring(0, versIdx).toLowerCase().replace('\\', '/');
+    return line.substring(0, versIdx).replace('\\', '/');
+  }
+
+  public void setRecursive(boolean recursive) {
+    myRecursive = recursive;
+  }
+
+  public void setViewOnly(boolean viewOnly) {
+    myViewOnly = viewOnly;
   }
 }

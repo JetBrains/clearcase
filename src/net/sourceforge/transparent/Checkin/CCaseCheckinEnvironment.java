@@ -19,10 +19,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.NullableFunction;
 import com.intellij.util.PairConsumer;
 import com.intellij.vcsUtil.VcsUtil;
-import net.sourceforge.transparent.CCaseSharedConfig;
-import net.sourceforge.transparent.CCaseViewsManager;
-import net.sourceforge.transparent.ClearCase;
-import net.sourceforge.transparent.TransparentVcs;
+import net.sourceforge.transparent.*;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -174,10 +171,24 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     {
       //  Nothing to do, just refresh the files which have been already committed.
     }
+    checkForUnchangedFolders(changes, errors, comment);
 
     VcsUtil.refreshFiles( project, processedFiles );
 
     return errors;
+  }
+
+  private void checkForUnchangedFolders(List<Change> changes, final List<VcsException> errors, final String comment) {
+    for (Change change : changes) {
+      final FilePath filePath = ChangesUtil.getFilePath(change);
+      final File ioFile = filePath.getIOFile();
+      if (filePath.isDirectory() && ioFile.exists()) {
+        final Status status = host.getStatus(ioFile);
+        if (Status.CHECKED_OUT.equals(status)) {
+          host.checkinFile(ioFile, comment, errors);
+        }
+      }
+    }
   }
 
   public List<VcsException> commit(List<Change> changes, String preparedComment) {

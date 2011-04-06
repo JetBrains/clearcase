@@ -9,16 +9,13 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Key;
-import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.FileStatus;
-import com.intellij.openapi.vcs.ProjectLevelVcsManager;
-import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.Processor;
 import com.intellij.util.WaitForProgressToShow;
+import com.intellij.util.containers.Convertor;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.*;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
@@ -144,11 +141,14 @@ public class CCaseChangeProvider implements ChangeProvider {
           myViewManager.extractViewActivities();
           myViewManager.synchActivities2ChangeLists(addGate);
         }
-        computeStatuses();
+        computeStatuses(dirtyScope);
       } else {
         restoreStatusesFromCached();
       }
       processStatusExceptions();
+
+      getUnversioned();
+      addCheckedOutFolders();
 
       //-----------------------------------------------------------------------
       //  For an UCM view we must determine the corresponding changes list name
@@ -158,8 +158,6 @@ public class CCaseChangeProvider implements ChangeProvider {
         setActivityInfoOnChangedFiles();
       }
 
-      getUnversioned();
-      addCheckedOutFolders();
       addLocallyDeletedFiles(builder);
       addAddedFiles( builder );
       addChangedFiles( builder );
@@ -225,6 +223,7 @@ public class CCaseChangeProvider implements ChangeProvider {
         dir.putUserData(ourVersionedKey, Boolean.TRUE);
         if (Status.HIJACKED.equals(status) || Status.CHECKED_OUT.equals(status)) {
           filesChanged.add(dir.getPath());
+          host.checkedOutFolders.add(dir.getPath());
         }
       }
     }
@@ -242,39 +241,6 @@ public class CCaseChangeProvider implements ChangeProvider {
           public void run() {  Messages.showWarningDialog( project, REMINDER_TEXT, REMINDER_TITLE );  }
         }, null, project);
     }
-  }
-
-  private void collectCheckouts( HashSet<String> files )
-  {
-    LOG.debug( "---ChangeProvider - Checking status by analyzing the set of checked out files via LSCO.");
-
-    VirtualFile[] roots = ProjectLevelVcsManager.getInstance( project ).getRootsUnderVcs( host );
-    for( VirtualFile root : roots )
-    {
-      String out = TransparentVcs.cleartoolOnLocalPathWithOutput( root.getPath(), LIST_CHECKOUTS_CMD, CURR_USER_ONLY_SWITCH,
-                                                                  CURR_VIEW_ONLY_SWITCH, SHORT_SWITCH, RECURSE_SWITCH );
-      LOG.debug( out );
-
-      String[] lines = LineTokenizer.tokenize( out, false );
-      for( String line : lines )
-      {
-        String fileName = root.getPath() + "/" + VcsUtil.getCanonicalLocalPath( line );
-        File file = new File( fileName );
-        if(file.exists())
-        {
-          try
-          {
-            String path = VcsUtil.getCanonicalLocalPath( file.getCanonicalPath() );
-            files.add( path );
-          }
-          catch( IOException e ){
-            //  Nothing to do - we have no idea on what shit cleartool decided to return.
-            LOG.info(e);
-          }
-        }
-      }
-    }
-    LOG.debug( "---ChangeProvider - Total " + files.size() + " non-folder checkouts found by LSCO.");
   }
 
   /**
@@ -318,7 +284,7 @@ public class CCaseChangeProvider implements ChangeProvider {
           filesIgnored.add( fileName );
         else
         {
-          String refName = host.discoverOldName( fileName );
+          String refName = host.discoverOldName(fileName);
 
           //  Check that folder physically exists.
           if( !host.fileExistsInVcs( refName ))
@@ -367,14 +333,15 @@ public class CCaseChangeProvider implements ChangeProvider {
       {
         public boolean process(final FilePath file)
         {
-          String path = file.getPath().replace('\\', '/');
-          VirtualFile vFile = file.getVirtualFile();
-          if( isValidFile( vFile ) )
-          {
-            if( host.isFileIgnored( vFile ) )
-              filesIgnored.add(path);
-            else
-              filesWritable.add(path);
+          final String path = file.getPath().replace('\\', '/');
+          final VirtualFile vFile = file.getVirtualFile();
+          if (host.isFileIgnored(vFile)) {
+            filesIgnored.add(path);
+            return true;
+          }
+
+          if (isValidFile(vFile)) {
+            filesWritable.add(path);
           } else if ((vFile != null) && vFile.isDirectory() && ! Boolean.TRUE.equals(vFile.getUserData(ourVersionedKey)) &&
                      (! host.renamedFolders.containsKey(vFile.getPath()))) {
             myDirs.add(vFile);
@@ -385,27 +352,59 @@ public class CCaseChangeProvider implements ChangeProvider {
     }
   }
 
-  private void computeStatuses()
-  {
+  private void computeStatuses(VcsDirtyScope dirtyScope) {
     LOG.debug( "---ChangeProvider - " + filesIgnored.size() + " ignored files accumulated so far.");
 
-    if( filesWritable.size() < MAX_FILES_FOR_ITERATIVE_STATUS )
-    {
+    if (filesWritable.size() < MAX_FILES_FOR_ITERATIVE_STATUS) {
       analyzeWritableFiles( filesWritable );
+    } else {
+      final Collection<VirtualFile> roots = dirtyScope.getAffectedContentRoots();
+      final List<String> pathsAsString = ObjectsConvertor.convert(roots, new Convertor<VirtualFile, String>() {
+        @Override
+        public String convert(VirtualFile o) {
+          return o.getPath();
+        }
+      });
+      final StatusMultipleProcessor processor = new StatusMultipleProcessor(pathsAsString);
+      processor.setRecursive(true);
+      processor.setViewOnly(true);
+      processor.execute();
+      processViewStatusResults(processor);
     }
-    else
-    {
-      collectCheckouts( filesChanged );
-      for( String file : filesWritable )
-      {
-        String normPath;
+  }
 
-        //  enough for comparison?
-        try {  normPath = VcsUtil.getCanonicalLocalPath( new File( file ).getCanonicalPath() );  }
-        catch( IOException exc ){  normPath = VcsUtil.getCanonicalLocalPath( file );  }
+  private void processViewStatusResults(final StatusMultipleProcessor processor) {
+    for (String path : processor.getUnversioned()) {
+      filesNew.add(path);
+    }
+    for (String path : processor.getCheckoutFiles()) {
+      filesChanged.add(path);
+    }
+    for (String path : processor.getHijackedFiles()) {
+      final String oldName = host.discoverOldName(path);
+      if (path.equals(oldName)) {
+        filesHijacked.add(path);
+      } else {
+        filesChanged.add(path);
+      }
+    }
+    for (String path : processor.getLocallyDeleted()) {
+      final String newName = host.discoverNewName(path);
+      // map holds new -> old
+      if (! host.renamedFiles.containsKey(newName)) {
+        if (! path.equals(newName)) {
+          //host.renamedFiles.put(newName, path);
+          final File newFile = new File(newName);
 
-        if( !filesChanged.contains( normPath ) )
-          filesNew.add( file );
+          if (newFile.exists() && newFile.canWrite()) {
+            filesChanged.add(newName);
+          }
+          continue;
+        } if (! host.renamedFolders.containsValue(newName)) {
+          filesLocallyDeleted.add(path);
+        }
+      } else {
+        filesChanged.add(newName);
       }
     }
   }
@@ -434,52 +433,11 @@ public class CCaseChangeProvider implements ChangeProvider {
 
     LOG.debug( "ChangeProvider - Analyzing writables in batch mode using CLEARTOOL on " + writables.size() + " files." );
 
-    final List<String> newFiles = new ArrayList<String>();
     StatusMultipleProcessor processor = new StatusMultipleProcessor( refNames );
     processor.execute();
     LOG.debug( "ChangeProvider - \"CLEARTOOL LS\" batch command finished." );
 
-    for( int i = 0; i < writableFiles.size(); i++ ) {
-      if( processor.isNonexist( refNames.get( i ) )) {
-        newFiles.add( writableFiles.get( i ) );
-      } else {
-        final String file = refNames.get(i);
-        if( processor.isCheckedout(file)) {
-          filesChanged.add( writableFiles.get( i ) );
-        } else if( processor.isHijacked( file )) {
-          filesHijacked.add( writableFiles.get( i ) );
-        } else if (processor.isLocallyDeleted(file)) {
-          if (! host.renamedFiles.containsKey(file)) {
-            final String renamedFolder = getUnderRenamedFolder(file);
-            if (renamedFolder != null && ! renamedFolder.equals(file)) {
-              host.renamedFiles.put(writableFiles.get(i), file);
-              filesChanged.add(writableFiles.get(i));
-              continue;
-            } if (! host.renamedFolders.containsValue(file)) {
-              filesLocallyDeleted.add(file);
-            }
-          }
-        }
-      }
-    }
-
-    if( isBatchUpdate )
-    {
-      //  For each new file check whether parent folders structure is also new.
-      //  If so - mark these folders as dirty and assign them new statuses on the
-      //  next iteration to "getChanges()".
-      final List<String> newFolders = new ArrayList<String>();
-      final HashSet<String> processedFolders = new HashSet<String>();
-      newFiles.addAll( filesNew ); //  in order to analyze all of them.
-      for( String file : newFiles )
-      {
-        if( !isPathUnderProcessedFolders( processedFolders, file ))
-          analyzeParentFoldersForPresence( file, newFolders, processedFolders );
-      }
-
-      filesNew.addAll( newFolders );
-    }
-    filesNew.addAll( newFiles );
+    processViewStatusResults(processor);
   }
 
   /**
@@ -540,32 +498,6 @@ public class CCaseChangeProvider implements ChangeProvider {
     }
   }
 
-  /**
-   * For a given file which is known to be new, check also its direct parent
-   * folder for presence in the VSS repository, and then all its indirect parent
-   * folders until we reach project boundaries or find the existing folder.
-   */
-  private void analyzeParentFoldersForPresence( String file, List<String> newFolders,
-                                                HashSet<String> processed )
-  {
-    String fileParent = new File( file ).getParentFile().getPath();
-    String fileParentNorm = VcsUtil.getCanonicalLocalPath( fileParent );
-    String refParentName = host.discoverOldName( fileParentNorm );
-
-    if( host.fileIsUnderVcs( fileParent ) && !processed.contains( fileParent.toLowerCase() ) )
-    {
-      LOG.debug( "ChangeProvider - Check potentially new folder" );
-
-      processed.add( fileParent.toLowerCase() );
-      if( !host.fileExistsInVcs( refParentName ))
-      {
-        LOG.debug( "                 Folder [" + fileParent + "] is not in the repository" );
-        newFolders.add( fileParent );
-        analyzeParentFoldersForPresence( fileParent, newFolders, processed );
-      }
-    }
-  }
-
   private void restoreStatusesFromCached()
   {
     for( String fileName : filesWritable )
@@ -606,8 +538,12 @@ public class CCaseChangeProvider implements ChangeProvider {
     {
       //  In the case of file rename or parent folder rename we should
       //  refer to the list of new files by the
-      String refName = host.discoverOldName( fileName );
+      final String refName = host.discoverOldName(fileName);
 
+      if (! refName.equals(fileName)) {
+        //filesChanged.add(fileName);
+        continue;
+      }
       //  New file could be added AFTER and BEFORE e.g. the package rename.
       if( host.containsNew( fileName ) || host.containsNew( refName ))
       {
@@ -647,7 +583,7 @@ public class CCaseChangeProvider implements ChangeProvider {
     List<String> refFilesToCheck = new ArrayList<String>();
     for( String fileName : files )
     {
-      refFilesToCheck.add(host.discoverOldName( fileName ));
+      refFilesToCheck.add(host.discoverOldName(fileName));
     }
 
     DescribeMultipleProcessor processor = new DescribeMultipleProcessor( refFilesToCheck );
@@ -694,13 +630,13 @@ public class CCaseChangeProvider implements ChangeProvider {
 
     for( String fileName : filesChanged )
     {
-      String validRefName = host.discoverOldName( fileName );
+      String validRefName = host.discoverOldName(fileName);
       add2ChangeList( builder, FileStatus.MODIFIED, fileName, validRefName );
     }
 
     for( String fileName : filesHijacked )
     {
-      String validRefName = host.discoverOldName( fileName );
+      String validRefName = host.discoverOldName(fileName);
       add2ChangeList( builder, FileStatus.HIJACKED, fileName, validRefName );
     }
 
@@ -779,17 +715,6 @@ public class CCaseChangeProvider implements ChangeProvider {
     }
   }
 
-  private static boolean isPathUnderProcessedFolders( HashSet<String> folders, String path )
-  {
-    String parentPathToCheck = new File( path ).getParent();
-    for( String folderPath : folders )
-    {
-      if( parentPathToCheck.equalsIgnoreCase( folderPath ) )
-        return true;
-    }
-    return false;
-  }
-
   /**
    * For the renamed or moved file we receive two change requests: one for
    * the old file and one for the new one. For renamed file old request differs
@@ -826,20 +751,18 @@ public class CCaseChangeProvider implements ChangeProvider {
    */
   private boolean isBatchUpdate( VcsDirtyScope scope )
   {
-    boolean isBatch = false;
     ProjectLevelVcsManager mgr = ProjectLevelVcsManager.getInstance( project );
     VirtualFile[] roots = mgr.getRootsUnderVcs( host );
-    for( FilePath path : scope.getRecursivelyDirtyDirectories() )
-    {
-      for( VirtualFile root : roots )
-      {
+    for (FilePath path : scope.getRecursivelyDirtyDirectories()) {
+      for (VirtualFile root : roots) {
         VirtualFile vfScopePath = path.getVirtualFile();
         //  VFile may be null in the case of deleted folders (IDEADEV-18855)
-        isBatch = isBatch || (vfScopePath != null &&
-                              vfScopePath.getPath().equalsIgnoreCase( root.getPath() ) );
+        if (vfScopePath != null && vfScopePath.getPath().equalsIgnoreCase(root.getPath())) {
+          return true;
+        }
       }
     }
-    return isBatch;
+    return false;
   }
 
   private boolean isUnderRenamedFolder( String fileName ) {
@@ -848,21 +771,14 @@ public class CCaseChangeProvider implements ChangeProvider {
 
   @Nullable
   private String getUnderRenamedFolder(String fileName) {
-    for( String folder : host.renamedFolders.keySet() )
-    {
-      if( fileName.startsWith( folder ) )
+    for (String folder : host.renamedFolders.keySet()) {
+      if (fileName.startsWith(folder)) {
         return folder;
+      }
     }
     return null;
   }
 
-  /*
-  private boolean isFileCCaseProcessable( VirtualFile file )
-  {
-    return isValidFile( file ) && VcsUtil.isPathUnderProject( project, file.getPath() );
-  }
-
-  */
   private static boolean isValidFile( VirtualFile file )
   {
     return (file != null) && file.isWritable() && !file.isDirectory();

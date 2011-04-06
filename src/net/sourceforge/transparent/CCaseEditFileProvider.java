@@ -4,11 +4,13 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.EditFileProvider;
 import com.intellij.openapi.vcs.VcsConfiguration;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
+import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.WaitForProgressToShow;
 import com.intellij.util.io.ReadOnlyAttributeUtil;
@@ -44,8 +46,15 @@ public class CCaseEditFileProvider implements EditFileProvider
     final List<VcsException> errors = new ArrayList<VcsException>();
     final ChangeListManager mgr = ChangeListManager.getInstance( host.getProject() );
 
-    final CurrentStatusHelper statusHelper = preProcessFiles(files);
-    final String comment = getEditComment(files, statusHelper);
+    final CurrentStatusHelper[] statusHelper = new CurrentStatusHelper[1];
+    final boolean succeeded = ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
+        @Override
+        public void run() {
+          statusHelper[0] = preProcessFiles(files);
+        }
+      }, "ClearCase checkout: preprocessing files", true, host.getProject());
+    if (! succeeded || statusHelper[0] == null) return;
+    final String comment = getEditComment(files, statusHelper[0]);
     if (comment == null) return;  // was cancelled
     ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
       @Override
@@ -57,15 +66,13 @@ public class CCaseEditFileProvider implements EditFileProvider
           final ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
           if (indicator != null) {
             indicator.checkCanceled();
-            final VirtualFile parent = file.getParent();
-            indicator.setText2((ignoredFile ? "Ignored: " : "Checking out: ") + file.getName() +
-              " (" + (parent == null ? file.getPath() : parent.getPath()) + ")");
+            indicator.setText2((ignoredFile ? "Ignored: " : "Checking out: ") + getFileDescriptionForProgress(file));
             indicator.setFraction((double) cnt/files.length);
           }
           ++ cnt;
           if(! ignoredFile) {
             try {
-              statusHelper.checkOutOrHijackFile(file, errors, comment);
+              statusHelper[0].checkOutOrHijackFile(file, errors, comment);
             }
             catch (VcsException e) {
               return;
@@ -79,6 +86,11 @@ public class CCaseEditFileProvider implements EditFileProvider
     {
       throw errors.get(0);
     }
+  }
+
+  private static String getFileDescriptionForProgress(final VirtualFile file) {
+    final VirtualFile parent = file.getParent();
+    return file.getName() + " (" + (parent == null ? file.getPath() : parent.getPath()) + ")";
   }
 
   @Nullable
@@ -124,7 +136,7 @@ public class CCaseEditFileProvider implements EditFileProvider
               ReadOnlyAttributeUtil.setReadOnlyAttribute(file, false);
             }
             catch (IOException e) {
-              Messages.showErrorDialog(FAIL_RO_TEXT + file.getName(), FAIL_DIALOG_TITLE);
+              Messages.showErrorDialog(FAIL_RO_TEXT + file.getPath(), FAIL_DIALOG_TITLE);
             }
           }
         });
@@ -134,7 +146,18 @@ public class CCaseEditFileProvider implements EditFileProvider
 
   private CurrentStatusHelper preProcessFiles(final VirtualFile[] files) {
     final CurrentStatusHelper csh = new CurrentStatusHelper(host);
+    final ProgressIndicator pi = ProgressManager.getInstance().getProgressIndicator();
+    if (pi != null) {
+      pi.setIndeterminate(false);
+    }
+    int cnt = 0;
     for (VirtualFile file : files) {
+      if (pi != null) {
+        pi.checkCanceled();
+        pi.setFraction((double) cnt / files.length);
+        pi.setText(getFileDescriptionForProgress(file));
+      }
+      ++ cnt;
       final String oldName = host.discoverOldName(file.getPath());
       if (oldName != null) {
         csh.addRenamed(file, oldName);
@@ -189,7 +212,7 @@ public class CCaseEditFileProvider implements EditFileProvider
           hijackFile(file);
         } else {
           final String oldName = myRenamedMap.get(file);
-          if (oldName != null) {
+          if (oldName != null && ! file.getPath().equals(FileUtil.toSystemIndependentName(oldName))) {
             final File oldFile = new File(oldName);
             host.checkoutFile(oldFile, false, comment, true, true);
             hijackFile(file);

@@ -96,8 +96,18 @@ public class CommandLineClearCase implements ClearCase
     params = commandLine.toArray(new String[commandLine.size()]);
 
     Runner runner = cleartool( params, true );
-    if( !runner.isSuccessfull() )
-      throw new ClearCaseException( runner.getOutput() );
+    if( !runner.isSuccessfull() ) {
+      boolean isCheckedOut = false;
+      try {
+        final Status status = getStatus(file);
+        isCheckedOut = Status.CHECKED_OUT.equals(status);
+      } catch (ClearCaseException e) {
+        // ignore and show first exception
+      }
+      if (! isCheckedOut) {
+        throw new ClearCaseException(runner.getOutput());
+      }
+    }
 
     String activity = extractActivity( runner.getOutput() );
 
