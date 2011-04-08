@@ -14,6 +14,7 @@ import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.WaitForProgressToShow;
 import com.intellij.util.io.ReadOnlyAttributeUtil;
+import com.intellij.vcsUtil.FilesProgress;
 import net.sourceforge.transparent.actions.CheckoutDialog;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
@@ -150,14 +151,9 @@ public class CCaseEditFileProvider implements EditFileProvider
     if (pi != null) {
       pi.setIndeterminate(false);
     }
-    int cnt = 0;
+    final FilesProgress filesProgress = new FilesProgress(files.length, "");
     for (VirtualFile file : files) {
-      if (pi != null) {
-        pi.checkCanceled();
-        pi.setFraction((double) cnt / files.length);
-        pi.setText(getFileDescriptionForProgress(file));
-      }
-      ++ cnt;
+      filesProgress.updateIndicator(file);
       final String oldName = host.discoverOldName(file.getPath());
       if (oldName != null) {
         csh.addRenamed(file, oldName);
