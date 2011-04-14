@@ -71,10 +71,6 @@ public abstract class VcsAction extends AnAction
     return mgr.getStatus(file);
   }
 
-  protected static Project getProject(AnActionEvent e) {
-    return e.getData(PlatformDataKeys.PROJECT);
-  }
-
   protected static TransparentVcs getHost(AnActionEvent e) {
     return TransparentVcs.getInstance(e.getData(PlatformDataKeys.PROJECT));
   }
