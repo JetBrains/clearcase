@@ -19,7 +19,7 @@ public class PropertiesAction extends AsynchronousAction
 
     if( e.getPresentation().isEnabled())
     {
-      Project project = getProject( e );
+      Project project = getEventProject( e );
       FileStatusManager mgr = FileStatusManager.getInstance( project );
       e.getPresentation().setEnabled( mgr.getStatus( files[ 0 ] ) != FileStatus.HIJACKED );
     }

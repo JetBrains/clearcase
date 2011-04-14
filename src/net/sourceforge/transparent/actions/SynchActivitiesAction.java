@@ -32,8 +32,8 @@ public class SynchActivitiesAction extends SynchronousAction
   {
     super.update( e );
 
-    boolean enabled = CCaseViewsManager.getInstance( getProject( e ) ).isAnyUcmView() &&
-                      !CCaseConfig.getInstance( getProject( e ) ).synchActivitiesOnRefresh;
+    boolean enabled = CCaseViewsManager.getInstance( getEventProject( e ) ).isAnyUcmView() &&
+                      !CCaseConfig.getInstance( getEventProject( e ) ).synchActivitiesOnRefresh;
     e.getPresentation().setEnabled( enabled );
   }
 
