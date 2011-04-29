@@ -82,7 +82,7 @@ public class CCaseConfigurable implements Configurable
     return hasScrTextChanged()
            || vcsConfig.checkoutReserved != myReservedCheckoutsCheckBox.isSelected()
            || vcsConfig.checkInUseHijack != myCheckOutForHijacked.isSelected()
-           || mySharedConfig.isUseUcmModel() != myUseUCMModel.isSelected()
+           || (mySharedConfig.getState().myUseUcmModel == null ? vcsConfig.useUcmModel : mySharedConfig.isUseUcmModel()) != myUseUCMModel.isSelected()
            || vcsConfig.isOffline() != myWorkOffline.isSelected()
            || vcsConfig.isHistoryResticted != myRestrictHistory.isSelected()
            || vcsConfig.getHistoryRevisionsMargin() != getMargin()
