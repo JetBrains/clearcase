@@ -172,7 +172,13 @@ public class CCaseRollbackEnvironment implements RollbackEnvironment
           !VcsUtil.isChangeForDeleted(change))
       {
         final boolean isRenameChange = VcsUtil.isRenameChange(change);
-        if (VcsUtil.isChangeForFolder(change) && isRenameChange) continue;
+        if (VcsUtil.isChangeForFolder(change) && isRenameChange) {
+          final File wasFile = change.getBeforeRevision().getFile().getIOFile();
+          final Status status = host.getStatus(wasFile);
+          if (! (Status.CHECKED_OUT.equals(status) || Status.HIJACKED.equals(status))) {
+            continue;
+          }
+        }
 
         FilePath filePath = change.getAfterRevision().getFile();
         String path = filePath.getPath();
@@ -192,8 +198,9 @@ public class CCaseRollbackEnvironment implements RollbackEnvironment
           List<VcsException> localErrors = new ArrayList<VcsException>();
           FilePath oldFile = change.getBeforeRevision().getFile();
           host.undoCheckoutFile( oldFile.getIOFile(), localErrors );
-          if( localErrors.size() > 0 && !isUnknownFileError( localErrors ) )
+          if( localErrors.size() > 0 && !isUnknownFileError( localErrors ) ) {
             errors.addAll( localErrors );
+          }
 
           host.renamedFiles.remove( filePath.getPath() );
           FileUtil.delete( new File( path ) );
@@ -202,7 +209,11 @@ public class CCaseRollbackEnvironment implements RollbackEnvironment
         {
           final Status fileStatus = host.getStatusSafely(filePath.getIOFile());
           if (! Status.HIJACKED.equals(fileStatus)) {
-            host.undoCheckoutFile( filePath.getVirtualFile(), errors );
+            if (filePath.getVirtualFile() == null) {
+              host.undoCheckoutFile( filePath.getIOFile(), errors );
+            } else {
+              host.undoCheckoutFile( filePath.getVirtualFile(), errors );
+            }
           } else {
             updateFile( path, errors );
           }

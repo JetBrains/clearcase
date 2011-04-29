@@ -202,8 +202,9 @@ public class CCaseChangeProvider implements ChangeProvider {
   private void addCheckedOutFolders() {
     final Set<String> checkedOutFolders = new HashSet<String>(host.getCheckedOutFolders());
     for (String dir : checkedOutFolders) {
-      if (host.renamedFolders.containsKey(dir)) continue;
-      final Status status = host.getStatus(new File(dir));
+      if (host.renamedFolders.containsKey(dir) || host.renamedFolders.containsValue(dir)) continue;
+      final File file = new File(dir);
+      final Status status = file.exists() ? host.getStatus(file) : null;
       if (Status.HIJACKED.equals(status) || Status.CHECKED_OUT.equals(status)) {
         filesChanged.add(dir);
       } else {
@@ -378,6 +379,7 @@ public class CCaseChangeProvider implements ChangeProvider {
       filesNew.add(path);
     }
     for (String path : processor.getCheckoutFiles()) {
+      if (host.renamedFiles.containsValue(path) || host.renamedFolders.containsValue(path)) continue;
       filesChanged.add(path);
     }
     for (String path : processor.getHijackedFiles()) {
