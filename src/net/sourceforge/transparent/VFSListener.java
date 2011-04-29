@@ -10,7 +10,9 @@ import com.intellij.openapi.vcs.actions.VcsContextFactory;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.*;
+import com.intellij.util.Processor;
 import com.intellij.vcsUtil.VcsUtil;
+import net.sourceforge.transparent.ChangeManagement.CCaseChangeProvider;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
 
@@ -142,6 +144,15 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
     }
 
     final VirtualFile file = event.getFile();
+    VfsUtil.processFilesRecursively(file, new Processor<VirtualFile>() {
+      @Override
+      public boolean process(VirtualFile virtualFile) {
+        if (virtualFile.isDirectory()) {
+          virtualFile.putUserData(CCaseChangeProvider.ourVersionedKey, null);
+        }
+        return true;
+      }
+    });
     if (wasDeleted(file)) {
       restore(file);
     } else if (file.getParent() != null && ! wasMovedRenamed(file)) {
