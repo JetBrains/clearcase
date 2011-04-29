@@ -142,10 +142,26 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
     }
 
     final VirtualFile file = event.getFile();
-    if (file.getParent() != null && ! wasMovedRenamed(file)) {
+    if (wasDeleted(file)) {
+      restore(file);
+    } else if (file.getParent() != null && ! wasMovedRenamed(file)) {
       toBeCreated(event, file);
     }
     VcsDirtyScopeManager.getInstance(project).dirDirtyRecursively(event.getFile());
+  }
+
+  private void restore(VirtualFile file) {
+    final String path = file.getPath();
+    if (file.isDirectory()) {
+      host.deletedFolders.remove(path);
+    } else {
+      host.deletedFiles.remove(path);
+    }
+  }
+
+  private boolean wasDeleted(VirtualFile file) {
+    final String path = file.getPath();
+    return file.isDirectory() ? host.deletedFolders.contains(path) : host.deletedFiles.contains(path);
   }
 
   private boolean wasMovedRenamed(final VirtualFile file) {
