@@ -23,7 +23,6 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.*;
 
 import static net.sourceforge.transparent.TransparentVcs.MERGE_CONFLICT;
@@ -168,6 +167,7 @@ public class CCaseChangeProvider implements ChangeProvider {
     catch( ClearCaseException e )
     {
       String excMessage = e.getMessage();
+      excMessage = excMessage == null ? "" : excMessage;
       @NonNls String message = FAIL_2_CONNECT_MSG + excMessage;
 
       if( TransparentVcs.isServerDownMessage( excMessage ))

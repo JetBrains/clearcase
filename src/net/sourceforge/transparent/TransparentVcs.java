@@ -999,7 +999,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     @NonNls final String msgSig2 = "Unable to connect albd_server";
     @NonNls final String msgSig3 = "can not contact license server";
 
-    return ( msg.indexOf( msgSig1 ) != -1 ) || ( msg.indexOf( msgSig2 ) != -1 ) || ( msg.indexOf( msgSig3 ) != -1 ); 
+    return msg != null && (( msg.indexOf( msgSig1 ) != -1 ) || ( msg.indexOf( msgSig2 ) != -1 ) || ( msg.indexOf( msgSig3 ) != -1 ));
   }
 
   private static boolean isMergeConflictMessage( String msg )
@@ -1007,7 +1007,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     @NonNls final String msgSig1 = "he most recent version";
     @NonNls final String msgSig2 = "is not the predecessor of this";
 
-    return (msg.indexOf( msgSig1 ) != -1) && (msg.indexOf( msgSig2 ) != -1);
+    return msg != null && ((msg.indexOf( msgSig1 ) != -1) && (msg.indexOf( msgSig2 ) != -1));
   }
 
   //
