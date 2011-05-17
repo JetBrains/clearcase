@@ -463,23 +463,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     }
   }
 
-  public Set<VirtualFile> getUnversioned(final File under) {
-    final LocalFileSystem lfs = LocalFileSystem.getInstance();
-    final VirtualFile base = lfs.refreshAndFindFileByIoFile(under);
-    if (base == null) Collections.emptySet();
-
-    final Set<String> unversioned = clearcase.getUnversioned(under);
-    if (unversioned.isEmpty()) return Collections.emptySet();
-    final Set<VirtualFile> result = new HashSet<VirtualFile>();
-    for (String s : unversioned) {
-      final VirtualFile relativeFile = VfsUtil.findRelativeFile(s, base);
-      if (relativeFile != null) {
-        result.add(relativeFile);
-      }
-    }
-    return result;
-  }
-
   public void deleteNewFile( VirtualFile file ) {
     newFiles.remove( file );
   }
