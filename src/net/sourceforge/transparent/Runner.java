@@ -2,6 +2,7 @@ package net.sourceforge.transparent;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.util.process.ProcessCloseUtil;
 import com.intellij.openapi.util.text.StringUtil;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
@@ -15,12 +16,14 @@ public class Runner
   private static final Logger LOG = Logger.getInstance("#net.sourceforge.transparent.Runner");
 
   private static final boolean DEBUG = false;
-  private final StringBuffer _buffer = new StringBuffer();
   private boolean successfull;
+  private Process myProcess;
   public String workingDir = null;
+  private String myOutput;
 
-  private class Consumer implements Runnable
+  private static class Consumer implements Runnable
   {
+    private final StringBuilder _buffer = new StringBuilder();
     private final BufferedReader _reader;
 
     public Consumer(InputStream inputStream) {
@@ -32,34 +35,35 @@ public class Runner
         String line;
         while ((line = _reader.readLine()) != null) {
           if (DEBUG) System.out.println("      " + line);
-          if (_buffer.length() != 0) _buffer.append("\n"); // not theadsafe, but who cares
+          if (_buffer.length() != 0) _buffer.append("\n");
           _buffer.append(line);
         }
       } catch (Exception e) {
         throw new RuntimeException(e.getMessage());
       }
     }
+
+    public StringBuilder get_buffer() {
+      return _buffer;
+    }
   }
 
-  private Process startProcess( String[] command ) throws IOException, InterruptedException
+  private void startProcess( String[] command ) throws IOException, InterruptedException
   {
     String cmdLine = getCommandLine( command );
 
-    Process process;
     if( workingDir == null )
-      process = Runtime.getRuntime().exec( command );
+      myProcess = Runtime.getRuntime().exec( command );
     else
     {
       File wrkDir = new File( workingDir );
       if( !wrkDir.exists() || !wrkDir.isDirectory() )
         throw new IOException( "Path " + workingDir + " is not a valid working directory for a command: " + cmdLine );
 
-      process = Runtime.getRuntime().exec( command, null, wrkDir );
+      myProcess = Runtime.getRuntime().exec( command, null, wrkDir );
     }
 
-    consumeProcessOutputs( process );
-
-    return process;
+    consumeProcessOutputs();
   }
 
   public static String getCommandLine(String[] command)
@@ -71,10 +75,10 @@ public class Runner
     return buf.toString();
   }
 
-  private void consumeProcessOutputs(Process process) throws InterruptedException
+  private void consumeProcessOutputs() throws InterruptedException
   {
-    Consumer outputConsumer = new Consumer(process.getInputStream());
-    Consumer errorConsumer =  new Consumer(process.getErrorStream());
+    Consumer outputConsumer = new Consumer(myProcess.getInputStream());
+    Consumer errorConsumer =  new Consumer(myProcess.getErrorStream());
     final Future<?> errorDone = ApplicationManager.getApplication().executeOnPooledThread(errorConsumer);
     outputConsumer.run();
     try {
@@ -83,10 +87,13 @@ public class Runner
     catch (ExecutionException e) {
       LOG.error(e);
     }
+    final StringBuilder out = outputConsumer.get_buffer();
+    final StringBuilder error = errorConsumer.get_buffer();
+    myOutput = out + (error.length() > 0 ? ((out.length() > 0 ? "\n" : "") + error) : "");
   }
 
-   private static boolean endProcess(Process process) throws InterruptedException {
-      return process.waitFor() == 0;
+   private boolean endProcess() throws InterruptedException {
+      return myProcess.waitFor() == 0;
    }
 
    public static void runAsynchronously(String command) throws IOException {
@@ -115,13 +122,11 @@ public class Runner
      
       try
       {
-         Process process = startProcess(command);
-
-         successfull = endProcess( process );
+        dealWithProcess(command);
          if( successfull ){
             return true;
          } else {
-            if (!canFail) throw new ClearCaseException("Error executing " + getCommandLine(command) + " : " + _buffer);
+            if (!canFail) throw new ClearCaseException("Error executing " + getCommandLine(command) + " : " + myOutput);
             return false;
          }
       } catch (RuntimeException e) {
@@ -141,8 +146,19 @@ public class Runner
       }
    }
 
+  private void dealWithProcess(String[] command) throws IOException, InterruptedException {
+    try {
+      startProcess(command);
+      successfull = endProcess();
+    } finally {
+      if (myProcess != null) {
+        ProcessCloseUtil.close(myProcess);
+      }
+    }
+  }
 
-   public String getOutput() {  return _buffer.toString();   }
+
+  public String getOutput() {  return myOutput;   }
 
    public boolean isSuccessfull() {  return successfull;   }
 
