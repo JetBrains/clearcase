@@ -17,7 +17,6 @@ public class Runner
 
   private static final boolean DEBUG = false;
   private boolean successfull;
-  private Process myProcess;
   public String workingDir = null;
   private String myOutput;
 
@@ -48,37 +47,35 @@ public class Runner
     }
   }
 
-  private void startProcess( String[] command ) throws IOException, InterruptedException
-  {
-    String cmdLine = getCommandLine( command );
+  private Process createProcess(String[] command) throws IOException {
+    String cmdLine = getCommandLine(command);
 
-    if( workingDir == null )
-      myProcess = Runtime.getRuntime().exec( command );
-    else
-    {
-      File wrkDir = new File( workingDir );
-      if( !wrkDir.exists() || !wrkDir.isDirectory() )
-        throw new IOException( "Path " + workingDir + " is not a valid working directory for a command: " + cmdLine );
-
-      myProcess = Runtime.getRuntime().exec( command, null, wrkDir );
+    if (workingDir == null) {
+      return Runtime.getRuntime().exec(command);
     }
+    else {
+      File wrkDir = new File(workingDir);
+      if (!wrkDir.exists() || !wrkDir.isDirectory()) {
+        throw new IOException("Path " + workingDir + " is not a valid working directory for a command: " + cmdLine);
+      }
 
-    consumeProcessOutputs();
+      return Runtime.getRuntime().exec(command, null, wrkDir);
+    }
   }
 
   public static String getCommandLine(String[] command)
   {
-    StringBuffer buf = new StringBuffer();
+    StringBuilder buf = new StringBuilder();
     for (String aCommand : command) {
       buf.append(aCommand).append(" ");
     }
     return buf.toString();
   }
 
-  private void consumeProcessOutputs() throws InterruptedException
+  private static String consumeProcessOutputs(Process process) throws InterruptedException
   {
-    Consumer outputConsumer = new Consumer(myProcess.getInputStream());
-    Consumer errorConsumer =  new Consumer(myProcess.getErrorStream());
+    Consumer outputConsumer = new Consumer(process.getInputStream());
+    Consumer errorConsumer =  new Consumer(process.getErrorStream());
     final Future<?> errorDone = ApplicationManager.getApplication().executeOnPooledThread(errorConsumer);
     outputConsumer.run();
     try {
@@ -89,14 +86,16 @@ public class Runner
     }
     final StringBuilder out = outputConsumer.get_buffer();
     final StringBuilder error = errorConsumer.get_buffer();
-    myOutput = out + (error.length() > 0 ? ((out.length() > 0 ? "\n" : "") + error) : "");
+
+    if (error.length() > 0) {
+      if (out.length() > 0) out.append('\n');
+      out.append(error);
+    }
+
+    return out.toString();
   }
 
-   private boolean endProcess() throws InterruptedException {
-      return myProcess.waitFor() == 0;
-   }
-
-   public static void runAsynchronously(String command) throws IOException {
+  public static void runAsynchronously(String command) throws IOException {
       Runtime.getRuntime().exec( command );
    }
 
@@ -122,7 +121,7 @@ public class Runner
      
       try
       {
-        dealWithProcess(command);
+        successfull = execProcess(command);
          if( successfull ){
             return true;
          } else {
@@ -146,14 +145,15 @@ public class Runner
       }
    }
 
-  private void dealWithProcess(String[] command) throws IOException, InterruptedException {
+  private boolean execProcess(String[] command) throws IOException, InterruptedException {
+    final Process process = createProcess(command);
     try {
-      startProcess(command);
-      successfull = endProcess();
-    } finally {
-      if (myProcess != null) {
-        ProcessCloseUtil.close(myProcess);
-      }
+      myOutput = consumeProcessOutputs(process);
+      final int retCode = process.waitFor();
+      return retCode == 0;
+    }
+    finally {
+      ProcessCloseUtil.close(process);
     }
   }
 
