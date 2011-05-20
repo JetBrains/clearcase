@@ -233,6 +233,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       checkRootsForUCMMismatch();
     }
     myActivatePolicyCalculateUCM = ourActivatePolicyCalculateUCMDefault;
+    ReadonlyStatusIsVisibleActivationCheck.check(myProject, NAME);
   }
 
   public void checkRootsForUCMMismatch() {
