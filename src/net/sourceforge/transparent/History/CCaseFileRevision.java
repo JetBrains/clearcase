@@ -2,6 +2,7 @@ package net.sourceforge.transparent.History;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.vcsUtil.VcsUtil;
@@ -44,7 +45,7 @@ public class CCaseFileRevision implements VcsFileRevision
     this.path = path;
   }
 
-  public byte[] getContent()      { return content;    }
+  public byte[] getContent() throws IOException, VcsException { return content;    }
   public String getBranchName()   { return null;       }
   public Date getRevisionDate() { return null; }
   public String getChangeCcaseDate() { return changeCcaseDate; }
@@ -56,7 +57,7 @@ public class CCaseFileRevision implements VcsFileRevision
 
   public VcsRevisionNumber getRevisionNumber() {  return new CCaseRevisionNumber( version, order );  }
 
-  public void loadContent()
+  public byte[] loadContent() throws IOException, VcsException
   {
     @NonNls final String TMP_FILE_NAME = "idea_ccase";
     @NonNls final String EXT = ".tmp";
@@ -84,6 +85,7 @@ public class CCaseFileRevision implements VcsFileRevision
     {
       content = null;
     }
+    return content;
   }
 
   public int compareTo( Object revision )
