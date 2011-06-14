@@ -1,7 +1,6 @@
 package net.sourceforge.transparent;
 
 import com.intellij.notification.Notification;
-import com.intellij.notification.NotificationDisplayType;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.project.Project;
@@ -52,7 +51,7 @@ public class BaseOrUCM {
       oldNotification.expire();
     }
     if (newNotification != null) {
-      Notifications.Bus.notify(newNotification, NotificationDisplayType.STICKY_BALLOON, myVcs.getProject());
+      Notifications.Bus.notify(newNotification, myVcs.getProject());
     }
   }
 
