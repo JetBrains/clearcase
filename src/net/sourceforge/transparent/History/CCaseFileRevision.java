@@ -5,6 +5,7 @@ import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import com.intellij.vcsUtil.VcsImplUtil;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
@@ -76,7 +77,7 @@ public class CCaseFileRevision implements VcsFileRevision
       //  We expect that properly finished command produce no (error or
       //  warning) output.
       if( out.length() > 0 ) {
-        VcsUtil.showErrorMessage(myProject, out, TITLE);
+        VcsImplUtil.showErrorMessage(myProject, out, TITLE);
       } else {
         content = VcsUtil.getFileByteContent( myTmpFile );
       }

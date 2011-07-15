@@ -11,6 +11,7 @@ import com.intellij.openapi.vfs.CharsetToolkit;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ArrayUtil;
 import com.intellij.util.WaitForProgressToShow;
+import com.intellij.vcsUtil.VcsImplUtil;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.History.CCaseHistoryParser;
 import net.sourceforge.transparent.TransparentVcs;
@@ -124,7 +125,7 @@ public class CCaseContentRevision implements ContentRevision
             {
               WaitForProgressToShow.runOrInvokeLaterAboveProgress(new Runnable() {
                 public void run() {
-                  VcsUtil.showErrorMessage(project, out2, TITLE);
+                  VcsImplUtil.showErrorMessage(project, out2, TITLE);
                 }
               }, null, project);
             }
@@ -138,7 +139,7 @@ public class CCaseContentRevision implements ContentRevision
         }
         catch( Exception e )
         {
-           VcsUtil.showErrorMessage( project, e.getMessage(), TITLE );
+           VcsImplUtil.showErrorMessage(project, e.getMessage(), TITLE);
         }
       }
     }
