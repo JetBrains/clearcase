@@ -118,6 +118,11 @@ public class CCaseFileAnnotation implements FileAnnotation
 
   @Override
   public Date getLineDate(int lineNumber) {
+    if (myLineInfos.size() <= lineNumber || lineNumber < 0) {
+      return null;
+    }
+    final LineInfo info = myLineInfos.get(lineNumber);
+    // todo
     return null;
   }
 
@@ -136,6 +141,11 @@ public class CCaseFileAnnotation implements FileAnnotation
 
   public AnnotationSourceSwitcher getAnnotationSourceSwitcher() {
     return null;
+  }
+
+  @Override
+  public int getLineCount() {
+    return myLineInfos.size();
   }
 
   public void addLineInfo( final String date, final String revision, final String author, final String line)
