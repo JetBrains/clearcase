@@ -8,6 +8,7 @@ import com.intellij.openapi.vfs.VirtualFileManager;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -112,6 +113,11 @@ public class CCaseFileAnnotation implements FileAnnotation
 
   @Nullable
   public VcsRevisionNumber getLineRevisionNumber(final int lineNumber) {
+    return null;
+  }
+
+  @Override
+  public Date getLineDate(int lineNumber) {
     return null;
   }
 
