@@ -5,6 +5,7 @@
 package net.sourceforge.transparent.ChangeManagement;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.diff.impl.patch.formove.FilePathComparator;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
@@ -12,7 +13,9 @@ import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.*;
+import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.PairProcessor;
 import com.intellij.util.Processor;
 import com.intellij.util.WaitForProgressToShow;
 import com.intellij.util.containers.Convertor;
@@ -83,7 +86,7 @@ public class CCaseChangeProvider implements ChangeProvider {
   private final HashSet<String> filesMerge = new HashSet<String>();
   private final HashSet<String> filesLocallyDeleted = new HashSet<String>();
   private final ChangeListManager myChangeListManager;
-  private Set<VirtualFile> myDirs;
+  private TreeSet<VirtualFile> myDirs;
 
   public CCaseChangeProvider( Project project, TransparentVcs hostVcs )
   {
@@ -92,7 +95,7 @@ public class CCaseChangeProvider implements ChangeProvider {
     host = hostVcs;
     isFirstShow = true;
     myChangeListManager = ChangeListManager.getInstance(this.project);
-    myDirs = new HashSet<VirtualFile>();
+    myDirs = new TreeSet<VirtualFile>(FilePathComparator.getInstance());
   }
 
   public boolean isModifiedDocumentTrackingRequired() { return false;  }
@@ -343,13 +346,40 @@ public class CCaseChangeProvider implements ChangeProvider {
 
           if (isValidFile(vFile)) {
             filesWritable.add(path);
-          } else if ((vFile != null) && vFile.isDirectory() && ! Boolean.TRUE.equals(vFile.getUserData(ourVersionedKey)) &&
-                     (! host.renamedFolders.containsKey(vFile.getPath()))) {
-            myDirs.add(vFile);
           }
           return true;
         }
-      } );
+      }, new PairProcessor<VirtualFile, VirtualFile[]>() {
+        @Override
+        public boolean process(VirtualFile virtualFile, VirtualFile[] virtualFiles) {
+          boolean isIgnored = host.isFileIgnored(virtualFile);
+          if (isIgnored) return false;
+          for (VirtualFile file : virtualFiles) {
+            if (file.isValid() && ! file.isWritable() && ! host.renamedFiles.containsKey(file.getPath())) {
+              removeParentsFromUnversioned(virtualFile);
+              return true; // directory is versioned
+            }
+          }
+          String dirPath = virtualFile.getPath();
+          if (! Boolean.TRUE.equals(virtualFile.getUserData(ourVersionedKey)) &&
+                               (! host.renamedFolders.containsKey(dirPath)) && ! host.checkedOutFolders.contains(dirPath)) {
+            myDirs.add(virtualFile);
+          }
+          return true;
+        }
+      });
+    }
+  }
+
+  private void removeParentsFromUnversioned(VirtualFile vFile) {
+    VirtualFile floor = myDirs.floor(vFile);
+    if (floor == null) return;
+    Iterator<VirtualFile> iterator = myDirs.headSet(floor).iterator();
+    while (iterator.hasNext()) {
+      VirtualFile next = iterator.next();
+      if (VfsUtil.isAncestor(next, vFile, false)) {
+        iterator.remove();
+      }
     }
   }
 
