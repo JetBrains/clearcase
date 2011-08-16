@@ -30,6 +30,13 @@ public class CCaseSharedConfig extends AbstractProjectComponent implements Persi
 
   @Override
   public State getState() {
+    State state = determineState();
+    // default is true
+    if (Boolean.TRUE.equals(state.myUseUcmModel)) return null;
+    return state;
+  }
+
+  private State determineState() {
     if (myState.myUseUcmModel == null) {
       myState.myUseUcmModel = CCaseConfig.getInstance(myProject).useUcmModel;
     }

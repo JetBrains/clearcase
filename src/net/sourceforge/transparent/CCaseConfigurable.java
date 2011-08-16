@@ -79,10 +79,11 @@ public class CCaseConfigurable implements Configurable
 
   public boolean isModified()
   {
+    CCaseSharedConfig.State state = mySharedConfig.getState();
     return hasScrTextChanged()
            || vcsConfig.checkoutReserved != myReservedCheckoutsCheckBox.isSelected()
            || vcsConfig.checkInUseHijack != myCheckOutForHijacked.isSelected()
-           || (mySharedConfig.getState().myUseUcmModel == null ? vcsConfig.useUcmModel : mySharedConfig.isUseUcmModel()) != myUseUCMModel.isSelected()
+           || (state == null ? true : state.myUseUcmModel) != myUseUCMModel.isSelected()
            || vcsConfig.isOffline() != myWorkOffline.isSelected()
            || vcsConfig.isHistoryResticted != myRestrictHistory.isSelected()
            || vcsConfig.getHistoryRevisionsMargin() != getMargin()
