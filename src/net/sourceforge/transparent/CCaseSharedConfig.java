@@ -12,16 +12,17 @@ import com.intellij.openapi.project.Project;
   name = "ClearCaseSharedConfig",
   storages = {@Storage( file = "$PROJECT_FILE$"),
     @Storage( file = "$PROJECT_CONFIG_DIR$/vcs.xml", scheme = StorageScheme.DIRECTORY_BASED)})
-public class CCaseSharedConfig extends AbstractProjectComponent implements PersistentStateComponent<CCaseSharedConfig.State> {
+public class CCaseSharedConfig implements PersistentStateComponent<CCaseSharedConfig.State> {
   private State myState;
+  private final Project myProject;
 
   public CCaseSharedConfig(Project project) {
-    super(project);
+    myProject = project;
     myState = new State();
   }
 
   public static CCaseSharedConfig getInstance(final Project project) {
-    return project.getComponent(CCaseSharedConfig.class);
+    return ServiceManager.getService(project, CCaseSharedConfig.class);
   }
 
   public static class State {

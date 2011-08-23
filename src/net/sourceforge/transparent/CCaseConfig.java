@@ -1,20 +1,25 @@
 package net.sourceforge.transparent;
 
-import com.intellij.lifecycle.PeriodicalTasksCloser;
-import com.intellij.openapi.components.AbstractProjectComponent;
+import com.intellij.openapi.components.PersistentStateComponent;
+import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.components.State;
+import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.DefaultJDOMExternalizer;
-import com.intellij.openapi.util.InvalidDataException;
-import com.intellij.openapi.util.JDOMExternalizable;
-import com.intellij.openapi.util.WriteExternalException;
-import org.jdom.Element;
-import org.jetbrains.annotations.NotNull;
+import com.intellij.util.xmlb.XmlSerializerUtil;
 
 /**
  * This is the persistent state of the transparent plugin - just anything that needs
  * to be persisted as a field
  */
-public class CCaseConfig extends AbstractProjectComponent implements JDOMExternalizable {
+@State(
+  name = "CCaseConfig",
+  storages = {
+    @Storage(
+      file = "$WORKSPACE_FILE$"
+    )
+  }
+)
+public class CCaseConfig implements PersistentStateComponent<CCaseConfig> {
   public boolean checkoutReserved = false;
   public boolean markExternalChangeAsUpToDate = true;
   public boolean checkInUseHijack = true;
@@ -32,17 +37,18 @@ public class CCaseConfig extends AbstractProjectComponent implements JDOMExterna
 
   private TransparentVcs host;
 
-  public CCaseConfig(Project project) {
-    super(project);
+  @Override
+  public CCaseConfig getState() {
+    return this;
   }
 
-  @NotNull
-  public String getComponentName() {
-    return "CCaseConfig";
+  @Override
+  public void loadState(CCaseConfig state) {
+    XmlSerializerUtil.copyBean(state, this);
   }
 
   public static CCaseConfig getInstance(Project project) {
-    return PeriodicalTasksCloser.getInstance().safeGetComponent(project, CCaseConfig.class);
+    return ServiceManager.getService(project, CCaseConfig.class);
   }
 
   public void setHost(TransparentVcs host) {
@@ -68,13 +74,5 @@ public class CCaseConfig extends AbstractProjectComponent implements JDOMExterna
 
   public boolean isOffline() {
     return isOffline;
-  }
-
-  public void readExternal(Element element) throws InvalidDataException {
-    DefaultJDOMExternalizer.readExternal(this, element);
-  }
-
-  public void writeExternal(Element parentNode) throws WriteExternalException {
-    DefaultJDOMExternalizer.writeExternal(this, parentNode);
   }
 }

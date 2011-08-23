@@ -12,18 +12,12 @@
       <component>
          <implementation-class>net.sourceforge.transparent.TransparentVcs</implementation-class>
          <option name="workspace" value="true"/>
-      </component>
-      <component>
-         <implementation-class>net.sourceforge.transparent.CCaseConfig</implementation-class>
-         <option name="workspace" value="true"/>
+         <loadForDefaultProject/>
       </component>
      <component>
         <implementation-class>net.sourceforge.transparent.CCaseViewsManager</implementation-class>
         <option name="workspace" value="true"/>
-     </component>
-     <component>
-       <implementation-class>net.sourceforge.transparent.CCaseSharedConfig</implementation-class>
-       <option name="workspace" value="false"/>
+        <loadForDefaultProject/>
      </component>
    </project-components>
 
@@ -61,6 +55,8 @@
     <ComponentRoamingType component="CCaseViewsManager" type="DISABLED"/>
     <vcs name="ClearCase" vcsClass="net.sourceforge.transparent.TransparentVcs" displayName="ClearCase"/>
     <vcsCheckinHandlerFactory implementation="net.sourceforge.transparent.TransparentVcsCheckinHandlerFactory"/>
+    <projectService serviceImplementation="net.sourceforge.transparent.CCaseConfig"/>
+    <projectService serviceImplementation="net.sourceforge.transparent.CCaseSharedConfig"/>
   </extensions>
 
 </idea-plugin>
