@@ -10,7 +10,6 @@ import com.intellij.openapi.vcs.EditFileProvider;
 import com.intellij.openapi.vcs.VcsConfiguration;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
-import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.WaitForProgressToShow;
 import com.intellij.util.io.ReadOnlyAttributeUtil;
