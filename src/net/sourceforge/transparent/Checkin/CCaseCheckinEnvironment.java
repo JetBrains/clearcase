@@ -130,7 +130,10 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     return true;
   }
 
-  public List<VcsException> commit(List<Change> changes, String comment, @NotNull NullableFunction<Object, Object> parametersHolder)
+  public List<VcsException> commit(List<Change> changes,
+                                   String comment,
+                                   @NotNull NullableFunction<Object, Object> parametersHolder,
+                                   Set<String> feedback)
   {
     List<VcsException> errors = new ArrayList<VcsException>();
     HashSet<FilePath> processedFiles = new HashSet<FilePath>();
@@ -193,7 +196,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   }
 
   public List<VcsException> commit(List<Change> changes, String preparedComment) {
-    return commit(changes, preparedComment, FunctionUtil.<Object, Object>nullConstant());
+    return commit(changes, preparedComment, FunctionUtil.<Object, Object>nullConstant(), null);
   }
 
   /**
