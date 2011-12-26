@@ -130,6 +130,11 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     return true;
   }
 
+  @Override
+  public boolean isRefreshAfterCommitNeeded() {
+    return true;
+  }
+
   public List<VcsException> commit(List<Change> changes,
                                    String comment,
                                    @NotNull NullableFunction<Object, Object> parametersHolder,
