@@ -102,9 +102,7 @@ public class CheckOutAction extends SynchronousAction
     if (indicator != null) {
       indicator.checkCanceled();
       final VirtualFile parent = file.getParent();
-      indicator.setText(
-        new StringBuilder().append("Processing: ").append(file.getName()).append(" (")
-          .append(parent == null ? (file.getPath()) : parent.getPath()).append(")").toString());
+      indicator.setText("Processing: " + file.getName() + " (" + (parent == null ? file.getPath() : parent.getPath()) + ')');
       indicator.setText2("Processed: " + cnt + " files");
       ++ cnt;
     }
