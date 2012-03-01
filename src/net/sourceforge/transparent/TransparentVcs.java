@@ -1127,7 +1127,9 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   }
 
   @Override
-  public void generalPreConfigurationStep() {
+  @CalledInAwt
+  public void enableIntegration() {
+    super.enableIntegration();
     myActivatePolicyCalculateUCM = true;
   }
 
