@@ -2,6 +2,8 @@ package net.sourceforge.transparent.History;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.vcs.DefaultRepositoryLocation;
+import com.intellij.openapi.vcs.RepositoryLocation;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
@@ -44,6 +46,11 @@ public class CCaseFileRevision implements VcsFileRevision
     changeCcaseDate = data.changeDate;
 
     this.path = path;
+  }
+
+  @Override
+  public RepositoryLocation getChangedRepositoryPath() {
+    return null;
   }
 
   public byte[] getContent() throws IOException, VcsException { return content;    }
