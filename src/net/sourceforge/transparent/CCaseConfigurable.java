@@ -44,7 +44,7 @@ public class CCaseConfigurable implements Configurable
   public void disposeUIResources() {}
 
   public String getDisplayName()  {  return OPTIONS_SCREEN_NAME;        }
-  public Icon   getIcon()         {  return null;  }
+
   public String getHelpTopic()    {  return "project.propVCSSupport.VCSs.ClearCase";  }
 
   public JComponent createComponent()
