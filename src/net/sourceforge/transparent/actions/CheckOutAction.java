@@ -15,7 +15,6 @@ import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.TransparentVcs;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.List;
 
@@ -195,6 +194,6 @@ public class CheckOutAction extends SynchronousAction
   {
     //  We should never reach this point. Most methods are overloaded to support
     //  adding uniform data (here - comment) to the operation.
-    throw new NotImplementedException();
+    throw new UnsupportedOperationException();
   }
 }
