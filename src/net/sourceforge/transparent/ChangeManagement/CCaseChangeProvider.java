@@ -13,10 +13,7 @@ import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.*;
-import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.PairProcessor;
-import com.intellij.util.Processor;
 import com.intellij.util.WaitForProgressToShow;
 import com.intellij.util.containers.Convertor;
 import com.intellij.vcsUtil.VcsUtil;
@@ -328,59 +325,13 @@ public class CCaseChangeProvider implements ChangeProvider {
    * - writable files, they are the subject for subsequent analysis
    * - "ignored" files - which will be shown in a separate changes folder.
    */
-  private void collectWritableFiles( final FilePath filePath )
-  {
-    VirtualFile vf = filePath.getVirtualFile();
-    if( vf != null )
-    {
-      ProjectLevelVcsManager.getInstance(project).iterateVcsRoot( vf, new Processor<FilePath>()
-      {
-        public boolean process(final FilePath file)
-        {
-          final String path = file.getPath().replace('\\', '/');
-          final VirtualFile vFile = file.getVirtualFile();
-          if (host.isFileIgnored(vFile)) {
-            filesIgnored.add(path);
-            return true;
-          }
+  private void collectWritableFiles( final FilePath filePath ) {
+    final CCaseWriteableAndUnversionedCollector collector = new CCaseWriteableAndUnversionedCollector(project, host);
+    collector.collectWritableFiles(filePath);
 
-          if (isValidFile(vFile)) {
-            filesWritable.add(path);
-          }
-          return true;
-        }
-      }, new PairProcessor<VirtualFile, VirtualFile[]>() {
-        @Override
-        public boolean process(VirtualFile virtualFile, VirtualFile[] virtualFiles) {
-          boolean isIgnored = host.isFileIgnored(virtualFile);
-          if (isIgnored) return false;
-          for (VirtualFile file : virtualFiles) {
-            if (file.isValid() && ! file.isWritable() && ! host.renamedFiles.containsKey(file.getPath())) {
-              removeParentsFromUnversioned(virtualFile);
-              return true; // directory is versioned
-            }
-          }
-          String dirPath = virtualFile.getPath();
-          if (! Boolean.TRUE.equals(virtualFile.getUserData(ourVersionedKey)) &&
-                               (! host.renamedFolders.containsKey(dirPath)) && ! host.checkedOutFolders.contains(dirPath)) {
-            myDirs.add(virtualFile);
-          }
-          return true;
-        }
-      });
-    }
-  }
-
-  private void removeParentsFromUnversioned(VirtualFile vFile) {
-    VirtualFile floor = myDirs.floor(vFile);
-    if (floor == null) return;
-    Iterator<VirtualFile> iterator = myDirs.headSet(floor).iterator();
-    while (iterator.hasNext()) {
-      VirtualFile next = iterator.next();
-      if (VfsUtil.isAncestor(next, vFile, false)) {
-        iterator.remove();
-      }
-    }
+    filesIgnored.addAll(collector.getFilesIgnored());
+    filesWritable.addAll(collector.getFilesWritable());
+    myDirs.addAll(collector.getDirs());
   }
 
   private void computeStatuses(VcsDirtyScope dirtyScope) {
@@ -811,7 +762,7 @@ public class CCaseChangeProvider implements ChangeProvider {
     return null;
   }
 
-  private static boolean isValidFile( VirtualFile file )
+  static boolean isValidFile( VirtualFile file )
   {
     return (file != null) && file.isWritable() && !file.isDirectory();
   }

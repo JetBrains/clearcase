@@ -27,6 +27,7 @@
     <orderEntry type="module" module-name="ultimate-verifier" />
     <orderEntry type="module" module-name="platform-ultimate" />
     <orderEntry type="module" module-name="platform-impl" />
+    <orderEntry type="module" module-name="testFramework" scope="TEST" />
   </component>
 </module>
 

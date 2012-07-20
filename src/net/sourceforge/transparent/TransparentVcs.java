@@ -33,6 +33,7 @@ import com.intellij.util.containers.HashSet;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.Annotations.CCaseAnnotationProvider;
 import net.sourceforge.transparent.ChangeManagement.CCaseChangeProvider;
+import net.sourceforge.transparent.ChangeManagement.TransparentI;
 import net.sourceforge.transparent.Checkin.CCaseCheckinEnvironment;
 import net.sourceforge.transparent.Checkin.CCaseRollbackEnvironment;
 import net.sourceforge.transparent.History.CCaseDiffProvider;
@@ -46,7 +47,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDOMExternalizable
+public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDOMExternalizable, TransparentI
 {
   public static final Logger LOG = Logger.getInstance("#net.sourceforge.transparent.TransparentVcs");
   private static final String NAME = "ClearCase";
@@ -402,6 +403,21 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   {
     ChangeListManager mgr = ChangeListManager.getInstance( myProject );
     return (file != null) && mgr.isIgnoredFile( file );
+  }
+
+  @Override
+  public boolean isRenamedFile(String path) {
+    return renamedFiles.containsKey(path);
+  }
+
+  @Override
+  public boolean isRenamedFolder(String path) {
+    return renamedFolders.containsKey(path);
+  }
+
+  @Override
+  public boolean isCheckedOutFolder(String path) {
+    return checkedOutFolders.contains(path);
   }
 
   public Set<String> getCheckedOutFolders() {
