@@ -98,6 +98,11 @@ public class CCaseHistoryProvider implements VcsHistoryProvider, VcsCacheableHis
     return false;
   }
 
+  @Override
+  public DiffFromHistoryHandler getHistoryDiffHandler() {
+    return null;
+  }
+
   public AnAction[]   getAdditionalActions(final Runnable refresher) {  return AnAction.EMPTY_ARRAY;   }
   public VcsDependentHistoryComponents getUICustomization(final VcsHistorySession session, JComponent forShortcutRegistration)  {  return VcsDependentHistoryComponents.createOnlyColumns(new ColumnInfo[] { CCASE_DATE, ACTION, LABEL });  }
 
