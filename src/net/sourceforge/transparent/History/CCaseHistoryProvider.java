@@ -103,6 +103,11 @@ public class CCaseHistoryProvider implements VcsHistoryProvider, VcsCacheableHis
     return null;
   }
 
+  @Override
+  public boolean canShowHistoryFor(@NotNull VirtualFile file) {
+    return true;
+  }
+
   public AnAction[]   getAdditionalActions(final Runnable refresher) {  return AnAction.EMPTY_ARRAY;   }
   public VcsDependentHistoryComponents getUICustomization(final VcsHistorySession session, JComponent forShortcutRegistration)  {  return VcsDependentHistoryComponents.createOnlyColumns(new ColumnInfo[] { CCASE_DATE, ACTION, LABEL });  }
 
