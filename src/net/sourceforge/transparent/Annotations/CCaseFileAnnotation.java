@@ -1,10 +1,12 @@
 package net.sourceforge.transparent.Annotations;
 
+import com.intellij.openapi.vcs.VcsKey;
 import com.intellij.openapi.vcs.annotate.*;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
+import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -16,15 +18,14 @@ import java.util.List;
  * User: lloix
  * Date: Sep 5, 2007
  */
-public class CCaseFileAnnotation implements FileAnnotation
+public class CCaseFileAnnotation extends FileAnnotation
 {
   private final StringBuffer myContentBuffer = new StringBuffer();
   private final List<LineInfo> myLineInfos = new ArrayList<LineInfo>();
-  private final List<AnnotationListener> myListeners = new ArrayList<AnnotationListener>();
   private VFSForAnnotationListener myListener;
 
   public CCaseFileAnnotation(final VirtualFile file) {
-    myListener = new VFSForAnnotationListener(file, myListeners);
+    myListener = new VFSForAnnotationListener(file, this);
     VirtualFileManager.getInstance().addVirtualFileListener(myListener);
   }
 
@@ -78,15 +79,6 @@ public class CCaseFileAnnotation implements FileAnnotation
         return myLineInfos.get(lineNumber).getAuthor();
     }
   };
-
-
-  public void addListener(AnnotationListener listener) {
-    myListeners.add(listener);
-  }
-
-  public void removeListener(AnnotationListener listener) {
-    myListeners.remove(listener);
-  }
 
   public void dispose() {
     VirtualFileManager.getInstance().removeVirtualFileListener(myListener);
@@ -168,5 +160,16 @@ public class CCaseFileAnnotation implements FileAnnotation
     protected void showAffectedPaths(int lineNum) {
       //todo
     }
+  }
+
+  @Nullable
+  @Override
+  public VcsRevisionNumber getCurrentRevision() {
+    return null;
+  }
+
+  @Override
+  public VcsKey getVcsKey() {
+    return TransparentVcs.getKey();
   }
 }
