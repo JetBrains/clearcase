@@ -1,5 +1,6 @@
 package net.sourceforge.transparent.Annotations;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsKey;
 import com.intellij.openapi.vcs.annotate.*;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
@@ -22,9 +23,12 @@ public class CCaseFileAnnotation extends FileAnnotation
 {
   private final StringBuffer myContentBuffer = new StringBuffer();
   private final List<LineInfo> myLineInfos = new ArrayList<LineInfo>();
+  private final VirtualFile myFile;
   private VFSForAnnotationListener myListener;
 
-  public CCaseFileAnnotation(final VirtualFile file) {
+  public CCaseFileAnnotation(Project project, final VirtualFile file) {
+    super(project);
+    myFile = file;
     myListener = new VFSForAnnotationListener(file, this);
     VirtualFileManager.getInstance().addVirtualFileListener(myListener);
   }
@@ -171,5 +175,10 @@ public class CCaseFileAnnotation extends FileAnnotation
   @Override
   public VcsKey getVcsKey() {
     return TransparentVcs.getKey();
+  }
+
+  @Override
+  public VirtualFile getFile() {
+    return myFile;
   }
 }
