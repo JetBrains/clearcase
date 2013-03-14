@@ -9,6 +9,7 @@ import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.CharsetToolkit;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.encoding.EncodingRegistry;
 import com.intellij.util.ArrayUtil;
 import com.intellij.util.WaitForProgressToShow;
 import com.intellij.vcsUtil.VcsImplUtil;
@@ -86,7 +87,8 @@ public class CCaseContentRevision implements ContentRevision
       {
         if( file != null )
         {
-          try { content = CharsetToolkit.bytesToString(file.contentsToByteArray()); }
+          try {
+            content = CharsetToolkit.bytesToString(file.contentsToByteArray(), EncodingRegistry.getInstance().getDefaultCharset()); }
           catch( IOException e ){ /* nothing to do, content remains empty */ }
         }
       }
@@ -132,7 +134,7 @@ public class CCaseContentRevision implements ContentRevision
             else
             {
               byte[] byteContent = VcsUtil.getFileByteContent( myTmpFile );
-              content = file == null ? CharsetToolkit.bytesToString(byteContent) : CharsetToolkit.bytesToString(byteContent, file.getCharset());
+              content = file == null ? CharsetToolkit.bytesToString(byteContent, EncodingRegistry.getInstance().getDefaultCharset()) : CharsetToolkit.bytesToString(byteContent, file.getCharset());
               myTmpFile.delete();
             }
           }
