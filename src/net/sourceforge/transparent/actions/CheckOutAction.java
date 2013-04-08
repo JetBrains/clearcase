@@ -5,6 +5,7 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FileStatus;
@@ -18,56 +19,57 @@ import org.jetbrains.annotations.NonNls;
 
 import java.util.List;
 
-public class CheckOutAction extends SynchronousAction
-{
+public class CheckOutAction extends SynchronousAction {
   @NonNls private static final String ACTION_NAME = "Check Out";
   @NonNls private static final String CHECKOUT_HIJACKED_TITLE = "Check out hijacked file";
   @NonNls private static final String NOT_A_VOB_OBJECT_SIG = "Not a vob object";
   @NonNls private static final String IS_ALREADY_CHECKED_OUT_SIG = "is already checked out";
   private int cnt;
 
-  protected String getActionName( AnActionEvent e )
-  {
-    boolean verbose = getHost( e ).getCheckoutOptions().getValue();
+  @Override
+  protected String getActionName(AnActionEvent e) {
+    TransparentVcs host = getHost(e);
+    boolean verbose = host != null && host.getCheckoutOptions() != null && host.getCheckoutOptions().getValue();
     return verbose ? ACTION_NAME + "..." : ACTION_NAME;
   }
 
-  public void update( AnActionEvent e )
-  {
-    super.update( e );
+  @Override
+  public void update(AnActionEvent e) {
+    super.update(e);
 
-    TransparentVcs host = getHost( e );
-    boolean isVisible = (host != null && host.getConfig() != null);
-    e.getPresentation().setVisible( isVisible );
-    e.getPresentation().setEnabled( isVisible && !host.getConfig().isOffline() &&
-                                    e.getPresentation().isEnabled() );  
+    TransparentVcs host = getHost(e);
+    boolean isVisible = host != null && host.getConfig() != null;
+    e.getPresentation().setVisible(isVisible);
+    e.getPresentation().setEnabled(isVisible && !host.getConfig().isOffline() &&
+                                   e.getPresentation().isEnabled());
   }
 
-  protected boolean isEnabled(VirtualFile file, final Project project)
-  {
-    if( !VcsUtil.isFileForVcs( file, project, TransparentVcs.getInstance(project) ) )
+  @Override
+  protected boolean isEnabled(VirtualFile file, final Project project) {
+    if (!VcsUtil.isFileForVcs(file, project, TransparentVcs.getInstance(project))) {
       return false;
+    }
 
     //  NB: if invoked for a folder, the status is most often "NOT_CHANGED"
-    FileStatus status = getFileStatus( project, file );
+    FileStatus status = getFileStatus(project, file);
     return status == FileStatus.NOT_CHANGED || status == FileStatus.HIJACKED;
   }
 
-  protected void execute( AnActionEvent e, final List<VcsException> errors )
-  {
+  @Override
+  protected void execute(AnActionEvent e, final List<VcsException> errors) {
     cnt = 0;
     final Project project = e.getData(PlatformDataKeys.PROJECT);
     String comment = "";
-    final VirtualFile[] files = VcsUtil.getVirtualFiles( e );
+    final VirtualFile[] files = VcsUtil.getVirtualFiles(e);
 
-    if( TransparentVcs.getInstance(project).getCheckoutOptions().getValue() )
-    {
-      CheckoutDialog dialog = ( files.length == 1 ) ?
-                              new CheckoutDialog( project, files[ 0 ] ) :
-                              new CheckoutDialog( project, files );
+    if (TransparentVcs.getInstance(project).getCheckoutOptions().getValue()) {
+      CheckoutDialog dialog = files.length == 1 ?
+                              new CheckoutDialog(project, files[0]) :
+                              new CheckoutDialog(project, files);
       dialog.show();
-      if( dialog.getExitCode() == CheckoutDialog.CANCEL_EXIT_CODE )
+      if (dialog.getExitCode() == DialogWrapper.CANCEL_EXIT_CODE) {
         return;
+      }
 
       comment = dialog.getComment();
     }
@@ -77,55 +79,51 @@ public class CheckOutAction extends SynchronousAction
     String title = "Checkout ";
     if (files.length > 1) {
       title += "files";
-    } else {
+    }
+    else {
       title += files[0].isDirectory() ? "directory" : "file";
     }
     pm.runProcessWithProgressSynchronously(new Runnable() {
-        @Override
-        public void run() {
-          final ProgressIndicator indicator = pm.getProgressIndicator();
-          indicator.setIndeterminate(true);
-          for (VirtualFile file : files) {
-            performOnFile(project, file, finalComment, errors, indicator);
-          }
+      @Override
+      public void run() {
+        final ProgressIndicator indicator = pm.getProgressIndicator();
+        indicator.setIndeterminate(true);
+        for (VirtualFile file : files) {
+          performOnFile(project, file, finalComment, errors, indicator);
         }
-      }, title, true, project);
+      }
+    }, title, true, project);
   }
 
   private void performOnFile(final Project project,
                              VirtualFile file,
                              String comment,
                              List<VcsException> errors,
-                             ProgressIndicator indicator)
-  {
+                             ProgressIndicator indicator) {
     if (indicator != null) {
       indicator.checkCanceled();
       final VirtualFile parent = file.getParent();
       indicator.setText("Processing: " + file.getName() + " (" + (parent == null ? file.getPath() : parent.getPath()) + ')');
       indicator.setText2("Processed: " + cnt + " files");
-      ++ cnt;
+      ++cnt;
     }
-    if( isEnabled( file, project) )
-    {
-      VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance( project );
-      try
-      {
-        perform( file, comment, project);
-        mgr.fileDirty( file );
+    if (isEnabled(file, project)) {
+      VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance(project);
+      try {
+        perform(file, comment, project);
+        mgr.fileDirty(file);
       }
-      catch( VcsException ex ) {
-        if( !isIgnorableMessage( ex.getMessage() ) )
-        {
-          ex.setVirtualFile( file );
-          errors.add( ex );
+      catch (VcsException ex) {
+        if (!isIgnorableMessage(ex.getMessage())) {
+          ex.setVirtualFile(file);
+          errors.add(ex);
         }
       }
-      catch ( RuntimeException ex ) {
-        if( !isIgnorableMessage( ex.getMessage() ) )
-        {
-          VcsException vcsEx = new VcsException( ex );
-          vcsEx.setVirtualFile( file );
-          errors.add( vcsEx );
+      catch (RuntimeException ex) {
+        if (!isIgnorableMessage(ex.getMessage())) {
+          VcsException vcsEx = new VcsException(ex);
+          vcsEx.setVirtualFile(file);
+          errors.add(vcsEx);
         }
       }
       executeRecursively(project, file, comment, errors, indicator);
@@ -136,62 +134,57 @@ public class CheckOutAction extends SynchronousAction
                                   VirtualFile file,
                                   String comment,
                                   List<VcsException> errors,
-                                  ProgressIndicator indicator)
-  {
-    if( file.isDirectory() )
-    {
-      for( VirtualFile child : file.getChildren() )
+                                  ProgressIndicator indicator) {
+    if (file.isDirectory()) {
+      for (VirtualFile child : file.getChildren()) {
         performOnFile(project, child, comment, errors, indicator);
+      }
     }
   }
 
-  protected static void perform(VirtualFile file, String comment, final Project project) throws VcsException
-  {
+  protected static void perform(VirtualFile file, String comment, final Project project) throws VcsException {
     final TransparentVcs vcs = TransparentVcs.getInstance(project);
     //  Checkout command can be issued for a folder - we do not support this as
     //  the separate operation.
-    if( file.isDirectory() ) {
+    if (file.isDirectory()) {
       vcs.folderCheckedOut(file.getPath());
     }
 
-    FileStatus status = getFileStatus( project, file );
-    if( status == FileStatus.UNKNOWN || status == FileStatus.MODIFIED )
+    FileStatus status = getFileStatus(project, file);
+    if (status == FileStatus.UNKNOWN || status == FileStatus.MODIFIED) {
       return;
-
-    boolean keepHijack = false;
-    if( status == FileStatus.HIJACKED )
-    {
-      @NonNls String message = "The file " + file.getPresentableUrl() + " has been hijacked. \n" +
-                               "Would you like to use it as the checked-out file?\nIf not it will be lost.";
-      int answer = Messages.showYesNoDialog( message, CHECKOUT_HIJACKED_TITLE, Messages.getQuestionIcon() );
-      keepHijack = (answer == 0);
     }
 
-    try
-    {
+    boolean keepHijack = false;
+    if (status == FileStatus.HIJACKED) {
+      @NonNls String message = "The file " + file.getPresentableUrl() + " has been hijacked. \n" +
+                               "Would you like to use it as the checked-out file?\nIf not it will be lost.";
+      int answer = Messages.showYesNoDialog(message, CHECKOUT_HIJACKED_TITLE, Messages.getQuestionIcon());
+      keepHijack = answer == 0;
+    }
+
+    try {
       vcs.checkoutFile(file, keepHijack, comment);
 
       //  Assign the special marker to the file indicating that there is no need
       //  to run <cleartool> command on the file - it is known to be modified
       //  after the checkout command.
-      file.putUserData( TransparentVcs.SUCCESSFUL_CHECKOUT, true );
-      file.refresh( true, file.isDirectory() );
+      file.putUserData(TransparentVcs.SUCCESSFUL_CHECKOUT, true);
+      file.refresh(true, file.isDirectory());
     }
-    catch( ClearCaseException exc )
-    {
-      VcsException vcsExc = new VcsException( exc );
-      AbstractVcsHelper.getInstance( project ).showError( vcsExc, ACTION_NAME );
+    catch (ClearCaseException exc) {
+      VcsException vcsExc = new VcsException(exc);
+      AbstractVcsHelper.getInstance(project).showError(vcsExc, ACTION_NAME);
     }
   }
 
-  private static boolean isIgnorableMessage( String message )
-  {
-    return message.indexOf( NOT_A_VOB_OBJECT_SIG ) != -1 ||
-           message.indexOf( IS_ALREADY_CHECKED_OUT_SIG ) != -1;
+  private static boolean isIgnorableMessage(String message) {
+    return message.indexOf(NOT_A_VOB_OBJECT_SIG) != -1 ||
+           message.indexOf(IS_ALREADY_CHECKED_OUT_SIG) != -1;
   }
 
-  protected void perform(VirtualFile file, final Project project) throws VcsException
-  {
+  @Override
+  protected void perform(VirtualFile file, final Project project) throws VcsException {
     //  We should never reach this point. Most methods are overloaded to support
     //  adding uniform data (here - comment) to the operation.
     throw new UnsupportedOperationException();
