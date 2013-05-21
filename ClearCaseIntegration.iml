@@ -10,15 +10,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="Log4J" level="project" />
     <orderEntry type="library" name="Velocity" level="project" />
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/commons-lang-1.0.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
     <orderEntry type="library" name="commons-logging" level="project" />
     <orderEntry type="module" module-name="openapi" />
     <orderEntry type="library" scope="TEST" name="JUnit4" level="project" />
