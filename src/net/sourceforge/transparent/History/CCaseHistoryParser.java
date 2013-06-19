@@ -192,7 +192,7 @@ public class CCaseHistoryParser
     }
 
     public boolean acceptString(final String s) {
-      return StringUtil.startsWithConcatenationOf(s, String.valueOf(myNum), myMagic);
+      return StringUtil.startsWithConcatenation(s, String.valueOf(myNum), myMagic);
     }
 
     protected abstract void fill(@Nullable final String value, final CreatingIterator iterator);
