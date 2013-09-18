@@ -11,6 +11,7 @@ import com.intellij.util.xmlb.XmlSerializerUtil;
  */
 @State(
   name = "CCaseConfig",
+  roamingType = RoamingType.DISABLED,
   storages = {
     @Storage(
       file = StoragePathMacros.WORKSPACE_FILE
