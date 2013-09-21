@@ -47,7 +47,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDOMExternalizable, TransparentI
+public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDOMExternalizable, TransparentI, RoamingTypeDisabled
 {
   public static final Logger LOG = Logger.getInstance("#net.sourceforge.transparent.TransparentVcs");
   private static final String NAME = "ClearCase";

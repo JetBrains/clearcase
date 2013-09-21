@@ -49,9 +49,6 @@
    </actions>
   <extensions defaultExtensionNs="com.intellij">
     <errorHandler implementation="com.intellij.diagnostic.ITNReporter"/>
-
-    <ComponentRoamingType component="ClearCase" type="DISABLED"/>
-    <ComponentRoamingType component="CCaseViewsManager" type="DISABLED"/>
     <vcs name="ClearCase" vcsClass="net.sourceforge.transparent.TransparentVcs" displayName="ClearCase"/>
     <vcsCheckinHandlerFactory implementation="net.sourceforge.transparent.TransparentVcsCheckinHandlerFactory"/>
     <projectService serviceImplementation="net.sourceforge.transparent.CCaseConfig"/>
