@@ -1,6 +1,7 @@
 package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -58,7 +59,7 @@ public class CheckOutAction extends SynchronousAction {
   @Override
   protected void execute(AnActionEvent e, final List<VcsException> errors) {
     cnt = 0;
-    final Project project = e.getData(PlatformDataKeys.PROJECT);
+    final Project project = e.getData(CommonDataKeys.PROJECT);
     String comment = "";
     final VirtualFile[] files = VcsUtil.getVirtualFiles(e);
 
