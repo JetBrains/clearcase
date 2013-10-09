@@ -111,7 +111,7 @@ public class CCaseWriteableAndUnversionedCollector {
           if (Boolean.TRUE.equals(ro)) {
             removeParentsFromUnversioned(file);
           }
-          if (chain.getFirst().equals(file)){
+          if (!chain.isEmpty() && chain.getFirst().equals(file)){
             chain.removeFirst();
           }
           chainROFlag.remove(file);
