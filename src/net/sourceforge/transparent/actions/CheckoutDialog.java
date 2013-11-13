@@ -79,7 +79,7 @@ public class CheckoutDialog extends OptionsDialog implements Refreshable
     {
       int requestForCheckin = Messages.showYesNoDialog("Check out with empty comment?", "Comment Is Empty",
                                                        Messages.getWarningIcon());
-      if( requestForCheckin != OK_EXIT_CODE )
+      if( requestForCheckin != Messages.YES )
         return;
     }
     myConfiguration.LAST_COMMIT_MESSAGE = getComment();

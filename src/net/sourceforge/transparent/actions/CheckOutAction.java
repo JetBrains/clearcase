@@ -2,7 +2,6 @@ package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
-import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
@@ -161,7 +160,7 @@ public class CheckOutAction extends SynchronousAction {
       @NonNls String message = "The file " + file.getPresentableUrl() + " has been hijacked. \n" +
                                "Would you like to use it as the checked-out file?\nIf not it will be lost.";
       int answer = Messages.showYesNoDialog(message, CHECKOUT_HIJACKED_TITLE, Messages.getQuestionIcon());
-      keepHijack = answer == 0;
+      keepHijack = answer == Messages.YES;
     }
 
     try {
