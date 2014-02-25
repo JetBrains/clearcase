@@ -15,6 +15,7 @@ import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.ChangeManagement.CCaseChangeProvider;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.util.*;
@@ -38,7 +39,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
     myChangeListManager = ChangeListManager.getInstance(this.project);
   }
 
-  public void fileCreated(VirtualFileEvent event) {
+  public void fileCreated(@NotNull VirtualFileEvent event) {
     VirtualFile file = event.getFile();
 
     //  In the case of multi-vcs project configurations, we need to skip all
@@ -109,7 +110,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
     }
   }
 
-  public void beforeFileDeletion(VirtualFileEvent event) {
+  public void beforeFileDeletion(@NotNull VirtualFileEvent event) {
     try {
       if (!isIgnoredEvent(event)) {
         performDeleteFile(event.getFile());
@@ -137,7 +138,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
   }
 
   @Override
-  public void fileMoved(VirtualFileMoveEvent event) {
+  public void fileMoved(@NotNull VirtualFileMoveEvent event) {
     super.fileMoved(event);
     if (isIgnoredEvent(event)) {
       return;
@@ -183,7 +184,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
     }
   }
 
-  public void beforeFileMovement(VirtualFileMoveEvent event) {
+  public void beforeFileMovement(@NotNull VirtualFileMoveEvent event) {
     if (isIgnoredEvent(event)) {
       return;
     }
@@ -216,7 +217,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
     return host.containsNew(file) || (! Status.NOT_AN_ELEMENT.equals(host.getStatusSafely(file)));
   }
 
-  public void beforePropertyChange(VirtualFilePropertyEvent event) {
+  public void beforePropertyChange(@NotNull VirtualFilePropertyEvent event) {
     VirtualFile file = event.getFile();
 
     //  In the case of multi-vcs project configurations, we need to skip all
