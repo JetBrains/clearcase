@@ -1,7 +1,16 @@
 <idea-plugin>
    <id>ClearcasePlugin</id>
    <name>ClearCase Integration</name>
-   <description>Allows using ClearCase from within IDEA</description>
+  <description>
+      <![CDATA[
+      Allows working with <a href="http://www.ibm.com/developerworks/rational/products/clearcase/">Rational ClearCase version control system</a>.
+      The following features are available:
+        <ul>
+        <li>Dedicated page under the Version Control node in the Settings/Preferences dialog.</li>
+        <li>When ClearCase is enabled, the ClearCase node appears on the VCS menu, and on the context menu of the editor.
+        </ul>
+      ]]>
+   </description>
    <version>2.0</version>
    <vendor>JetBrains</vendor>
    <category>VCS Integration</category>
