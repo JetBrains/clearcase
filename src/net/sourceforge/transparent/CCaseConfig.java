@@ -1,7 +1,6 @@
 package net.sourceforge.transparent;
 
 import com.intellij.openapi.components.*;
-import com.intellij.openapi.components.StoragePathMacros;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 
@@ -11,11 +10,8 @@ import com.intellij.util.xmlb.XmlSerializerUtil;
  */
 @State(
   name = "CCaseConfig",
-  roamingType = RoamingType.DISABLED,
   storages = {
-    @Storage(
-      file = StoragePathMacros.WORKSPACE_FILE
-    )
+    @Storage(file = StoragePathMacros.WORKSPACE_FILE)
   }
 )
 public class CCaseConfig implements PersistentStateComponent<CCaseConfig> {
