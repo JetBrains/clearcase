@@ -58,6 +58,7 @@
    </actions>
   <extensions defaultExtensionNs="com.intellij">
     <errorHandler implementation="com.intellij.diagnostic.ITNReporter"/>
+    <search.topHitProvider implementation="net.sourceforge.transparent.ClearCaseOptionsTopHitProvider"/>
     <vcs name="ClearCase" vcsClass="net.sourceforge.transparent.TransparentVcs" displayName="ClearCase"/>
     <vcsCheckinHandlerFactory implementation="net.sourceforge.transparent.TransparentVcsCheckinHandlerFactory"/>
     <projectService serviceImplementation="net.sourceforge.transparent.CCaseConfig"/>
