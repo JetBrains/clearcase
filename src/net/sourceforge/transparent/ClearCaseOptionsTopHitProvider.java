@@ -7,6 +7,7 @@ import com.intellij.ide.ui.search.BooleanOptionDescription;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,8 +26,8 @@ public final class ClearCaseOptionsTopHitProvider extends OptionsTopHitProvider 
 
   @NotNull
   @Override
-  public Collection<BooleanOptionDescription> getOptions(final Project project) {
-    if (ProjectLevelVcsManager.getInstance(project).getAllVcss().length == 0) {
+  public Collection<BooleanOptionDescription> getOptions(@Nullable final Project project) {
+    if (project == null || ProjectLevelVcsManager.getInstance(project).getAllVcss().length == 0) {
       return Collections.emptyList();
     }
     ArrayList<BooleanOptionDescription> options = new ArrayList<BooleanOptionDescription>();
