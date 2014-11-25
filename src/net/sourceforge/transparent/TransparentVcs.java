@@ -126,7 +126,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   private boolean myActivatePolicyCalculateUCM;
   private static final boolean ourActivatePolicyCalculateUCMDefault = false;
 
-  public TransparentVcs(Project project, UltimateVerifier verifier) {
+  public TransparentVcs(@NotNull Project project, UltimateVerifier verifier) {
     super( project, NAME);
     PluginVerifier.verifyUltimatePlugin(verifier);
 

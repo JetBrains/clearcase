@@ -14,6 +14,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.Consumer;
 import net.sourceforge.transparent.ChangeManagement.CCaseContentRevision;
 import net.sourceforge.transparent.StatusMultipleProcessor;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author irengrig
@@ -21,9 +22,9 @@ import net.sourceforge.transparent.StatusMultipleProcessor;
  *         Time: 1:55 PM
  */
 public class CCaseDiffProvider implements DiffProvider {
-  private final Project myProject;
+  @NotNull private final Project myProject;
 
-  public CCaseDiffProvider(Project project) {
+  public CCaseDiffProvider(@NotNull Project project) {
     myProject = project;
   }
 
