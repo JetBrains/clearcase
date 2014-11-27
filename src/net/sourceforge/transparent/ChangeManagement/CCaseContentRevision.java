@@ -9,7 +9,7 @@ import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.CharsetToolkit;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.encoding.EncodingRegistry;
+import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
 import com.intellij.util.ArrayUtil;
 import com.intellij.util.WaitForProgressToShow;
 import com.intellij.vcsUtil.VcsImplUtil;
@@ -37,22 +37,22 @@ public class CCaseContentRevision implements ContentRevision
   @NonNls private static final String VERSION_SEPARATOR = "@@";
   @NonNls private static final String WARNING_NO_GROUP_SIG = "Warning: Can not find a group named";
 
-  private final VirtualFile   file;
-  private final FilePath      revisionPath;
-  private final Project       project;
-  private String        myServerContent;
+  private final VirtualFile file;
+  private final FilePath revisionPath;
+  @NotNull private final Project project;
+  private String myServerContent;
   private final TransparentVcs host;
   private String myVersion;
 
-  public CCaseContentRevision(FilePath path, Project proj) {
-    this(path, proj, null);
+  public CCaseContentRevision(FilePath path, @NotNull Project project) {
+    this(path, project, null);
   }
 
-  public CCaseContentRevision(FilePath path, Project proj, final String version) {
+  public CCaseContentRevision(FilePath path, @NotNull Project project, final String version) {
     revisionPath = path;
-    project = proj;
+    this.project = project;
 
-    host = TransparentVcs.getInstance( proj );
+    host = TransparentVcs.getInstance( project );
     file = path.getVirtualFile();
     myVersion = version;
   }
@@ -88,7 +88,7 @@ public class CCaseContentRevision implements ContentRevision
         if( file != null )
         {
           try {
-            content = CharsetToolkit.bytesToString(file.contentsToByteArray(), EncodingRegistry.getInstance().getDefaultCharset()); }
+            content = CharsetToolkit.bytesToString(file.contentsToByteArray(), EncodingProjectManager.getInstance(project).getDefaultCharset()); }
           catch( IOException e ){ /* nothing to do, content remains empty */ }
         }
       }
@@ -134,7 +134,7 @@ public class CCaseContentRevision implements ContentRevision
             else
             {
               byte[] byteContent = VcsUtil.getFileByteContent( myTmpFile );
-              content = file == null ? CharsetToolkit.bytesToString(byteContent, EncodingRegistry.getInstance().getDefaultCharset()) : CharsetToolkit.bytesToString(byteContent, file.getCharset());
+              content = file == null ? CharsetToolkit.bytesToString(byteContent, EncodingProjectManager.getInstance(project).getDefaultCharset()) : CharsetToolkit.bytesToString(byteContent, file.getCharset());
               myTmpFile.delete();
             }
           }
