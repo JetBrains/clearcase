@@ -21,10 +21,7 @@ import com.intellij.openapi.vcs.diff.DiffProvider;
 import com.intellij.openapi.vcs.history.VcsHistoryProvider;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
-import com.intellij.openapi.vfs.LocalFileSystem;
-import com.intellij.openapi.vfs.VfsUtil;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.VirtualFileListener;
+import com.intellij.openapi.vfs.*;
 import com.intellij.ultimate.PluginVerifier;
 import com.intellij.ultimate.UltimateVerifier;
 import com.intellij.util.ArrayUtil;
@@ -40,6 +37,7 @@ import net.sourceforge.transparent.History.CCaseDiffProvider;
 import net.sourceforge.transparent.History.CCaseHistoryProvider;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jdom.Element;
+import org.jetbrains.annotations.CalledInAwt;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
@@ -1156,7 +1154,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public void reportAdded(final VirtualFile dir, final Collection<VirtualFile> addTo) {
     for (VirtualFile newFile : newFiles) {
-      if (newFile != null && newFile.isValid() && VfsUtil.isAncestor(dir,  newFile, false)) {
+      if (newFile != null && newFile.isValid() && VfsUtilCore.isAncestor(dir, newFile, false)) {
         addTo.add(newFile);
       }
     }
