@@ -54,7 +54,7 @@ public class CCaseCheckinHandler extends CheckinHandler
 
     if( set.size() > 0 )
     {
-      int result = Messages.showOkCancelDialog( "Renamed folder(s) for committed file(s) will be added to the change list",
+      int result = Messages.showOkCancelDialog( "Renamed folder(s) for committed file(s) will be added to the changelist",
                                                 "Change list is incomplete", Messages.getWarningIcon() );
       if (result != Messages.OK) {
         return ReturnResult.CANCEL;
