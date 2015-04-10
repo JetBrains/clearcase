@@ -2,11 +2,14 @@ package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.VcsException;
@@ -16,6 +19,7 @@ import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.TransparentVcs;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -157,10 +161,7 @@ public class CheckOutAction extends SynchronousAction {
 
     boolean keepHijack = false;
     if (status == FileStatus.HIJACKED) {
-      @NonNls String message = "The file " + file.getPresentableUrl() + " has been hijacked. \n" +
-                               "Would you like to use it as the checked-out file?\nIf not it will be lost.";
-      int answer = Messages.showYesNoDialog(message, CHECKOUT_HIJACKED_TITLE, Messages.getQuestionIcon());
-      keepHijack = answer == Messages.YES;
+      keepHijack = askIfUseHijackedFileAsCheckedOut(file);
     }
 
     try {
@@ -176,6 +177,19 @@ public class CheckOutAction extends SynchronousAction {
       VcsException vcsExc = new VcsException(exc);
       AbstractVcsHelper.getInstance(project).showError(vcsExc, ACTION_NAME);
     }
+  }
+
+  private static boolean askIfUseHijackedFileAsCheckedOut(@NotNull final VirtualFile file) {
+    final Ref<Integer> answer = Ref.create();
+    ApplicationManager.getApplication().invokeAndWait(new Runnable() {
+      @Override
+      public void run() {
+        String message = "The file " + file.getPresentableUrl() + " has been hijacked. \n" +
+                         "Would you like to use it as the checked-out file?\nIf not it will be lost.";
+        answer.set(Messages.showYesNoDialog(message, CHECKOUT_HIJACKED_TITLE, Messages.getQuestionIcon()));
+      }
+    }, ModalityState.defaultModalityState());
+    return answer.get() == Messages.YES;
   }
 
   private static boolean isIgnorableMessage(String message) {
