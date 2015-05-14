@@ -1,6 +1,5 @@
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
-import com.intellij.openapi.vcs.FilePathImpl;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.fixtures.IdeaProjectTestFixture;
@@ -9,6 +8,7 @@ import com.intellij.testFramework.fixtures.TestFixtureBuilder;
 import com.intellij.testFramework.vcs.DirectoryData;
 import com.intellij.util.containers.hash.HashSet;
 import com.intellij.util.ui.UIUtil;
+import com.intellij.vcsUtil.VcsUtil;
 import junit.framework.Assert;
 import net.sourceforge.transparent.ChangeManagement.CCaseWriteableAndUnversionedCollector;
 import net.sourceforge.transparent.ChangeManagement.TransparentI;
@@ -82,7 +82,7 @@ public class CCaseWriteableAndUnversionedTest {
       mockTransparent.addToNeverAsk(vFUnder2);
 
       final CCaseWriteableAndUnversionedCollector collector = new CCaseWriteableAndUnversionedCollector(myProject, mockTransparent);
-      collector.collectWritableFiles(new FilePathImpl(myProject.getBaseDir()));
+      collector.collectWritableFiles(VcsUtil.getFilePath(myProject.getBaseDir()));
 
       final Set<String> ignored = collector.getFilesIgnored();
       Assert.assertEquals(1, ignored.size());
@@ -124,7 +124,7 @@ public class CCaseWriteableAndUnversionedTest {
       final MockTransparent mockTransparent = new MockTransparent();
 
       final CCaseWriteableAndUnversionedCollector collector = new CCaseWriteableAndUnversionedCollector(myProject, mockTransparent);
-      collector.collectWritableFiles(new FilePathImpl(myProject.getBaseDir()));
+      collector.collectWritableFiles(VcsUtil.getFilePath(myProject.getBaseDir()));
 
       final Set<String> ignored = collector.getFilesIgnored();
       Assert.assertEquals(0, ignored.size());
@@ -164,7 +164,7 @@ public class CCaseWriteableAndUnversionedTest {
       mockTransparent.checkOut(vCheckedOut.getPath());
 
       final CCaseWriteableAndUnversionedCollector collector = new CCaseWriteableAndUnversionedCollector(myProject, mockTransparent);
-      collector.collectWritableFiles(new FilePathImpl(myProject.getBaseDir()));
+      collector.collectWritableFiles(VcsUtil.getFilePath(myProject.getBaseDir()));
 
       final Set<String> ignored = collector.getFilesIgnored();
       Assert.assertEquals(0, ignored.size());

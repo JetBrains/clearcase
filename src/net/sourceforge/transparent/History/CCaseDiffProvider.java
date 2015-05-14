@@ -3,7 +3,6 @@ package net.sourceforge.transparent.History;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.FilePathImpl;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.diff.DiffProvider;
@@ -12,6 +11,7 @@ import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.Consumer;
+import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.ChangeManagement.CCaseContentRevision;
 import net.sourceforge.transparent.StatusMultipleProcessor;
 import org.jetbrains.annotations.NotNull;
@@ -38,7 +38,7 @@ public class CCaseDiffProvider implements DiffProvider {
   public ItemLatestState getLastRevision(VirtualFile virtualFile) {
     final String[] result = new String[1];
     try {
-      CCaseHistoryProvider.historyGetter(myProject, new FilePathImpl(virtualFile), 1, new Consumer<CCaseHistoryParser.SubmissionData>() {
+      CCaseHistoryProvider.historyGetter(myProject, VcsUtil.getFilePath(virtualFile), 1, new Consumer<CCaseHistoryParser.SubmissionData>() {
         @Override
         public void consume(CCaseHistoryParser.SubmissionData submissionData) {
           if (submissionData != null) {
@@ -68,7 +68,7 @@ public class CCaseDiffProvider implements DiffProvider {
 
   @Override
   public ContentRevision createFileContent(VcsRevisionNumber revisionNumber, VirtualFile selectedFile) {
-    return new CCaseContentRevision(new FilePathImpl(selectedFile), myProject, revisionNumber.asString());
+    return new CCaseContentRevision(VcsUtil.getFilePath(selectedFile), myProject, revisionNumber.asString());
   }
 
   @Override
