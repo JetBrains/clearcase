@@ -21,7 +21,10 @@ import com.intellij.openapi.vcs.diff.DiffProvider;
 import com.intellij.openapi.vcs.history.VcsHistoryProvider;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
-import com.intellij.openapi.vfs.*;
+import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.VfsUtilCore;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileListener;
 import com.intellij.ultimate.PluginVerifier;
 import com.intellij.ultimate.UltimateVerifier;
 import com.intellij.util.ArrayUtil;
@@ -45,8 +48,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDOMExternalizable, TransparentI, RoamingTypeDisabled
-{
+public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDOMExternalizable, TransparentI {
   public static final Logger LOG = Logger.getInstance("#net.sourceforge.transparent.TransparentVcs");
   private static final String NAME = "ClearCase";
   private static final VcsKey ourKey = createKey(NAME);

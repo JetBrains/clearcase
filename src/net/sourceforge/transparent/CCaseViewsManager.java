@@ -5,7 +5,6 @@ import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.InvalidDataException;
 import com.intellij.openapi.util.JDOMExternalizable;
-import com.intellij.openapi.util.RoamingTypeDisabled;
 import com.intellij.openapi.util.WriteExternalException;
 import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.text.StringUtil;
@@ -33,7 +32,7 @@ import java.util.Set;
  * User: lloix
  * Date: Oct 18, 2007
  */
-public class CCaseViewsManager extends AbstractProjectComponent implements ChangeListDecorator, JDOMExternalizable, RoamingTypeDisabled {
+public class CCaseViewsManager extends AbstractProjectComponent implements ChangeListDecorator, JDOMExternalizable {
   @NonNls private static final String PERSISTENCY_SAVED_ACTIVITY_MAP_TAG = "ClearCasePersistencyActivitiesMap";
 
   @NonNls private static final String VIEW_INFO_TAG = "ViewInfo";
