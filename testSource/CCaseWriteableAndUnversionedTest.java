@@ -4,7 +4,6 @@ import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.fixtures.IdeaProjectTestFixture;
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory;
-import com.intellij.testFramework.fixtures.TestFixtureBuilder;
 import com.intellij.testFramework.vcs.DirectoryData;
 import com.intellij.util.containers.hash.HashSet;
 import com.intellij.util.ui.UIUtil;
@@ -33,8 +32,7 @@ public class CCaseWriteableAndUnversionedTest {
 
   @Before
   public void setUp() throws Exception {
-    final TestFixtureBuilder<IdeaProjectTestFixture> testFixtureBuilder = IdeaTestFixtureFactory.getFixtureFactory().createFixtureBuilder();
-    myProjectFixture = testFixtureBuilder.getFixture();
+    myProjectFixture = IdeaTestFixtureFactory.getFixtureFactory().createFixtureBuilder(getClass().getSimpleName()).getFixture();
     myProjectFixture.setUp();
     myProject = myProjectFixture.getProject();
 
