@@ -1,3 +1,5 @@
+package x;
+
 import junit.framework.Assert;
 import junit.framework.TestCase;
 import net.sourceforge.transparent.History.CCaseHistoryParser;

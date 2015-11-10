@@ -1,7 +1,10 @@
+package x;
+
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.testFramework.PlatformTestCase;
 import com.intellij.testFramework.fixtures.IdeaProjectTestFixture;
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory;
 import com.intellij.testFramework.vcs.DirectoryData;
@@ -11,9 +14,6 @@ import com.intellij.vcsUtil.VcsUtil;
 import junit.framework.Assert;
 import net.sourceforge.transparent.ChangeManagement.CCaseWriteableAndUnversionedCollector;
 import net.sourceforge.transparent.ChangeManagement.TransparentI;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 import java.io.File;
 import java.util.Set;
@@ -25,12 +25,12 @@ import java.util.TreeSet;
  * Date: 7/19/12
  * Time: 7:44 PM
  */
-public class CCaseWriteableAndUnversionedTest {
+public class CCaseWriteableAndUnversionedTest extends PlatformTestCase {
   private LocalFileSystem myLocalFileSystem;
   private IdeaProjectTestFixture myProjectFixture;
   private Project myProject;
 
-  @Before
+  @Override
   public void setUp() throws Exception {
     myProjectFixture = IdeaTestFixtureFactory.getFixtureFactory().createFixtureBuilder(getClass().getSimpleName()).getFixture();
     myProjectFixture.setUp();
@@ -39,7 +39,7 @@ public class CCaseWriteableAndUnversionedTest {
     myLocalFileSystem = LocalFileSystem.getInstance();
   }
 
-  @After
+  @Override
   public void tearDown() throws Exception {
     UIUtil.invokeAndWaitIfNeeded(new Runnable() {
       @Override
@@ -54,7 +54,6 @@ public class CCaseWriteableAndUnversionedTest {
     });
   }
 
-  @Test
   public void testReadOnlyFileAndIgnoredFolder() throws Exception {
     final DirectoryData data = new DirectoryData(myProject.getBaseDir(), 3, 2, ".txt");
     try {
@@ -107,7 +106,45 @@ public class CCaseWriteableAndUnversionedTest {
     }
   }
 
-  @Test
+  public void testCheckoutedFolder() throws Exception {
+    final DirectoryData data = new DirectoryData(myProject.getBaseDir(), 3, 2, ".txt");
+    try {
+      data.clear();
+      data.create();
+
+      final VirtualFile vCheckedOut = myLocalFileSystem.refreshAndFindFileByIoFile(new File(data.getBase().getPath(), "DL0N1/DL01N1"));
+      Assert.assertTrue(vCheckedOut != null);
+
+      final MockTransparent mockTransparent = new MockTransparent();
+      mockTransparent.checkOut(vCheckedOut.getPath());
+
+      final CCaseWriteableAndUnversionedCollector collector = new CCaseWriteableAndUnversionedCollector(myProject, mockTransparent);
+      collector.collectWritableFiles(VcsUtil.getFilePath(myProject.getBaseDir()));
+
+      final Set<String> ignored = collector.getFilesIgnored();
+      Assert.assertEquals(0, ignored.size());
+
+      final TreeSet<VirtualFile> dirs = collector.getDirs();
+      //Assert.assertEquals(4, dirs.size());
+
+      final VirtualFile vUnv1 = myLocalFileSystem.refreshAndFindFileByIoFile(new File(data.getBase().getPath(), "DL0N0"));
+      final VirtualFile vUnv2 = myLocalFileSystem.refreshAndFindFileByIoFile(new File(data.getBase().getPath(), "DL0N0/DL00N0"));
+      final VirtualFile vUnv3 = myLocalFileSystem.refreshAndFindFileByIoFile(new File(data.getBase().getPath(), "DL0N0/DL00N1"));
+      final VirtualFile vUnv31 = myLocalFileSystem.refreshAndFindFileByIoFile(new File(data.getBase().getPath(), "DL0N1/DL01N0"));
+      Assert.assertTrue(vUnv1 != null && vUnv2 != null && vUnv3 != null && vUnv31 != null);
+      Assert.assertTrue(dirs.contains(vUnv1));
+      Assert.assertTrue(dirs.contains(vUnv2));
+      Assert.assertTrue(dirs.contains(vUnv3));
+      Assert.assertTrue(dirs.contains(vUnv31));
+
+      Assert.assertTrue(! dirs.contains(vCheckedOut));
+      Assert.assertTrue(! dirs.contains(vCheckedOut.getParent()));
+      Assert.assertTrue(! dirs.contains(data.getBase()));
+    } finally {
+      data.clear();
+    }
+  }
+
   public void testReadOnlyBelow() throws Exception {
     final DirectoryData data = new DirectoryData(myProject.getBaseDir(), 3, 2, ".txt");
     try {
@@ -142,46 +179,6 @@ public class CCaseWriteableAndUnversionedTest {
 
       Assert.assertTrue(! dirs.contains(vFileRo.getParent()));
       Assert.assertTrue(! dirs.contains(vFileRo.getParent().getParent()));
-      Assert.assertTrue(! dirs.contains(data.getBase()));
-    } finally {
-      data.clear();
-    }
-  }
-
-  @Test
-  public void testCheckoutedFolder() throws Exception {
-    final DirectoryData data = new DirectoryData(myProject.getBaseDir(), 3, 2, ".txt");
-    try {
-      data.clear();
-      data.create();
-
-      final VirtualFile vCheckedOut = myLocalFileSystem.refreshAndFindFileByIoFile(new File(data.getBase().getPath(), "DL0N1/DL01N1"));
-      Assert.assertTrue(vCheckedOut != null);
-
-      final MockTransparent mockTransparent = new MockTransparent();
-      mockTransparent.checkOut(vCheckedOut.getPath());
-
-      final CCaseWriteableAndUnversionedCollector collector = new CCaseWriteableAndUnversionedCollector(myProject, mockTransparent);
-      collector.collectWritableFiles(VcsUtil.getFilePath(myProject.getBaseDir()));
-
-      final Set<String> ignored = collector.getFilesIgnored();
-      Assert.assertEquals(0, ignored.size());
-
-      final TreeSet<VirtualFile> dirs = collector.getDirs();
-      //Assert.assertEquals(4, dirs.size());
-
-      final VirtualFile vUnv1 = myLocalFileSystem.refreshAndFindFileByIoFile(new File(data.getBase().getPath(), "DL0N0"));
-      final VirtualFile vUnv2 = myLocalFileSystem.refreshAndFindFileByIoFile(new File(data.getBase().getPath(), "DL0N0/DL00N0"));
-      final VirtualFile vUnv3 = myLocalFileSystem.refreshAndFindFileByIoFile(new File(data.getBase().getPath(), "DL0N0/DL00N1"));
-      final VirtualFile vUnv31 = myLocalFileSystem.refreshAndFindFileByIoFile(new File(data.getBase().getPath(), "DL0N1/DL01N0"));
-      Assert.assertTrue(vUnv1 != null && vUnv2 != null && vUnv3 != null && vUnv31 != null);
-      Assert.assertTrue(dirs.contains(vUnv1));
-      Assert.assertTrue(dirs.contains(vUnv2));
-      Assert.assertTrue(dirs.contains(vUnv3));
-      Assert.assertTrue(dirs.contains(vUnv31));
-
-      Assert.assertTrue(! dirs.contains(vCheckedOut));
-      Assert.assertTrue(! dirs.contains(vCheckedOut.getParent()));
       Assert.assertTrue(! dirs.contains(data.getBase()));
     } finally {
       data.clear();
