@@ -5,7 +5,7 @@ import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
-import com.intellij.openapi.vcs.changes.ContentRevision;
+import com.intellij.openapi.vcs.changes.ByteBackedContentRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.CharsetToolkit;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -31,7 +32,7 @@ import java.util.List;
 * User: lloix
 * Date: Feb 21, 2007
 */
-public class CCaseContentRevision implements ContentRevision
+public class CCaseContentRevision implements ByteBackedContentRevision
 {
   @NonNls private static final String TMP_FILE_NAME = "idea_ccase";
   @NonNls private static final String VERSION_SEPARATOR = "@@";
@@ -40,7 +41,7 @@ public class CCaseContentRevision implements ContentRevision
   private final VirtualFile file;
   private final FilePath revisionPath;
   @NotNull private final Project project;
-  private String myServerContent;
+  private byte[] myServerContent;
   private final TransparentVcs host;
   private String myVersion;
 
@@ -64,17 +65,26 @@ public class CCaseContentRevision implements ContentRevision
 
   public String getContent()
   {
+    byte[] byteContent = getContentAsBytes();
+    Charset charset = file == null ? EncodingProjectManager.getInstance(project).getDefaultCharset() : file.getCharset();
+    return CharsetToolkit.bytesToString(byteContent, charset);
+  }
+
+  @Nullable
+  @Override
+  public byte[] getContentAsBytes()
+  {
     if( myServerContent == null )
       myServerContent = getServerContent();
 
     return myServerContent;
   }
 
-  private String getServerContent()
+  private byte[] getServerContent()
   {
     @NonNls final String TITLE = "Error";
     @NonNls final String EXT = ".tmp";
-    String content = "";
+    byte[] content = new byte[0];
 
     //  For files which are in the project but reside outside the repository
     //  root their base revision version content is not defined (empty).
@@ -88,7 +98,7 @@ public class CCaseContentRevision implements ContentRevision
         if( file != null )
         {
           try {
-            content = CharsetToolkit.bytesToString(file.contentsToByteArray(), EncodingProjectManager.getInstance(project).getDefaultCharset()); }
+            content = file.contentsToByteArray(); }
           catch( IOException e ){ /* nothing to do, content remains empty */ }
         }
       }
@@ -133,8 +143,7 @@ public class CCaseContentRevision implements ContentRevision
             }
             else
             {
-              byte[] byteContent = VcsUtil.getFileByteContent( myTmpFile );
-              content = file == null ? CharsetToolkit.bytesToString(byteContent, EncodingProjectManager.getInstance(project).getDefaultCharset()) : CharsetToolkit.bytesToString(byteContent, file.getCharset());
+              content = VcsUtil.getFileByteContent( myTmpFile );
               myTmpFile.delete();
             }
           }
