@@ -20,6 +20,7 @@ import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.*;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -100,8 +101,8 @@ public class CCaseChangeProvider implements ChangeProvider {
   public void doCleanup(final List<VirtualFile> files) {
   }
 
-  public void getChanges(final VcsDirtyScope dirtyScope, final ChangelistBuilder builder, final ProgressIndicator progressIndicator,
-                         final ChangeListManagerGate addGate) throws VcsException {
+  public void getChanges(@NotNull final VcsDirtyScope dirtyScope, @NotNull final ChangelistBuilder builder, @NotNull final ProgressIndicator progressIndicator,
+                         @NotNull final ChangeListManagerGate addGate) throws VcsException {
     myDirs.clear();
     //-------------------------------------------------------------------------
     //  Protect ourselves from the calls which come during the unsafe project
