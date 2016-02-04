@@ -1,19 +1,12 @@
 package net.sourceforge.transparent;
 
-import com.intellij.openapi.components.*;
+import com.intellij.openapi.components.PersistentStateComponent;
+import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.components.State;
+import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.project.Project;
 
-/**
- * @author irengrig
- *         Date: 3/22/11
- *         Time: 7:04 PM
- */
-@State(
-  name = "ClearCaseSharedConfig",
-  storages = {
-    @Storage(file = StoragePathMacros.PROJECT_FILE),
-    @Storage(file = StoragePathMacros.PROJECT_CONFIG_DIR + "/vcs.xml", scheme = StorageScheme.DIRECTORY_BASED)
-  })
+@State(name = "ClearCaseSharedConfig", storages = @Storage("vcs.xml"))
 public class CCaseSharedConfig implements PersistentStateComponent<CCaseSharedConfig.State> {
   private State myState;
   private final Project myProject;

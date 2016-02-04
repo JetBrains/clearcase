@@ -11,7 +11,7 @@ import com.intellij.util.xmlb.XmlSerializerUtil;
 @State(
   name = "CCaseConfig",
   storages = {
-    @Storage(file = StoragePathMacros.WORKSPACE_FILE)
+    @Storage(StoragePathMacros.WORKSPACE_FILE)
   }
 )
 public class CCaseConfig implements PersistentStateComponent<CCaseConfig> {
