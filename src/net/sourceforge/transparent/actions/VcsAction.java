@@ -5,7 +5,6 @@ import com.intellij.history.LocalHistoryAction;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
-import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
@@ -71,6 +70,7 @@ public abstract class VcsAction extends AnAction {
   }
 
   protected static TransparentVcs getHost(AnActionEvent e) {
-    return TransparentVcs.getInstance(e.getData(CommonDataKeys.PROJECT));
+    Project project = e.getProject();
+    return project != null ? TransparentVcs.getInstance(project) : null;
   }
 }
