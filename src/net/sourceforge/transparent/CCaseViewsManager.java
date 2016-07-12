@@ -8,7 +8,10 @@ import com.intellij.openapi.util.JDOMExternalizable;
 import com.intellij.openapi.util.WriteExternalException;
 import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.openapi.vcs.*;
+import com.intellij.openapi.vcs.AbstractVcsHelper;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.ProjectLevelVcsManager;
+import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.ColoredTreeCellRenderer;
@@ -524,13 +527,15 @@ public class CCaseViewsManager extends AbstractProjectComponent implements Chang
                                  boolean selected,
                                  boolean expanded,
                                  boolean hasFocus) {
-    ChangesUtil.processChangesByVcs(myProject, changeList.getChanges(), new ChangesUtil.PerVcsProcessor<Change>() {
-      public void process(final AbstractVcs vcs, final List<Change> items) {
-        if (vcs == TransparentVcs.getInstance(myProject)) {
-          decorateClearCaseChangelist(changeList, cellRenderer);
-        }
+    if (ProjectLevelVcsManager.getInstance(myProject).checkVcsIsActive(TransparentVcs.getKey().getName())) {
+      ChangeListManagerImpl manager = ChangeListManagerImpl.getInstanceImpl(myProject);
+      boolean hasClearCaseChanges =
+        changeList.getChanges().stream().anyMatch(change -> TransparentVcs.getKey().equals(manager.getVcsFor(change)));
+
+      if (hasClearCaseChanges) {
+        decorateClearCaseChangelist(changeList, cellRenderer);
       }
-    });
+    }
   }
 
   private void decorateClearCaseChangelist(final LocalChangeList changeList, final ColoredTreeCellRenderer cellRenderer) {
