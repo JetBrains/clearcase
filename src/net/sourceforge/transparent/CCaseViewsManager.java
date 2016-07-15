@@ -529,8 +529,8 @@ public class CCaseViewsManager extends AbstractProjectComponent implements Chang
                                  boolean hasFocus) {
     if (ProjectLevelVcsManager.getInstance(myProject).checkVcsIsActive(TransparentVcs.getKey().getName())) {
       ChangeListManagerImpl manager = ChangeListManagerImpl.getInstanceImpl(myProject);
-      boolean hasClearCaseChanges =
-        changeList.getChanges().stream().anyMatch(change -> TransparentVcs.getKey().equals(manager.getVcsFor(change)));
+      TransparentVcs vcs = TransparentVcs.getInstance(myProject);
+      boolean hasClearCaseChanges = changeList.getChanges().stream().anyMatch(change -> vcs == manager.getVcsFor(change));
 
       if (hasClearCaseChanges) {
         decorateClearCaseChangelist(changeList, cellRenderer);
