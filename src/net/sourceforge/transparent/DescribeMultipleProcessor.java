@@ -33,12 +33,12 @@ public class DescribeMultipleProcessor
 
   public void execute()
   {
-    file2Activity = new HashMap<String, String>();
+    file2Activity = new HashMap<>();
 
     int currFileIndex = 0;
     int batchStartIndex = 0;
     int cmdLineLen;
-    LinkedList<String> options = new LinkedList<String>();
+    LinkedList<String> options = new LinkedList<>();
     while( currFileIndex < files.length )
     {
       cmdLineLen = DESCRIBE_COMMAND.length() + FMT_SWITCH.length() + FORMAT_SIG.length();

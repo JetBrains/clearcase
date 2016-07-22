@@ -43,7 +43,7 @@ public class CCaseEditFileProvider implements EditFileProvider
   public String getRequestText() {  return REQUEST_TEXT;  }
 
   public void editFiles( final VirtualFile[] files ) throws VcsException {
-    final List<VcsException> errors = new ArrayList<VcsException>();
+    final List<VcsException> errors = new ArrayList<>();
     final ChangeListManager mgr = ChangeListManager.getInstance( host.getProject() );
 
     final CurrentStatusHelper[] statusHelper = new CurrentStatusHelper[1];
@@ -180,8 +180,8 @@ public class CCaseEditFileProvider implements EditFileProvider
 
     CurrentStatusHelper(final TransparentVcs host) {
       this.host = host;
-      myRenamedMap = new HashMap<VirtualFile, String>();
-      myShouldHijackFiles = new HashSet<VirtualFile>();
+      myRenamedMap = new HashMap<>();
+      myShouldHijackFiles = new HashSet<>();
     }
 
     public void addRenamed(final VirtualFile file, final String oldName) {

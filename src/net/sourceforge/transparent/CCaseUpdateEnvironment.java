@@ -72,7 +72,7 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
         });
       }
     }
-    final ArrayList<VcsException> errors = new ArrayList<VcsException>();
+    final ArrayList<VcsException> errors = new ArrayList<>();
 
     progressIndicator.setText(PROGRESS_TEXT);
     new AbstractCalledLater(myProject, ModalityState.NON_MODAL) {
@@ -105,9 +105,9 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
   private static void parseOutput( String contentRoot, String output, UpdatedFiles updatedFiles )
   {
     String sepSymbol = new String( new char[] { File.separatorChar } );
-    HashSet<String> updated = new HashSet<String>();
-    HashSet<String> skipped = new HashSet<String>();
-    HashSet<String> deleted = new HashSet<String>();
+    HashSet<String> updated = new HashSet<>();
+    HashSet<String> skipped = new HashSet<>();
+    HashSet<String> deleted = new HashSet<>();
 
     String rootPath = contentRoot;
     if( !rootPath.endsWith( sepSymbol ) )

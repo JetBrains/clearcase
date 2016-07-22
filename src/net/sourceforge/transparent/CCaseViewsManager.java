@@ -115,10 +115,10 @@ public class CCaseViewsManager extends AbstractProjectComponent implements Chang
   public CCaseViewsManager(Project project) {
     super(project);
 
-    viewsMapByRoot = new HashMap<String, ViewInfo>();
+    viewsMapByRoot = new HashMap<>();
 
-    activitiesAssociations = new HashMap<String, String>();
-    activitiesMap = new HashMap<String, ActivityInfo>();
+    activitiesAssociations = new HashMap<>();
+    activitiesMap = new HashMap<>();
   }
 
   public boolean isAnyUcmView() {
@@ -237,7 +237,7 @@ public class CCaseViewsManager extends AbstractProjectComponent implements Chang
    * currently configured in the application.
    */
   private void removeObsoleteViews(VirtualFile[] roots) {
-    Set<String> storedRoots = new HashSet<String>(viewsMapByRoot.keySet());
+    Set<String> storedRoots = new HashSet<>(viewsMapByRoot.keySet());
     for (String storedRoot : storedRoots) {
       boolean isFound = false;
       for (VirtualFile root : roots) {
@@ -293,14 +293,14 @@ public class CCaseViewsManager extends AbstractProjectComponent implements Chang
   }
 
   private void checkViewsWithoutActions() {
-    Set<String> passiveViews = new HashSet<String>();
+    Set<String> passiveViews = new HashSet<>();
     for (ViewInfo info : viewsMapByRoot.values()) {
       if (info.currentActivity == null) {
         passiveViews.add(info.tag);
       }
     }
     if (passiveViews.size() > 0) {
-      List<VcsException> list = new ArrayList<VcsException>();
+      List<VcsException> list = new ArrayList<>();
       for (String view : passiveViews) {
         VcsException warn = new VcsException("View " + view + " has no associated activity. Checkout from this view will be problematic.");
         warn.setIsWarning(true);
@@ -320,7 +320,7 @@ public class CCaseViewsManager extends AbstractProjectComponent implements Chang
     //  Sometimes users configure content roots so that several of them correspond
     //  to the same view. Thus we should not repeat the command for the same view
     //  more than one time.
-    HashSet<String> completedViews = new HashSet<String>();
+    HashSet<String> completedViews = new HashSet<>();
 
     activitiesMap.clear();
     for (ViewInfo info : viewsMapByRoot.values()) {
@@ -514,7 +514,7 @@ public class CCaseViewsManager extends AbstractProjectComponent implements Chang
    * Collect all activities which are "current" or "active" in their views.
    */
   public List<String> getDefaultActivities() {
-    List<String> activities = new ArrayList<String>();
+    List<String> activities = new ArrayList<>();
     for (ActivityInfo info : activitiesMap.values()) {
       if (info.activeInView != null) activities.add(info.publicName);
     }

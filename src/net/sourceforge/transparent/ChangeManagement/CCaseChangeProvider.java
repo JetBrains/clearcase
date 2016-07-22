@@ -35,7 +35,7 @@ import static net.sourceforge.transparent.TransparentVcs.SUCCESSFUL_CHECKOUT;
  * Date: Dec 6, 2006
  */
 public class CCaseChangeProvider implements ChangeProvider {
-  public static final Key<Object> ourVersionedKey = new Key<Object>("CCASE_VERSIONED");
+  public static final Key<Object> ourVersionedKey = new Key<>("CCASE_VERSIONED");
   @NonNls private final static String REMINDER_TITLE = "Reminder";
   @NonNls private final static String REMINDER_TEXT = "Project started with ClearCase configured to be in the Offline mode.";
 
@@ -76,13 +76,13 @@ public class CCaseChangeProvider implements ChangeProvider {
   private boolean isBatchUpdate;
   private boolean isFirstShow;
 
-  private final HashSet<String> filesWritable = new HashSet<String>();
-  private final HashSet<String> filesNew = new HashSet<String>();
-  private final HashSet<String> filesChanged = new HashSet<String>();
-  private final HashSet<String> filesHijacked = new HashSet<String>();
-  private final HashSet<String> filesIgnored = new HashSet<String>();
-  private final HashSet<String> filesMerge = new HashSet<String>();
-  private final HashSet<String> filesLocallyDeleted = new HashSet<String>();
+  private final HashSet<String> filesWritable = new HashSet<>();
+  private final HashSet<String> filesNew = new HashSet<>();
+  private final HashSet<String> filesChanged = new HashSet<>();
+  private final HashSet<String> filesHijacked = new HashSet<>();
+  private final HashSet<String> filesIgnored = new HashSet<>();
+  private final HashSet<String> filesMerge = new HashSet<>();
+  private final HashSet<String> filesLocallyDeleted = new HashSet<>();
   private final ChangeListManager myChangeListManager;
   private TreeSet<VirtualFile> myDirs;
 
@@ -93,7 +93,7 @@ public class CCaseChangeProvider implements ChangeProvider {
     host = hostVcs;
     isFirstShow = true;
     myChangeListManager = ChangeListManager.getInstance(this.project);
-    myDirs = new TreeSet<VirtualFile>(FilePathComparator.getInstance());
+    myDirs = new TreeSet<>(FilePathComparator.getInstance());
   }
 
   public boolean isModifiedDocumentTrackingRequired() { return false;  }
@@ -201,7 +201,7 @@ public class CCaseChangeProvider implements ChangeProvider {
   }
 
   private void addCheckedOutFolders() {
-    final Set<String> checkedOutFolders = new HashSet<String>(host.getCheckedOutFolders());
+    final Set<String> checkedOutFolders = new HashSet<>(host.getCheckedOutFolders());
     for (String dir : checkedOutFolders) {
       if (host.renamedFolders.containsKey(dir) || host.renamedFolders.containsValue(dir)) continue;
       final File file = new File(dir);
@@ -408,7 +408,7 @@ public class CCaseChangeProvider implements ChangeProvider {
     List<String> writableFiles = filterOutMarkedFiles( writables );
 
     //-------------------------------------------------------------------------
-    List<String> refNames = new ArrayList<String>();
+    List<String> refNames = new ArrayList<>();
     for( String file : writableFiles )
     {
       String legalName = host.discoverOldName(file).replace('\\', '/');
@@ -431,7 +431,7 @@ public class CCaseChangeProvider implements ChangeProvider {
    */
   private List<String> filterOutMarkedFiles( HashSet<String> list )
   {
-    ArrayList<String> files = new ArrayList<String>();
+    ArrayList<String> files = new ArrayList<>();
     for( String path : list )
     {
       VirtualFile file = VcsUtil.getVirtualFile( path );
@@ -548,7 +548,7 @@ public class CCaseChangeProvider implements ChangeProvider {
    */
   private void setActivityInfoOnChangedFiles()
   {
-    List<String> filesToCheck = new ArrayList<String>();
+    List<String> filesToCheck = new ArrayList<>();
     for( String fileName : filesChanged )
     {
       if( myViewManager.getCheckoutActivityForFile( fileName ) == null )
@@ -564,7 +564,7 @@ public class CCaseChangeProvider implements ChangeProvider {
    */
   public void setActivityInfoOnChangedFiles( final List<String> files )
   {
-    List<String> refFilesToCheck = new ArrayList<String>();
+    List<String> refFilesToCheck = new ArrayList<>();
     for( String fileName : files )
     {
       refFilesToCheck.add(host.discoverOldName(fileName));
@@ -651,7 +651,7 @@ public class CCaseChangeProvider implements ChangeProvider {
   private void addRemovedFiles( final ChangelistBuilder builder )
   {
     //  Use additional set to remove async modification conflicts
-    final HashSet<String> files = new HashSet<String>();
+    final HashSet<String> files = new HashSet<>();
     files.addAll( host.removedFolders );
     for( String path : files )
       builder.processLocallyDeletedFile( VcsUtil.getFilePathForDeletedFile( path, true ) );
@@ -827,7 +827,7 @@ public class CCaseChangeProvider implements ChangeProvider {
 
   private static String extMasks( Set<FilePath> scope )
   {
-    HashMap<String, Integer> masks = new HashMap<String, Integer>();
+    HashMap<String, Integer> masks = new HashMap<>();
     for( FilePath path : scope )
     {
       int index = path.getName().lastIndexOf( '.' );

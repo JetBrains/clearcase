@@ -25,7 +25,7 @@ public class CheckoutDialog extends OptionsDialog implements Refreshable
   private final String              myLabel;
   private final JTextArea           myCommentArea = new JTextArea();
   private final VcsConfiguration    myConfiguration;
-  protected Collection<Refreshable> myAdditionalComponents = new ArrayList<Refreshable>();
+  protected Collection<Refreshable> myAdditionalComponents = new ArrayList<>();
 
   public CheckoutDialog( Project project, VirtualFile fileToCheckout )
   {

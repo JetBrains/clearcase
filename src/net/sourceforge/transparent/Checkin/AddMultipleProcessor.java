@@ -34,7 +34,7 @@ public class AddMultipleProcessor
   {
     int currFileIndex = 0;
     int cmdLineLen;
-    LinkedList<String> options = new LinkedList<String>();
+    LinkedList<String> options = new LinkedList<>();
     while( currFileIndex < files.length )
     {
       options.clear();

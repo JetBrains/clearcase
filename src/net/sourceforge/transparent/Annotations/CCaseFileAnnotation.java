@@ -22,7 +22,7 @@ import java.util.List;
 public class CCaseFileAnnotation extends FileAnnotation
 {
   private final StringBuffer myContentBuffer = new StringBuffer();
-  private final List<LineInfo> myLineInfos = new ArrayList<LineInfo>();
+  private final List<LineInfo> myLineInfos = new ArrayList<>();
   private final VirtualFile myFile;
   private VFSForAnnotationListener myListener;
 

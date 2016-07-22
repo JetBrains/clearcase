@@ -174,7 +174,7 @@ public class CCaseContentRevision implements ByteBackedContentRevision
       //  identifier latest in the hitory (first record).
       //---------------------------------------------------------------------
       if( mgr.getStatus( file ) == FileStatus.HIJACKED ) {
-        final List<String> commandParts = new ArrayList<String>();
+        final List<String> commandParts = new ArrayList<>();
         commandParts.add("lshistory");
         CCaseHistoryParser.fillParametersVersionOnly(commandParts);
         commandParts.add(file.getPath() + VERSION_SEPARATOR);

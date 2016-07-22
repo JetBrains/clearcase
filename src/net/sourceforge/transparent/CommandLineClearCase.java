@@ -80,7 +80,7 @@ public class CommandLineClearCase implements ClearCase
       canonName = file.getAbsolutePath();
     }
 
-    final List<String> commandLine = new ArrayList<String>();
+    final List<String> commandLine = new ArrayList<>();
     commandLine.add("co");
     if (StringUtil.isNotEmpty(comment)) {
       commandLine.add("-c");

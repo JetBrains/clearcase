@@ -191,9 +191,9 @@ public class CCaseWriteableAndUnversionedTest extends PlatformTestCase {
     private final Set<String> myCheckedOutFolders;
 
     private MockTransparent() {
-      myIgnoredFiles = new HashSet<VirtualFile>();
-      myNeverAskAbout = new HashSet<VirtualFile>();
-      myCheckedOutFolders = new HashSet<String>();
+      myIgnoredFiles = new HashSet<>();
+      myNeverAskAbout = new HashSet<>();
+      myCheckedOutFolders = new HashSet<>();
     }
 
     public void addToIgnored(final VirtualFile file) {

@@ -30,7 +30,7 @@ public abstract class AsynchronousAction extends FileAction
   {
     Project project = e.getData(CommonDataKeys.PROJECT);
     VirtualFile file = VcsUtil.getOneVirtualFile( e );
-    List<VcsException> exceptions = new ArrayList<VcsException>();
+    List<VcsException> exceptions = new ArrayList<>();
     try {
         perform( file, project);
     }

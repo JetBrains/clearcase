@@ -54,7 +54,7 @@ public class CCaseRollbackEnvironment implements RollbackEnvironment
 
   public void rollbackChanges(List<Change> changes, final List<VcsException> errors, @NotNull final RollbackProgressListener listener)
   {
-    HashSet<FilePath> processedFiles = new HashSet<FilePath>();
+    HashSet<FilePath> processedFiles = new HashSet<>();
 
     listener.determinate();
     rollbackRenamedFolders( changes, processedFiles, listener);
@@ -92,7 +92,7 @@ public class CCaseRollbackEnvironment implements RollbackEnvironment
 
   private void rollbackNew( List<Change> changes, HashSet<FilePath> processedFiles, @NotNull final RollbackProgressListener listener)
   {
-    HashSet<FilePath> filesAndFolder = new HashSet<FilePath>();
+    HashSet<FilePath> filesAndFolder = new HashSet<>();
     collectNewChangesBack( changes, filesAndFolder, processedFiles );
 
     VcsDirtyScopeManager mgr = VcsDirtyScopeManager.getInstance(project);
@@ -112,7 +112,7 @@ public class CCaseRollbackEnvironment implements RollbackEnvironment
   private void collectNewChangesBack( List<Change> changes, HashSet<FilePath> newFilesAndfolders,
                                       HashSet<FilePath> processedFiles )
   {
-    HashSet<FilePath> foldersNew = new HashSet<FilePath>();
+    HashSet<FilePath> foldersNew = new HashSet<>();
     for( Change change : changes )
     {
       if( VcsUtil.isChangeForNew( change ) )
@@ -195,7 +195,7 @@ public class CCaseRollbackEnvironment implements RollbackEnvironment
           //    the SourceSafe ("file not existing") and just delete the
           //    new file.
 
-          List<VcsException> localErrors = new ArrayList<VcsException>();
+          List<VcsException> localErrors = new ArrayList<>();
           FilePath oldFile = change.getBeforeRevision().getFile();
           host.undoCheckoutFile( oldFile.getIOFile(), localErrors );
           if( localErrors.size() > 0 && !isUnknownFileError( localErrors ) ) {
@@ -268,7 +268,7 @@ public class CCaseRollbackEnvironment implements RollbackEnvironment
       //     before its checkout on deletion (if it was checked out previously).
       //  2. Otherwise (we rollback the file which was not previusly checked
       //     out) perform "Update".
-      List<VcsException> localErrors = new ArrayList<VcsException>();
+      List<VcsException> localErrors = new ArrayList<>();
       host.undoCheckoutFile( path.getIOFile(), localErrors );
       if( localErrors.size() > 0 )
       {

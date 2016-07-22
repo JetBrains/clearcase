@@ -23,7 +23,7 @@ public class BaseOrUCM {
 
   public BaseOrUCM(final TransparentVcs vcs) {
     myVcs = vcs;
-    myCurrentNotification = new AtomicReference<MyNotification>(null);
+    myCurrentNotification = new AtomicReference<>(null);
   }
 
   public void checkRootsForUCMMismatch() {

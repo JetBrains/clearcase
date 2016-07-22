@@ -74,16 +74,16 @@ public class StatusMultipleProcessor
 
   public void execute()
   {
-    deletedFiles = new HashSet<String>();
-    nonexistingFiles = new HashSet<String>();
-    checkoutFiles = new HashSet<String>();
-    hijackedFiles = new HashSet<String>();
-    locallyDeleted = new HashSet<String>();
+    deletedFiles = new HashSet<>();
+    nonexistingFiles = new HashSet<>();
+    checkoutFiles = new HashSet<>();
+    hijackedFiles = new HashSet<>();
+    locallyDeleted = new HashSet<>();
 
     int currFileIndex = 0;
     int batchStartIndex = 0;
     int cmdLineLen;
-    LinkedList<String> options = new LinkedList<String>();
+    LinkedList<String> options = new LinkedList<>();
     while( currFileIndex < files.length )
     {
       cmdLineLen = 0;

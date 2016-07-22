@@ -23,7 +23,7 @@ public class ContentRevisionFactory
 
   static
   {
-    cachedRevisions = new HashMap<FilePath, CCaseContentRevision>();
+    cachedRevisions = new HashMap<>();
     listener = new VFSKeysListener();
     LocalFileSystem.getInstance().addVirtualFileListener( listener );
   }
@@ -93,7 +93,7 @@ public class ContentRevisionFactory
       //  VirtualFile value inside their FilePath keys.
       if( path.isDirectory() )
       {
-        List<FilePath> keys = new ArrayList<FilePath>( cachedRevisions.keySet() );
+        List<FilePath> keys = new ArrayList<>(cachedRevisions.keySet());
         for( FilePath file : keys )
         {
           if( file.isUnder( path, false ) )

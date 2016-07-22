@@ -87,8 +87,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   private final BaseOrUCM myBaseOrUCM;
 
-  public static final Key<Boolean> SUCCESSFUL_CHECKOUT = new Key<Boolean>( "SUCCESSFUL_CHECKOUT" );
-  public static final Key<Boolean> MERGE_CONFLICT = new Key<Boolean>( "MERGE_CONFLICT" );
+  public static final Key<Boolean> SUCCESSFUL_CHECKOUT = new Key<>("SUCCESSFUL_CHECKOUT");
+  public static final Key<Boolean> MERGE_CONFLICT = new Key<>("MERGE_CONFLICT");
 
   public  Set<String> removedFiles;
   public  Set<String> removedFolders;
@@ -444,8 +444,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public void add2NewFiles(final Collection<VirtualFile> files) throws VcsException {
     final FilterDescendantVirtualFileConvertible<VirtualFile> filterDescendantVirtualFileConvertible =
-      new FilterDescendantVirtualFileConvertible<VirtualFile>(Convertor.SELF, FilePathComparator.getInstance());
-    final ArrayList<VirtualFile> highLevel = new ArrayList<VirtualFile>(files);
+      new FilterDescendantVirtualFileConvertible<>(Convertor.SELF, FilePathComparator.getInstance());
+    final ArrayList<VirtualFile> highLevel = new ArrayList<>(files);
     filterDescendantVirtualFileConvertible.doFilter(highLevel);
     for (VirtualFile file : highLevel) {
       add2NewFile(file);
@@ -1016,7 +1016,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public void readExternal(final Element element) throws InvalidDataException
   {
-    HashSet<String> tmp = new HashSet<String>();
+    HashSet<String> tmp = new HashSet<>();
     readElements( element, removedFiles, PERSISTENCY_REMOVED_FILE_TAG, false );
     readElements( element, removedFolders, PERSISTENCY_REMOVED_FOLDER_TAG, false );
     readElements( element, deletedFiles, PERSISTENCY_DELETED_FILE_TAG, false );
@@ -1089,7 +1089,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     writeElement( element, deletedFiles, PERSISTENCY_DELETED_FILE_TAG );
     writeElement(element, deletedFolders, PERSISTENCY_DELETED_FOLDER_TAG);
 
-    HashSet<String> tmp = new HashSet<String>();
+    HashSet<String> tmp = new HashSet<>();
     for( VirtualFile file : newFiles )
     {
       FileStatus status = FileStatusManager.getInstance( myProject ).getStatus( file );

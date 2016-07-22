@@ -29,8 +29,8 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
   private final TransparentVcs host;
 
   private int commandLevel;
-  private final List<VirtualFile> filesAdded = new ArrayList<VirtualFile>();
-  private final List<FilePath> filesDeleted = new ArrayList<FilePath>();
+  private final List<VirtualFile> filesAdded = new ArrayList<>();
+  private final List<FilePath> filesDeleted = new ArrayList<>();
   private final ChangeListManager myChangeListManager;
 
   public VFSListener(Project project) {
@@ -82,7 +82,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
     //  occasionally removed files.
     //  NB: These structures must be updated even in the case of refresh events
     //      (lines below).
-    final LinkedList<VirtualFile> queue = new LinkedList<VirtualFile>();
+    final LinkedList<VirtualFile> queue = new LinkedList<>();
     queue.add(newFile);
 
     while (! queue.isEmpty()) {
@@ -122,7 +122,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
   }
 
   private void performDeleteFile(final VirtualFile file) {
-    final LinkedList<VirtualFile> queue = new LinkedList<VirtualFile>();
+    final LinkedList<VirtualFile> queue = new LinkedList<>();
     queue.add(file);
     while (! queue.isEmpty()) {
       final VirtualFile current = queue.removeFirst();
@@ -338,8 +338,8 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
   }
 
   private void reportDirty() {
-    final Set<VirtualFile> files = new HashSet<VirtualFile>();
-    final Set<VirtualFile> dirs = new HashSet<VirtualFile>();
+    final Set<VirtualFile> files = new HashSet<>();
+    final Set<VirtualFile> dirs = new HashSet<>();
     for (VirtualFile virtualFile : filesAdded) {
       if (virtualFile.isDirectory()) {
         dirs.add(virtualFile);
@@ -364,7 +364,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
     @NonNls final String TITLE = "Add file(s)";
     @NonNls final String MESSAGE = "Do you want to schedule the following file for addition to ClearCase?\n{0}";
 
-    ArrayList<VirtualFile> files = new ArrayList<VirtualFile>(filesAdded);
+    ArrayList<VirtualFile> files = new ArrayList<>(filesAdded);
     VcsShowConfirmationOption confirmOption = host.getAddConfirmation();
 
     //  In the case when we need to perform "Add" vcs action right upon
@@ -415,7 +415,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
       markFileRemoval(filesDeleted, host.removedFolders, host.removedFiles);
     }
     else {
-      final List<FilePath> deletedFiles = new ArrayList<FilePath>(filesDeleted);
+      final List<FilePath> deletedFiles = new ArrayList<>(filesDeleted);
       AbstractVcsHelper helper = AbstractVcsHelper.getInstance(project);
       Collection<FilePath> filesToProcess = helper.selectFilePathsToProcess(deletedFiles, TITLE, null, TITLE,
                                                                             MESSAGE, confirmOption);
@@ -429,7 +429,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
   }
 
   private void markFileRemoval(final Collection<FilePath> paths, Set<String> folders, Set<String> files) {
-    final ArrayList<FilePath> allpaths = new ArrayList<FilePath>(paths);
+    final ArrayList<FilePath> allpaths = new ArrayList<>(paths);
     for (FilePath fpath : allpaths) {
       String path = fpath.getPath();
       path = VcsUtil.getCanonicalLocalPath(path);

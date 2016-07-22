@@ -84,7 +84,7 @@ public class SynchActivitiesAction extends SynchronousAction
     CCaseViewsManager viewsManager = CCaseViewsManager.getInstance( project );
     ChangeListManager mgr = ChangeListManager.getInstance( project );
     List<VirtualFile> files = mgr.getAffectedFiles();
-    List<String> files2Analyze = new ArrayList<String>();
+    List<String> files2Analyze = new ArrayList<>();
 
     for( VirtualFile vfile : files )
     {

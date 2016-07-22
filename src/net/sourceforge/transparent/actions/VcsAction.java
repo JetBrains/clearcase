@@ -50,7 +50,7 @@ public abstract class VcsAction extends AnAction {
   }
 
   protected List<VcsException> runAction(AnActionEvent e) {
-    List<VcsException> list = new ArrayList<VcsException>();
+    List<VcsException> list = new ArrayList<>();
 
     LocalHistoryAction a = LocalHistory.getInstance().startAction(e.getPresentation().getText());
 

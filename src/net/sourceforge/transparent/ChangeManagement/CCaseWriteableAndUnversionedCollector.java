@@ -30,9 +30,9 @@ public class CCaseWriteableAndUnversionedCollector {
   public CCaseWriteableAndUnversionedCollector(Project project, final TransparentI transparentI) {
     myProject = project;
     myTransparentI = transparentI;
-    myDirs = new TreeSet<VirtualFile>(FilePathComparator.getInstance());
-    myFilesIgnored = new HashSet<String>();
-    myFilesWritable = new HashSet<String>();
+    myDirs = new TreeSet<>(FilePathComparator.getInstance());
+    myFilesIgnored = new HashSet<>();
+    myFilesWritable = new HashSet<>();
   }
 
   public Set<String> getFilesWritable() {
@@ -57,8 +57,8 @@ public class CCaseWriteableAndUnversionedCollector {
     final VirtualFile vf = filePath.getVirtualFile();
     if( vf != null )
     {
-      final ArrayDeque<VirtualFile> chain = new ArrayDeque<VirtualFile>();
-      final Map<VirtualFile, Boolean> chainROFlag = new HashMap<VirtualFile, Boolean>();
+      final ArrayDeque<VirtualFile> chain = new ArrayDeque<>();
+      final Map<VirtualFile, Boolean> chainROFlag = new HashMap<>();
 
       ProjectLevelVcsManager.getInstance(myProject).iterateVcsRoot( vf, new Processor<FilePath>()
       {

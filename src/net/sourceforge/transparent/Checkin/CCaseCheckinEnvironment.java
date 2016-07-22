@@ -92,7 +92,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   public String getDefaultMessageFor( FilePath[] filesToCheckin )
   {
     ClearCase cc = host.getClearCase();
-    HashSet<String> commentsPerFile = new HashSet<String>();
+    HashSet<String> commentsPerFile = new HashSet<>();
     for( FilePath path : filesToCheckin )
     {
       //  For ADDED or DELETED files checkout comment has no sence.
@@ -140,8 +140,8 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
                                    @NotNull NullableFunction<Object, Object> parametersHolder,
                                    Set<String> feedback)
   {
-    List<VcsException> errors = new ArrayList<VcsException>();
-    HashSet<FilePath> processedFiles = new HashSet<FilePath>();
+    List<VcsException> errors = new ArrayList<>();
+    HashSet<FilePath> processedFiles = new HashSet<>();
     if (! SystemInfo.isWindows) {
       comment = comment.replace( "\"", "\\\"");
     }
@@ -275,9 +275,9 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   private void commitNew( List<Change> changes, String comment,
                           HashSet<FilePath> processedFiles, List<VcsException> errors )
   {
-    HashSet<FilePath> files = new HashSet<FilePath>();
-    HashSet<FilePath> folders = new HashSet<FilePath>();
-    HashSet<FilePath> checkedOutFolders = new HashSet<FilePath>();
+    HashSet<FilePath> files = new HashSet<>();
+    HashSet<FilePath> folders = new HashSet<>();
+    HashSet<FilePath> checkedOutFolders = new HashSet<>();
 
     collectNewFilesAndFolders( changes, processedFiles, folders, files );
 
@@ -515,7 +515,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
    */
   public List<VcsException> scheduleMissingFileForDeletion( List<FilePath> paths )
   {
-    List<VcsException> errors = new ArrayList<VcsException>();
+    List<VcsException> errors = new ArrayList<>();
     for( FilePath file : paths )
     {
       String path = VcsUtil.getCanonicalLocalPath( file.getPath() );
@@ -532,7 +532,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
 
   public List<VcsException> scheduleUnversionedFilesForAddition( List<VirtualFile> files )
   {
-    final ArrayList<VcsException> vcsExceptions = new ArrayList<VcsException>();
+    final ArrayList<VcsException> vcsExceptions = new ArrayList<>();
       try {
         host.add2NewFiles(files);
       }
@@ -558,7 +558,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   
   private Set<VirtualFile> getNecessaryRenamedFoldersForList( List<Change> changes )
   {
-    Set<VirtualFile> set = new HashSet<VirtualFile>();
+    Set<VirtualFile> set = new HashSet<>();
     for( Change change : changes )
     {
       ContentRevision rev = change.getAfterRevision();

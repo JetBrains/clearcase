@@ -220,7 +220,7 @@ public class CCaseHistoryParser
     private final ArrayList<SubmissionData> myResult;
 
     private LogParseResult() {
-      myResult = new ArrayList<SubmissionData>();
+      myResult = new ArrayList<>();
     }
 
     @NotNull

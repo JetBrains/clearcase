@@ -31,7 +31,7 @@ public final class ClearCaseOptionsTopHitProvider extends OptionsTopHitProvider 
     if (project != null) {
       for (VcsDescriptor descriptor : ProjectLevelVcsManager.getInstance(project).getAllVcss()) {
         if ("ClearCase".equals(descriptor.getDisplayName())) {
-          ArrayList<BooleanOptionDescription> options = new ArrayList<BooleanOptionDescription>();
+          ArrayList<BooleanOptionDescription> options = new ArrayList<>();
           CCaseViewsManager manager = CCaseViewsManager.getInstance(project);
           final CCaseConfig config = CCaseConfig.getInstance(project);
           if (manager.isAnySnapshotView()) {

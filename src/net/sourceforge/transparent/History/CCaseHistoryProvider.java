@@ -130,7 +130,7 @@ public class CCaseHistoryProvider implements VcsHistoryProvider, VcsCacheableHis
       }
     }
 
-    final List<String> commandParts = new ArrayList<String>();
+    final List<String> commandParts = new ArrayList<>();
     commandParts.add(HISTORY_CMD);
     if (host.getConfig().isHistoryResticted) {
       int margin = host.getConfig().getHistoryRevisionsMargin();
@@ -143,7 +143,7 @@ public class CCaseHistoryProvider implements VcsHistoryProvider, VcsCacheableHis
     log = TransparentVcs.cleartoolWithOutput(ArrayUtil.toStringArray(commandParts));
 
     //  There may exist files for which we know nothing.
-    ArrayList<VcsFileRevision> revisions = new ArrayList<VcsFileRevision>();
+    ArrayList<VcsFileRevision> revisions = new ArrayList<>();
     if( log.contains( NOT_A_VOB_OBJECT )) {
       throw new VcsException( log );
     } else {
@@ -189,7 +189,7 @@ public class CCaseHistoryProvider implements VcsHistoryProvider, VcsCacheableHis
       }
     }
 
-    final List<String> commandParts = new ArrayList<String>();
+    final List<String> commandParts = new ArrayList<>();
     commandParts.add(HISTORY_CMD);
     if (maxCnt > 0) {
       commandParts.add(LIMITED_SWITCH);

@@ -22,7 +22,7 @@ public class UndoCheckOutAction extends SynchronousAction
 
   protected void perform(VirtualFile file, final Project project) throws VcsException
   {
-    List<VcsException> errors = new ArrayList<VcsException>();
+    List<VcsException> errors = new ArrayList<>();
     
     if( !file.isDirectory() && properStatus( project, file ) )
     {
