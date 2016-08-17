@@ -13,6 +13,7 @@ import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.History.CCaseFileRevision;
 import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Created by IntelliJ IDEA.
@@ -75,7 +76,7 @@ public class CCaseAnnotationProvider implements AnnotationProvider
     return annotation;
   }
 
-  public boolean isAnnotationValid( VcsFileRevision rev )
+  public boolean isAnnotationValid(@NotNull VcsFileRevision rev )
   {
     CCaseFileRevision ccRev = (CCaseFileRevision) rev;
     final String action = ccRev.getAction();
