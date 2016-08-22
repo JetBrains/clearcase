@@ -122,20 +122,8 @@ public class CCaseFileAnnotation extends FileAnnotation
     return null;
   }
 
-  public VcsRevisionNumber originalRevision(int lineNumber) {
-    return null;
-  }
-
   @Nullable
   public List<VcsFileRevision> getRevisions() {
-    return null;
-  }
-
-  public boolean revisionsNotEmpty() {
-    return false;
-  }
-
-  public AnnotationSourceSwitcher getAnnotationSourceSwitcher() {
     return null;
   }
 
