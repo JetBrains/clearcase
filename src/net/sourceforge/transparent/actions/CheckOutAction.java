@@ -3,7 +3,6 @@ package net.sourceforge.transparent.actions;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
@@ -188,7 +187,7 @@ public class CheckOutAction extends SynchronousAction {
                          "Would you like to use it as the checked-out file?\nIf not it will be lost.";
         answer.set(Messages.showYesNoDialog(message, CHECKOUT_HIJACKED_TITLE, Messages.getQuestionIcon()));
       }
-    }, ModalityState.defaultModalityState());
+    });
     return answer.get() == Messages.YES;
   }
 
