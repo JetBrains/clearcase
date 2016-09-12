@@ -10,6 +10,7 @@ import com.intellij.vcsUtil.VcsImplUtil;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -64,7 +65,8 @@ public class CCaseFileRevision implements VcsFileRevision
   public String getAction()       { return action;     }
   public String getLabels()       { return labels;     }
 
-  public VcsRevisionNumber getRevisionNumber() {  return new CCaseRevisionNumber( version, order );  }
+  @NotNull
+  public VcsRevisionNumber getRevisionNumber() {  return new CCaseRevisionNumber(version, order );  }
 
   public byte[] loadContent() throws IOException, VcsException
   {
