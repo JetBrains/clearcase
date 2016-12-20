@@ -15,7 +15,6 @@ import com.intellij.openapi.util.text.LineTokenizer;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.VcsKey;
-import com.intellij.openapi.vcs.changes.committed.AbstractCalledLater;
 import com.intellij.openapi.vcs.update.*;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -31,6 +30,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+
+import static com.intellij.util.WaitForProgressToShow.runOrInvokeLaterAboveProgress;
 
 /**
  * Created by IntelliJ IDEA.
@@ -75,12 +76,7 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
     final ArrayList<VcsException> errors = new ArrayList<>();
 
     progressIndicator.setText(PROGRESS_TEXT);
-    new AbstractCalledLater(myProject, ModalityState.NON_MODAL) {
-      @Override
-      public void run() {
-        FileDocumentManager.getInstance().saveAllDocuments();
-      }
-    }.callMe();
+    runOrInvokeLaterAboveProgress(() -> FileDocumentManager.getInstance().saveAllDocuments(), ModalityState.NON_MODAL, myProject);
 
     for( FilePath root : contentRoots )
     {
