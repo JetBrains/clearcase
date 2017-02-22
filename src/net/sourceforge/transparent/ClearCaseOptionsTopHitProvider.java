@@ -4,6 +4,7 @@ import com.intellij.ide.ui.OptionsTopHitProvider;
 import com.intellij.ide.ui.PublicFieldBasedOptionDescription;
 import com.intellij.ide.ui.PublicMethodBasedOptionDescription;
 import com.intellij.ide.ui.search.BooleanOptionDescription;
+import com.intellij.ide.ui.search.OptionDescription;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.impl.VcsDescriptor;
@@ -27,7 +28,7 @@ public final class ClearCaseOptionsTopHitProvider extends OptionsTopHitProvider 
 
   @NotNull
   @Override
-  public Collection<BooleanOptionDescription> getOptions(@Nullable final Project project) {
+  public Collection<OptionDescription> getOptions(@Nullable final Project project) {
     if (project != null) {
       for (VcsDescriptor descriptor : ProjectLevelVcsManager.getInstance(project).getAllVcss()) {
         if ("ClearCase".equals(descriptor.getDisplayName())) {
