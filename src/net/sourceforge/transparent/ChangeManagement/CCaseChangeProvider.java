@@ -11,11 +11,13 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.openapi.vcs.*;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.FileStatus;
+import com.intellij.openapi.vcs.ProjectLevelVcsManager;
+import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.WaitForProgressToShow;
-import com.intellij.util.containers.Convertor;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.*;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
@@ -26,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.util.*;
 
+import static com.intellij.util.containers.ContainerUtil.map;
 import static net.sourceforge.transparent.TransparentVcs.MERGE_CONFLICT;
 import static net.sourceforge.transparent.TransparentVcs.SUCCESSFUL_CHECKOUT;
 
@@ -342,12 +345,7 @@ public class CCaseChangeProvider implements ChangeProvider {
       analyzeWritableFiles( filesWritable );
     } else {
       final Collection<VirtualFile> roots = dirtyScope.getAffectedContentRoots();
-      final List<String> pathsAsString = ObjectsConvertor.convert(roots, new Convertor<VirtualFile, String>() {
-        @Override
-        public String convert(VirtualFile o) {
-          return o.getPath();
-        }
-      });
+      List<String> pathsAsString = map(roots, VirtualFile::getPath);
       final StatusMultipleProcessor processor = new StatusMultipleProcessor(pathsAsString);
       processor.setRecursive(true);
       processor.setViewOnly(true);
