@@ -269,11 +269,6 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     }
   }
 
-  public void directoryMappingChanged()
-  {
-    CCaseViewsManager.getInstance( myProject ).reloadViews();
-  }
-
   public ClearCase getClearCase()
   {
     if( clearcase == null )
