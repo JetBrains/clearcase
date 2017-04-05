@@ -52,8 +52,7 @@ public class ContentRevisionFactory
     cachedRevisions.remove( path );
   }
 
-  private static class VFSKeysListener extends VirtualFileAdapter
-  {
+  private static class VFSKeysListener implements VirtualFileListener {
     public VFSKeysListener() {}
 
     public void beforeFileMovement( @NotNull VirtualFileMoveEvent e )

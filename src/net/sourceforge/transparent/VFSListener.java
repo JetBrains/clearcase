@@ -10,7 +10,6 @@ import com.intellij.openapi.vcs.actions.VcsContextFactory;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.*;
-import com.intellij.util.Processor;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.ChangeManagement.CCaseChangeProvider;
 import net.sourceforge.transparent.exceptions.ClearCaseException;
@@ -24,7 +23,7 @@ import java.util.*;
  * User: lloix
  * Date: Sep 21, 2006
  */
-public class VFSListener extends VirtualFileAdapter implements CommandListener {
+public class VFSListener implements CommandListener, VirtualFileListener {
   private final Project project;
   private final TransparentVcs host;
 
@@ -39,6 +38,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
     myChangeListManager = ChangeListManager.getInstance(this.project);
   }
 
+  @Override
   public void fileCreated(@NotNull VirtualFileEvent event) {
     VirtualFile file = event.getFile();
 
@@ -110,6 +110,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
     }
   }
 
+  @Override
   public void beforeFileDeletion(@NotNull VirtualFileEvent event) {
     try {
       if (!isIgnoredEvent(event)) {
@@ -139,20 +140,16 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
 
   @Override
   public void fileMoved(@NotNull VirtualFileMoveEvent event) {
-    super.fileMoved(event);
     if (isIgnoredEvent(event)) {
       return;
     }
 
     final VirtualFile file = event.getFile();
-    VfsUtil.processFilesRecursively(file, new Processor<VirtualFile>() {
-      @Override
-      public boolean process(VirtualFile virtualFile) {
-        if (virtualFile.isDirectory()) {
-          virtualFile.putUserData(CCaseChangeProvider.ourVersionedKey, null);
-        }
-        return true;
+    VfsUtilCore.processFilesRecursively(file, virtualFile -> {
+      if (virtualFile.isDirectory()) {
+        virtualFile.putUserData(CCaseChangeProvider.ourVersionedKey, null);
       }
+      return true;
     });
     if (wasDeleted(file)) {
       restore(file);
@@ -184,6 +181,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
     }
   }
 
+  @Override
   public void beforeFileMovement(@NotNull VirtualFileMoveEvent event) {
     if (isIgnoredEvent(event)) {
       return;
@@ -217,6 +215,7 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
     return host.containsNew(file) || (! Status.NOT_AN_ELEMENT.equals(host.getStatusSafely(file)));
   }
 
+  @Override
   public void beforePropertyChange(@NotNull VirtualFilePropertyEvent event) {
     VirtualFile file = event.getFile();
 
@@ -295,12 +294,14 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
     return false;
   }
 
+  @Override
   public void commandStarted(final CommandEvent event) {
     if (project == event.getProject()) {
       commandLevel++;
     }
   }
 
+  @Override
   public void commandFinished(final CommandEvent event) {
     if (project != event.getProject()) return;
 
@@ -474,14 +475,5 @@ public class VFSListener extends VirtualFileAdapter implements CommandListener {
       }
     }
     return false;
-  }
-
-  public void beforeCommandFinished(final CommandEvent event) {
-  }
-
-  public void undoTransparentActionStarted() {
-  }
-
-  public void undoTransparentActionFinished() {
   }
 }
