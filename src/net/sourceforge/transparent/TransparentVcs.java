@@ -144,9 +144,12 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     myActivatePolicyCalculateUCM = ourActivatePolicyCalculateUCMDefault;
   }
 
+  @Override
   @NotNull
   public String getComponentName()  {  return getName();   }
+  @Override
   public String getDisplayName()    {  return NAME;  }
+  @Override
   public String getMenuItemText()   {  return super.getMenuItemText();  }
   public static boolean isCmdImpl() {  return true; }
 
@@ -154,20 +157,28 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   public VcsShowConfirmationOption getAddConfirmation()   {  return addConfirmation;     }
   public VcsShowConfirmationOption getRemoveConfirmation(){  return removeConfirmation;  }
 
-  public Configurable         getConfigurable()       {  return new CCaseConfigurable( myProject );  }
+  @Override
+  public Configurable         getConfigurable()       {  return new CCaseConfigurable(myProject );  }
   public CCaseConfig          getConfig()             {  return config;           }
+  @Override
   public ChangeProvider       getChangeProvider()     {  return changeProvider;   }
+  @Override
   public EditFileProvider     getEditFileProvider()   {  return editProvider;     }
+  @Override
   public VcsHistoryProvider   getVcsHistoryProvider() {  return historyProvider;  }
+  @Override
   public AnnotationProvider   getAnnotationProvider() {  return annotationProvider;  }
+  @Override
   public CheckinEnvironment   createCheckinEnvironment() {
     return ((config == null) || !config.isOffline()) ? checkinEnvironment : null;
   }
 
+  @Override
   public RollbackEnvironment createRollbackEnvironment() {
     return ((config == null) || !config.isOffline()) ? rollbackEnvironment : null;
   }
 
+  @Override
   public UpdateEnvironment  createUpdateEnvironment()
   {
     //  For dynamic views "Update project" action makes no sence.
@@ -179,9 +190,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     return PeriodicalTasksCloser.getInstance().safeGetComponent(project, TransparentVcs.class);
   }
 
-  public void initComponent()     {}
-  public void disposeComponent()  {}
-
+  @Override
   public void projectOpened()
   {
     changeProvider = new CCaseChangeProvider( myProject, this );
@@ -199,14 +208,13 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     removeConfirmation = vcsManager.getStandardConfirmation( VcsConfiguration.StandardConfirmation.REMOVE, this );
   }
 
-  public void projectClosed() {}
-
   /**
    *  Attach different component only in the case when current VCS becomes
    *  "active" that is mapped to some module in the project. Otherwise some
    *  listeners and other components may interfere with other useful code or
    *  downgrade the performance.
    */
+  @Override
   public void activate()
   {
     config = CCaseConfig.getInstance( myProject );
@@ -241,6 +249,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     myBaseOrUCM.checkRootsForUCMMismatch();
   }
 
+  @Override
   public void deactivate()
   {
     LocalFileSystem.getInstance().removeVirtualFileListener( listener );
@@ -317,9 +326,11 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     {
       final String newPat = newPattern;
       final FileTypeManager mgr = FileTypeManager.getInstance();
-      final Runnable action = new Runnable() { public void run() { mgr.setIgnoredFilesList( newPat ); } };
+      final Runnable action = new Runnable() { @Override
+      public void run() { mgr.setIgnoredFilesList(newPat ); } };
       ApplicationManager.getApplication().invokeLater( new Runnable() {
-        public void run() { ApplicationManager.getApplication().runWriteAction( action );  }
+        @Override
+        public void run() { ApplicationManager.getApplication().runWriteAction(action );  }
       });
     }
 
@@ -334,10 +345,12 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     }
   }
 
-  public boolean fileIsUnderVcs( FilePath path ) {  return VcsUtil.getVcsFor( myProject, path ) == this;  }
+  @Override
+  public boolean fileIsUnderVcs(FilePath path ) {  return VcsUtil.getVcsFor(myProject, path ) == this;  }
   public boolean fileIsUnderVcs( String path )   {  return VcsUtil.isFileUnderVcs( myProject, path ); }
 
-  public boolean fileExistsInVcs( FilePath path )
+  @Override
+  public boolean fileExistsInVcs(FilePath path )
   {
     //  In the case we are offline, reply "NO" since we can not say definitely
     //  anything on the file status (and must not issue any CCase cleartool
@@ -394,7 +407,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     return exists;
   }
 
-  public boolean isFileIgnored( VirtualFile file )
+  @Override
+  public boolean isFileIgnored(VirtualFile file )
   {
     ChangeListManager mgr = ChangeListManager.getInstance( myProject );
     return (file != null) && mgr.isIgnoredFile( file );
@@ -657,6 +671,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     {
       Runnable action = new Runnable()
       {
+        @Override
         public void run()
         {
           //  We can remove only non-checkedout files???
@@ -710,6 +725,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       @NonNls final String modComment = StringUtil.isEmpty(comment) ? "Renamed " + oldFile.getName() + " to " + newName : comment;
 
       Runnable action = new Runnable() {
+        @Override
         public void run() {
           File ioParent = oldFile.getParentFile();
           if( ioParent.exists() )
@@ -744,6 +760,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
       @NonNls final String modComment = StringUtil.isEmpty(comment) ? "Moved " + filePath + " to " + newName : comment;
 
       Runnable action = new Runnable(){
+        @Override
         public void run()
         {
           renameFile( newFile, oldFile );
@@ -1009,6 +1026,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   // JDOMExternalizable methods
   //
 
+  @Override
   public void readExternal(final Element element) throws InvalidDataException
   {
     HashSet<String> tmp = new HashSet<>();
@@ -1077,7 +1095,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     }
   }
 
-  public void writeExternal( final Element element ) throws WriteExternalException
+  @Override
+  public void writeExternal(final Element element ) throws WriteExternalException
   {
     writeElement( element, removedFiles, PERSISTENCY_REMOVED_FILE_TAG );
     writeElement( element, removedFolders, PERSISTENCY_REMOVED_FOLDER_TAG );
