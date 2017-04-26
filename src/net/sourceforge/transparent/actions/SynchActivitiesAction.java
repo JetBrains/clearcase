@@ -2,7 +2,6 @@ package net.sourceforge.transparent.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
-import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
@@ -33,8 +32,10 @@ public class SynchActivitiesAction extends SynchronousAction
   {
     super.update( e );
 
-    boolean enabled = CCaseViewsManager.getInstance( getEventProject( e ) ).isAnyUcmView() &&
-                      !CCaseConfig.getInstance( getEventProject( e ) ).synchActivitiesOnRefresh;
+    Project project = getEventProject(e);
+    boolean enabled = project != null &&
+                      CCaseViewsManager.getInstance(project).isAnyUcmView() &&
+                      !CCaseConfig.getInstance(project).synchActivitiesOnRefresh;
     e.getPresentation().setEnabled( enabled );
   }
 
@@ -58,7 +59,7 @@ public class SynchActivitiesAction extends SynchronousAction
     //  (via "describe" command), and if its activity differs from the name
     //  of its current change list, move it to the new change list.
     relocateChangedFiles( project, TransparentVcs.getInstance(project));
-    
+
     //  New files (with status "ADDED") should be relocated to the newly
     //  activated activities.
     relocateNewFiles( project );
