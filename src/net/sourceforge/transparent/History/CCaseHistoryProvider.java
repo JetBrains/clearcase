@@ -54,21 +54,18 @@ public class CCaseHistoryProvider implements VcsHistoryProvider, VcsCacheableHis
 
     public Comparator<VcsFileRevision> getComparator()
     {
-      return new Comparator<VcsFileRevision>() {
-        public int compare(VcsFileRevision o1, VcsFileRevision o2)
-        {
-          if (!(o1 instanceof CCaseFileRevision)) return 0;
-          if (!(o2 instanceof CCaseFileRevision)) return 0;
+      return (o1, o2) -> {
+        if (!(o1 instanceof CCaseFileRevision)) return 0;
+        if (!(o2 instanceof CCaseFileRevision)) return 0;
 
-          CCaseFileRevision cO1 = (CCaseFileRevision) o1;
-          CCaseFileRevision cO2 = (CCaseFileRevision) o2;
-          if( cO1.getOrder() < cO2.getOrder() )
-            return -1;
-          else
-          if( cO1.getOrder() > cO2.getOrder() )
-            return 1;
-          return 0;
-        }
+        CCaseFileRevision cO1 = (CCaseFileRevision) o1;
+        CCaseFileRevision cO2 = (CCaseFileRevision) o2;
+        if( cO1.getOrder() < cO2.getOrder() )
+          return -1;
+        else
+        if( cO1.getOrder() > cO2.getOrder() )
+          return 1;
+        return 0;
       };
     }
   };

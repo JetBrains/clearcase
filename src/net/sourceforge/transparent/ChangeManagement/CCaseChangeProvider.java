@@ -242,9 +242,7 @@ public class CCaseChangeProvider implements ChangeProvider {
   {
     if( isBatchUpdate && isFirstShow && config.isOffline() )
     {
-      WaitForProgressToShow.runOrInvokeLaterAboveProgress(new Runnable() {
-          public void run() {  Messages.showWarningDialog( project, REMINDER_TEXT, REMINDER_TITLE );  }
-        }, null, project);
+      WaitForProgressToShow.runOrInvokeLaterAboveProgress(() -> Messages.showWarningDialog(project, REMINDER_TEXT, REMINDER_TITLE ), null, project);
     }
   }
 

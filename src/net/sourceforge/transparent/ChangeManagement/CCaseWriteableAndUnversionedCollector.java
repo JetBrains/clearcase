@@ -7,7 +7,6 @@ import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VirtualFileFilter;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.Processor;
 import com.intellij.util.containers.hash.HashMap;
 import com.intellij.util.containers.hash.HashSet;
 import org.jetbrains.annotations.NotNull;
@@ -60,40 +59,36 @@ public class CCaseWriteableAndUnversionedCollector {
       final ArrayDeque<VirtualFile> chain = new ArrayDeque<>();
       final Map<VirtualFile, Boolean> chainROFlag = new HashMap<>();
 
-      ProjectLevelVcsManager.getInstance(myProject).iterateVcsRoot( vf, new Processor<FilePath>()
-      {
-        public boolean process(final FilePath file)
-        {
-          final String path = file.getPath().replace('\\', '/');
-          final VirtualFile vFile = file.getVirtualFile();
-          if (vFile == null || ! vFile.isValid()) return true;
-          if (myTransparentI.isFileIgnored(vFile)) {
-            myFilesIgnored.add(path);
-            return true;
-          }
-
-          if (CCaseChangeProvider.isValidFile(vFile)) {
-            myFilesWritable.add(path);
-          } else if (! vFile.isDirectory()) {
-            if (! Boolean.TRUE.equals(chainROFlag.get(vFile.getParent())) && ! vFile.isWritable() && ! myTransparentI.isRenamedFile(vFile.getPath())) {
-              // then remove parents from unversioned; only check if not yet met before
-              chainROFlag.put(vFile.getParent(), true);
-            }
-          } else {
-            final boolean versioned = directoryIsVersioned(vFile);
-            if (! versioned) {
-              // directory probably unversioned
-              myDirs.add(vFile);
-              chain.addFirst(vFile);
-            } else if (! Boolean.TRUE.equals(chainROFlag.get(vFile)) && ! chain.isEmpty()) {
-              // directory is versioned
-              chainROFlag.put(vFile, true);
-            }
-          }
+      ProjectLevelVcsManager.getInstance(myProject).iterateVcsRoot(vf, file -> {
+        final String path = file.getPath().replace('\\', '/');
+        final VirtualFile vFile = file.getVirtualFile();
+        if (vFile == null || ! vFile.isValid()) return true;
+        if (myTransparentI.isFileIgnored(vFile)) {
+          myFilesIgnored.add(path);
           return true;
         }
+
+        if (CCaseChangeProvider.isValidFile(vFile)) {
+          myFilesWritable.add(path);
+        } else if (! vFile.isDirectory()) {
+          if (! Boolean.TRUE.equals(chainROFlag.get(vFile.getParent())) && ! vFile.isWritable() && ! myTransparentI.isRenamedFile(vFile.getPath())) {
+            // then remove parents from unversioned; only check if not yet met before
+            chainROFlag.put(vFile.getParent(), true);
+          }
+        } else {
+          final boolean versioned = directoryIsVersioned(vFile);
+          if (! versioned) {
+            // directory probably unversioned
+            myDirs.add(vFile);
+            chain.addFirst(vFile);
+          } else if (! Boolean.TRUE.equals(chainROFlag.get(vFile)) && ! chain.isEmpty()) {
+            // directory is versioned
+            chainROFlag.put(vFile, true);
+          }
+        }
+        return true;
       },
-      new VirtualFileFilter() {
+                                                                   new VirtualFileFilter() {
         @Override
         public boolean shouldGoIntoDirectory(@NotNull VirtualFile file) {
           final boolean ignored = myTransparentI.isFileIgnored(file);

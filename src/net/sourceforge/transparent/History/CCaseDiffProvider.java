@@ -10,7 +10,6 @@ import com.intellij.openapi.vcs.diff.ItemLatestState;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.Consumer;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.ChangeManagement.CCaseContentRevision;
 import net.sourceforge.transparent.StatusMultipleProcessor;
@@ -38,12 +37,9 @@ public class CCaseDiffProvider implements DiffProvider {
   public ItemLatestState getLastRevision(VirtualFile virtualFile) {
     final String[] result = new String[1];
     try {
-      CCaseHistoryProvider.historyGetter(myProject, VcsUtil.getFilePath(virtualFile), 1, new Consumer<CCaseHistoryParser.SubmissionData>() {
-        @Override
-        public void consume(CCaseHistoryParser.SubmissionData submissionData) {
-          if (submissionData != null) {
-            result[0] = submissionData.version;
-          }
+      CCaseHistoryProvider.historyGetter(myProject, VcsUtil.getFilePath(virtualFile), 1, submissionData -> {
+        if (submissionData != null) {
+          result[0] = submissionData.version;
         }
       });
     }

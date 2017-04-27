@@ -135,11 +135,7 @@ public class CCaseContentRevision implements ByteBackedContentRevision
             //  other subsystems which are not related to the "ct get" command per se.
             if( out2.length() > 0 && !isKnownMessage( out2 ) )
             {
-              WaitForProgressToShow.runOrInvokeLaterAboveProgress(new Runnable() {
-                public void run() {
-                  VcsImplUtil.showErrorMessage(project, out2, TITLE);
-                }
-              }, null, project);
+              WaitForProgressToShow.runOrInvokeLaterAboveProgress(() -> VcsImplUtil.showErrorMessage(project, out2, TITLE), null, project);
             }
             else
             {

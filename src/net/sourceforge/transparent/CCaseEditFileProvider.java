@@ -47,37 +47,30 @@ public class CCaseEditFileProvider implements EditFileProvider
     final ChangeListManager mgr = ChangeListManager.getInstance( host.getProject() );
 
     final CurrentStatusHelper[] statusHelper = new CurrentStatusHelper[1];
-    final boolean succeeded = ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
-        @Override
-        public void run() {
-          statusHelper[0] = preProcessFiles(files);
-        }
-      }, "ClearCase checkout: preprocessing files", true, host.getProject());
+    final boolean succeeded = ProgressManager.getInstance().runProcessWithProgressSynchronously(
+      (Runnable)() -> statusHelper[0] = preProcessFiles(files), "ClearCase checkout: preprocessing files", true, host.getProject());
     if (! succeeded || statusHelper[0] == null) return;
     final String comment = getEditComment(files, statusHelper[0]);
     if (comment == null) return;  // was cancelled
-    ProgressManager.getInstance().runProcessWithProgressSynchronously(new Runnable() {
-      @Override
-      public void run() {
-        int cnt = 0;
-        for( VirtualFile file : files )
-        {
-          final boolean ignoredFile = mgr.isIgnoredFile(file);
-          final ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
-          if (indicator != null) {
-            indicator.checkCanceled();
-            indicator.setText2((ignoredFile ? "Ignored: " : "Checking out: ") + getFileDescriptionForProgress(file));
-            indicator.setFraction((double) cnt/files.length);
+    ProgressManager.getInstance().runProcessWithProgressSynchronously(() -> {
+      int cnt = 0;
+      for( VirtualFile file : files )
+      {
+        final boolean ignoredFile = mgr.isIgnoredFile(file);
+        final ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
+        if (indicator != null) {
+          indicator.checkCanceled();
+          indicator.setText2((ignoredFile ? "Ignored: " : "Checking out: ") + getFileDescriptionForProgress(file));
+          indicator.setFraction((double) cnt/files.length);
+        }
+        ++ cnt;
+        if(! ignoredFile) {
+          try {
+            statusHelper[0].checkOutOrHijackFile(file, errors, comment);
           }
-          ++ cnt;
-          if(! ignoredFile) {
-            try {
-              statusHelper[0].checkOutOrHijackFile(file, errors, comment);
-            }
-            catch (VcsException e) {
-              return;
-              // exit, exception already kept
-            }
+          catch (VcsException e) {
+            return;
+            // exit, exception already kept
           }
         }
       }
@@ -127,21 +120,14 @@ public class CCaseEditFileProvider implements EditFileProvider
 
   public static void hijackFile( final VirtualFile file ) throws VcsException
   {
-    WaitForProgressToShow.runOrInvokeAndWaitAboveProgress(new Runnable() {
-      @Override
-      public void run() {
-        ApplicationManager.getApplication().runWriteAction(new Runnable() {
-          public void run() {
-            try {
-              ReadOnlyAttributeUtil.setReadOnlyAttribute(file, false);
-            }
-            catch (IOException e) {
-              Messages.showErrorDialog(FAIL_RO_TEXT + file.getPath(), FAIL_DIALOG_TITLE);
-            }
-          }
-        });
+    WaitForProgressToShow.runOrInvokeAndWaitAboveProgress(() -> ApplicationManager.getApplication().runWriteAction(() -> {
+      try {
+        ReadOnlyAttributeUtil.setReadOnlyAttribute(file, false);
       }
-    });
+      catch (IOException e) {
+        Messages.showErrorDialog(FAIL_RO_TEXT + file.getPath(), FAIL_DIALOG_TITLE);
+      }
+    }));
   }
 
   private CurrentStatusHelper preProcessFiles(final VirtualFile[] files) {

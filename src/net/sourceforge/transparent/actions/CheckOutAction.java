@@ -86,14 +86,11 @@ public class CheckOutAction extends SynchronousAction {
     else {
       title += files[0].isDirectory() ? "directory" : "file";
     }
-    pm.runProcessWithProgressSynchronously(new Runnable() {
-      @Override
-      public void run() {
-        final ProgressIndicator indicator = pm.getProgressIndicator();
-        indicator.setIndeterminate(true);
-        for (VirtualFile file : files) {
-          performOnFile(project, file, finalComment, errors, indicator);
-        }
+    pm.runProcessWithProgressSynchronously(() -> {
+      final ProgressIndicator indicator = pm.getProgressIndicator();
+      indicator.setIndeterminate(true);
+      for (VirtualFile file : files) {
+        performOnFile(project, file, finalComment, errors, indicator);
       }
     }, title, true, project);
   }
@@ -180,13 +177,10 @@ public class CheckOutAction extends SynchronousAction {
 
   private static boolean askIfUseHijackedFileAsCheckedOut(@NotNull final VirtualFile file) {
     final Ref<Integer> answer = Ref.create();
-    ApplicationManager.getApplication().invokeAndWait(new Runnable() {
-      @Override
-      public void run() {
-        String message = "The file " + file.getPresentableUrl() + " has been hijacked. \n" +
-                         "Would you like to use it as the checked-out file?\nIf not it will be lost.";
-        answer.set(Messages.showYesNoDialog(message, CHECKOUT_HIJACKED_TITLE, Messages.getQuestionIcon()));
-      }
+    ApplicationManager.getApplication().invokeAndWait(() -> {
+      String message = "The file " + file.getPresentableUrl() + " has been hijacked. \n" +
+                       "Would you like to use it as the checked-out file?\nIf not it will be lost.";
+      answer.set(Messages.showYesNoDialog(message, CHECKOUT_HIJACKED_TITLE, Messages.getQuestionIcon()));
     });
     return answer.get() == Messages.YES;
   }

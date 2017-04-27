@@ -41,15 +41,12 @@ public class CCaseWriteableAndUnversionedTest extends PlatformTestCase {
 
   @Override
   public void tearDown() throws Exception {
-    UIUtil.invokeAndWaitIfNeeded(new Runnable() {
-      @Override
-      public void run() {
-        try {
-          myProjectFixture.tearDown();
-        }
-        catch (Exception e) {
-          throw new RuntimeException(e);
-        }
+    UIUtil.invokeAndWaitIfNeeded((Runnable)() -> {
+      try {
+        myProjectFixture.tearDown();
+      }
+      catch (Exception e) {
+        throw new RuntimeException(e);
       }
     });
   }

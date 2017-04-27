@@ -18,7 +18,6 @@ import com.intellij.openapi.vcs.VcsKey;
 import com.intellij.openapi.vcs.update.*;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.Processor;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.ChangeManagement.CCaseChangeProvider;
 import org.jetbrains.annotations.NonNls;
@@ -64,12 +63,9 @@ public class CCaseUpdateEnvironment implements UpdateEnvironment
     for (FilePath contentRoot : contentRoots) {
       final VirtualFile vf = contentRoot.getVirtualFile();
       if (vf != null) {
-        VfsUtil.processFilesRecursively(vf, new Processor<VirtualFile>() {
-          @Override
-          public boolean process(VirtualFile virtualFile) {
-            virtualFile.putUserData(CCaseChangeProvider.ourVersionedKey, null);
-            return true;
-          }
+        VfsUtil.processFilesRecursively(vf, virtualFile -> {
+          virtualFile.putUserData(CCaseChangeProvider.ourVersionedKey, null);
+          return true;
         });
       }
     }

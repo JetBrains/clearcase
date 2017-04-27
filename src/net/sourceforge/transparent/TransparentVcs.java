@@ -326,12 +326,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     {
       final String newPat = newPattern;
       final FileTypeManager mgr = FileTypeManager.getInstance();
-      final Runnable action = new Runnable() { @Override
-      public void run() { mgr.setIgnoredFilesList(newPat ); } };
-      ApplicationManager.getApplication().invokeLater( new Runnable() {
-        @Override
-        public void run() { ApplicationManager.getApplication().runWriteAction(action );  }
-      });
+      final Runnable action = () -> mgr.setIgnoredFilesList(newPat );
+      ApplicationManager.getApplication().invokeLater(() -> ApplicationManager.getApplication().runWriteAction(action ));
     }
 
     //  Add file templates to ignore into the change list management also.
@@ -669,42 +665,37 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   {
     try
     {
-      Runnable action = new Runnable()
-      {
-        @Override
-        public void run()
+      Runnable action = () -> {
+        //  We can remove only non-checkedout files???
+        Status status = getFileStatus( file );
+        if( status == Status.CHECKED_OUT )
+          undoCheckoutFile( file, errors );
+
+        File ioParent = file.getParentFile();
+        if( ioParent.exists() )
         {
-          //  We can remove only non-checkedout files???
-          Status status = getFileStatus( file );
-          if( status == Status.CHECKED_OUT )
-            undoCheckoutFile( file, errors );
+          @NonNls String deleteComment = "Deleting " + file.getName();
+          String parentComment = addToComment( comment, deleteComment );
 
-          File ioParent = file.getParentFile();
-          if( ioParent.exists() )
+
+          VcsException error = tryToCheckout( ioParent, parentComment, false);
+          if( error != null )
           {
-            @NonNls String deleteComment = "Deleting " + file.getName();
-            String parentComment = addToComment( comment, deleteComment );
+            errors.add( error );
+            return;
+          }
 
-
-            VcsException error = tryToCheckout( ioParent, parentComment, false);
-            if( error != null )
-            {
-              errors.add( error );
-              return;
-            }
-
-            //  All other exceptions are currently non-workaroundable and
-            //  cause the complete operation failure.
-            try
-            {
-              getClearCase().delete( file, StringUtil.isNotEmpty( comment ) ? comment : deleteComment );
-              getClearCase().checkIn( ioParent, parentComment );
-            }
-            catch( ClearCaseException ccExc )
-            {
-              VcsException e = new VcsException( ccExc.getMessage() );
-              errors.add( e );
-            }
+          //  All other exceptions are currently non-workaroundable and
+          //  cause the complete operation failure.
+          try
+          {
+            getClearCase().delete( file, StringUtil.isNotEmpty( comment ) ? comment : deleteComment );
+            getClearCase().checkIn( ioParent, parentComment );
+          }
+          catch( ClearCaseException ccExc )
+          {
+            VcsException e = new VcsException( ccExc.getMessage() );
+            errors.add( e );
           }
         }
       };
@@ -724,21 +715,18 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     {
       @NonNls final String modComment = StringUtil.isEmpty(comment) ? "Renamed " + oldFile.getName() + " to " + newName : comment;
 
-      Runnable action = new Runnable() {
-        @Override
-        public void run() {
-          File ioParent = oldFile.getParentFile();
-          if( ioParent.exists() )
-          {
-            renameFile( newFile, oldFile );
-            if( !oldFile.isDirectory() )
-              checkinFile( oldFile, modComment, errors );
+      Runnable action = () -> {
+        File ioParent = oldFile.getParentFile();
+        if( ioParent.exists() )
+        {
+          renameFile( newFile, oldFile );
+          if( !oldFile.isDirectory() )
+            checkinFile( oldFile, modComment, errors );
 
-            getClearCase().checkOut( ioParent, config.checkoutReserved, modComment, true);
-            //getClearCase().checkOut( oldFile, config.checkoutReserved, modComment, false);
-            getClearCase().move( oldFile, newFile, modComment );
-            getClearCase().checkIn( ioParent, modComment );
-          }
+          getClearCase().checkOut( ioParent, config.checkoutReserved, modComment, true);
+          //getClearCase().checkOut( oldFile, config.checkoutReserved, modComment, false);
+          getClearCase().move( oldFile, newFile, modComment );
+          getClearCase().checkIn( ioParent, modComment );
         }
       };
       executeAndHandleOtherFileInTheWay(oldFile, action );
@@ -759,39 +747,35 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     {
       @NonNls final String modComment = StringUtil.isEmpty(comment) ? "Moved " + filePath + " to " + newName : comment;
 
-      Runnable action = new Runnable(){
-        @Override
-        public void run()
+      Runnable action = () -> {
+        renameFile( newFile, oldFile );
+        if( !oldFile.isDirectory() )
         {
-          renameFile( newFile, oldFile );
-          if( !oldFile.isDirectory() )
+          checkinFile( oldFile, modComment, errors );
+        }
+
+        //  Continue transaction only if there was no error on the previous
+        //  step.
+        if( errors.size() == 0 )
+        {
+          VcsException error;
+          try
           {
-            checkinFile( oldFile, modComment, errors );
+            error = tryToCheckout( newFile.getParentFile(), modComment, false);
+            if( error != null )
+              throw error;
+            error = tryToCheckout( oldFile.getParentFile(), modComment, false);
+            if( error != null )
+              throw error;
+
+            getClearCase().move( oldFile, newFile, modComment );
+
+            checkinFile( newFile.getParentFile(), null, errors );
+            checkinFile( oldFile.getParentFile(), null, errors );
           }
-
-          //  Continue transaction only if there was no error on the previous
-          //  step.
-          if( errors.size() == 0 )
+          catch( VcsException e )
           {
-            VcsException error;
-            try
-            {
-              error = tryToCheckout( newFile.getParentFile(), modComment, false);
-              if( error != null )
-                throw error;
-              error = tryToCheckout( oldFile.getParentFile(), modComment, false);
-              if( error != null )
-                throw error;
-
-              getClearCase().move( oldFile, newFile, modComment );
-
-              checkinFile( newFile.getParentFile(), null, errors );
-              checkinFile( oldFile.getParentFile(), null, errors );
-            }
-            catch( VcsException e )
-            {
-              handleException( e, newFile, errors );
-            }
+            handleException( e, newFile, errors );
           }
         }
       };
