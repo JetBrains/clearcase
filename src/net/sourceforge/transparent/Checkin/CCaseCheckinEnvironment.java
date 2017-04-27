@@ -201,7 +201,7 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
   }
 
   public List<VcsException> commit(List<Change> changes, String preparedComment) {
-    return commit(changes, preparedComment, FunctionUtil.<Object, Object>nullConstant(), null);
+    return commit(changes, preparedComment, FunctionUtil.nullConstant(), null);
   }
 
   /**
