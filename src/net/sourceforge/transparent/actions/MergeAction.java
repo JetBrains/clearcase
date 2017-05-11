@@ -15,11 +15,6 @@ import org.jetbrains.annotations.NonNls;
 
 import java.io.File;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lloix
- * Date: Apr 5, 2007
- */
 public class MergeAction extends AsynchronousAction
 {
   @NonNls private final static String ACTION_NAME = "Merge file...";

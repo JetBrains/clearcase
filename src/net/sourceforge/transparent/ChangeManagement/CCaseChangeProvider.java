@@ -32,11 +32,6 @@ import static com.intellij.util.containers.ContainerUtil.map;
 import static net.sourceforge.transparent.TransparentVcs.MERGE_CONFLICT;
 import static net.sourceforge.transparent.TransparentVcs.SUCCESSFUL_CHECKOUT;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lloix
- * Date: Dec 6, 2006
- */
 public class CCaseChangeProvider implements ChangeProvider {
   public static final Key<Object> ourVersionedKey = new Key<>("CCASE_VERSIONED");
   @NonNls private final static String REMINDER_TITLE = "Reminder";

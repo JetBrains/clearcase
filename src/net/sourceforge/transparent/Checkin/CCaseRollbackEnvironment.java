@@ -22,11 +22,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lloix
- * Date: Jun 28, 2007
- */
 public class CCaseRollbackEnvironment implements RollbackEnvironment
 {
   @NonNls private static final String FILE_NOT_IN_VOB_SIG = "element name not found";

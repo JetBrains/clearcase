@@ -32,11 +32,6 @@ import java.util.List;
 
 import static com.intellij.util.WaitForProgressToShow.runOrInvokeLaterAboveProgress;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lloix
- * Date: Dec 6, 2006
- */
 public class CCaseUpdateEnvironment implements UpdateEnvironment
 {
   @NonNls private final static String LOADING_SIG = "Loading \"";

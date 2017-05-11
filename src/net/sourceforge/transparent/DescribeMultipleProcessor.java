@@ -9,11 +9,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lloix
- * Date: May 7, 2007
- */
 public class DescribeMultipleProcessor
 {
   @NonNls private static final String DESCRIBE_COMMAND = "describe";

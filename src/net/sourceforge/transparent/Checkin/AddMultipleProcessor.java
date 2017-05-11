@@ -8,11 +8,6 @@ import org.jetbrains.annotations.NonNls;
 import java.util.HashSet;
 import java.util.LinkedList;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lloix
- * Date: Jul 5, 2007
- */
 public class AddMultipleProcessor
 {
   @NonNls private static final String MKELEM_COMMAND = "mkelem";

@@ -2,11 +2,6 @@ package net.sourceforge.transparent.Annotations;
 
 import com.intellij.openapi.vcs.VcsException;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lloix
- * Date: Sep 5, 2007
- */
 public class AnnotationLineParser
 {
   public final static String FIELDS_DELIMITER = " #|# ";

@@ -14,11 +14,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lloix
- * Date: Sep 5, 2007
- */
 public class CCaseFileAnnotation extends FileAnnotation
 {
   private final StringBuffer myContentBuffer = new StringBuffer();

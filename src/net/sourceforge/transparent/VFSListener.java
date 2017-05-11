@@ -19,10 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.util.*;
 
-/**
- * User: lloix
- * Date: Sep 21, 2006
- */
 public class VFSListener implements CommandListener, VirtualFileListener {
   private final Project project;
   private final TransparentVcs host;

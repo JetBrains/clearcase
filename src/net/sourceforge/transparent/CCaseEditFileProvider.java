@@ -22,11 +22,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lloix
- * Date: Dec 19, 2006
- */
 public class CCaseEditFileProvider implements EditFileProvider
 {
   @NonNls private final static String REQUEST_TEXT = "Would you like to invoke 'CheckOut' command?";

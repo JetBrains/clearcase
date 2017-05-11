@@ -15,11 +15,6 @@ import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lloix
- * Date: Sep 5, 2007
- */
 public class CCaseAnnotationProvider implements AnnotationProvider
 {
   @NonNls private final static String BRANCH_SIG = "branch";

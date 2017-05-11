@@ -9,11 +9,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lloix
- * Date: Jan 26, 2007
- */
 public class CCaseHistoryParser
 {
   @NonNls public static final String BRANCH_COMMAND_SIG = "create branch";

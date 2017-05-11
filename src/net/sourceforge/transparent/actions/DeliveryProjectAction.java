@@ -9,11 +9,6 @@ import net.sourceforge.transparent.CCaseViewsManager;
 import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lloix
- * Date: Apr 23, 2007
- */
 public class DeliveryProjectAction extends AsynchronousAction
 {
   @NonNls private final static String ACTION_NAME = "Deliver Activities";

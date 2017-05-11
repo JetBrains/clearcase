@@ -30,11 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lloix
- * Date: Oct 18, 2007
- */
 public class CCaseViewsManager extends AbstractProjectComponent implements ChangeListDecorator, JDOMExternalizable {
   @NonNls private static final String PERSISTENCY_SAVED_ACTIVITY_MAP_TAG = "ClearCasePersistencyActivitiesMap";
 

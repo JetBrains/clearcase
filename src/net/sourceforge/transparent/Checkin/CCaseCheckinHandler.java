@@ -11,11 +11,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lloix
- * Date: Apr 18, 2007
- */
 
 public class CCaseCheckinHandler extends CheckinHandler
 {

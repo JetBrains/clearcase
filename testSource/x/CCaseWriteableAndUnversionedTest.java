@@ -19,12 +19,6 @@ import java.io.File;
 import java.util.Set;
 import java.util.TreeSet;
 
-/**
- * Created with IntelliJ IDEA.
- * User: Irina.Chernushina
- * Date: 7/19/12
- * Time: 7:44 PM
- */
 public class CCaseWriteableAndUnversionedTest extends PlatformTestCase {
   private LocalFileSystem myLocalFileSystem;
   private IdeaProjectTestFixture myProjectFixture;

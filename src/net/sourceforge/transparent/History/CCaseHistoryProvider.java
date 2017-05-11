@@ -22,11 +22,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lloix
- * Date: Jan 26, 2007
- */
 public class CCaseHistoryProvider implements VcsHistoryProvider, VcsCacheableHistorySessionFactory<Boolean, CCaseHistoryProvider.CCaseHistorySession> {
   @NonNls private final static String HISTORY_CMD = "lshistory";
   @NonNls private final static String LIMITED_SWITCH = "-last";

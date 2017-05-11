@@ -13,12 +13,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-/**
- * Created with IntelliJ IDEA.
- * User: Irina.Chernushina
- * Date: 7/19/12
- * Time: 7:17 PM
- */
 public class CCaseWriteableAndUnversionedCollector {
   private final Project myProject;
   private final TransparentI myTransparentI;

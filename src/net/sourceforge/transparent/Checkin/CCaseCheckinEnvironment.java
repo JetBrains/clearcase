@@ -35,11 +35,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lloix
- * Date: Dec 6, 2006
- */
 public class CCaseCheckinEnvironment implements CheckinEnvironment
 {
   @NonNls private static final String CHECKIN_TITLE = "Check In";

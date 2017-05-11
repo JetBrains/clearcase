@@ -19,11 +19,6 @@ import org.jetbrains.annotations.NonNls;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lloix
- * Date: May 7, 2007
- */
 public class SynchActivitiesAction extends SynchronousAction
 {
   @NonNls private final static String ACTION_NAME = "Synchronize Activities";

@@ -11,11 +11,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lloix
- * Date: Feb 22, 2007
- */
 public class StatusMultipleProcessor
 {
   @NonNls private static final String STATUS_COMMAND = "ls";

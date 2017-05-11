@@ -11,11 +11,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lloix
- * Date: May 14, 2007
- */
 public class ContentRevisionFactory
 {
   private static final VFSKeysListener listener;

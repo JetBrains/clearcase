@@ -11,11 +11,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.NumberFormat;
 
-/**
- * Created by IntelliJ IDEA.
- * User: lloix
- * Date: Jun 6, 2007
- */
 public class CCaseConfigurable implements Configurable
 {
   @NonNls private final static String OPTIONS_SCREEN_NAME = "ClearCase Options";
