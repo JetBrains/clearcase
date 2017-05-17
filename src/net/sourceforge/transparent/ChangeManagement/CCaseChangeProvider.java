@@ -619,7 +619,7 @@ public class CCaseChangeProvider implements ChangeProvider {
     {
       String oldFolderName = host.renamedFolders.get( folderName );
 
-      final FilePath refPath = VcsUtil.getFilePathForDeletedFile( oldFolderName, true );
+      final FilePath refPath = VcsUtil.getFilePath( oldFolderName, true );
       final FilePath currPath = VcsUtil.getFilePath( folderName ); // == refPath if no rename occured
       String activity = findActivityForFile( refPath, currPath );
 
@@ -645,18 +645,18 @@ public class CCaseChangeProvider implements ChangeProvider {
     final HashSet<String> files = new HashSet<>();
     files.addAll( host.removedFolders );
     for( String path : files )
-      builder.processLocallyDeletedFile( VcsUtil.getFilePathForDeletedFile( path, true ) );
+      builder.processLocallyDeletedFile( VcsUtil.getFilePath( path, true ) );
 
     files.clear();
     files.addAll( host.removedFiles );
     for( String path : files )
-      builder.processLocallyDeletedFile( VcsUtil.getFilePathForDeletedFile( path, false ) );
+      builder.processLocallyDeletedFile( VcsUtil.getFilePath( path, false ) );
 
     files.clear();
     files.addAll( host.deletedFolders );
     for( String path : files )
     {
-      FilePath refPath = VcsUtil.getFilePathForDeletedFile( path, true );
+      FilePath refPath = VcsUtil.getFilePath( path, true );
       String activity = findActivityForFile( refPath, refPath );
       builder.processChangeInList( new Change( new CurrentContentRevision( refPath ), null, FileStatus.DELETED ), activity, TransparentVcs.getKey());
     }
@@ -665,7 +665,7 @@ public class CCaseChangeProvider implements ChangeProvider {
     files.addAll( host.deletedFiles );
     for( String path : files )
     {
-      FilePath refPath = VcsUtil.getFilePathForDeletedFile( path, false );
+      FilePath refPath = VcsUtil.getFilePath( path, false );
       CCaseContentRevision revision = ContentRevisionFactory.getRevision( refPath, project );
       String activity = findActivityForFile( refPath, refPath );
 

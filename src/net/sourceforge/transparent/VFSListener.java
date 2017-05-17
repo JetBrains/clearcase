@@ -129,7 +129,7 @@ public class VFSListener implements CommandListener, VirtualFileListener {
     final Status status = host.getStatusSafely(file);
     if (Status.NOT_AN_ELEMENT.equals(status)) return;
     if (isFileProcessable(file)) {
-      FilePath path = VcsContextFactory.SERVICE.getInstance().createFilePathOnDeleted(new File(file.getPath()), file.isDirectory());
+      FilePath path = VcsContextFactory.SERVICE.getInstance().createFilePathOn(new File(file.getPath()), file.isDirectory());
       filesDeleted.add(path);
     }
   }
