@@ -28,7 +28,6 @@ import com.intellij.openapi.vfs.VirtualFileListener;
 import com.intellij.ultimate.PluginVerifier;
 import com.intellij.ultimate.UltimateVerifier;
 import com.intellij.util.ArrayUtil;
-import com.intellij.util.containers.Convertor;
 import com.intellij.util.containers.HashSet;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.Annotations.CCaseAnnotationProvider;
@@ -47,6 +46,8 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+
+import static java.util.function.Function.identity;
 
 public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDOMExternalizable, TransparentI {
   public static final Logger LOG = Logger.getInstance("#net.sourceforge.transparent.TransparentVcs");
@@ -449,7 +450,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
 
   public void add2NewFiles(final Collection<VirtualFile> files) throws VcsException {
     final FilterDescendantVirtualFileConvertible<VirtualFile> filterDescendantVirtualFileConvertible =
-      new FilterDescendantVirtualFileConvertible<>(Convertor.SELF, FilePathComparator.getInstance());
+      new FilterDescendantVirtualFileConvertible<>(identity(), FilePathComparator.getInstance());
     final ArrayList<VirtualFile> highLevel = new ArrayList<>(files);
     filterDescendantVirtualFileConvertible.doFilter(highLevel);
     for (VirtualFile file : highLevel) {
