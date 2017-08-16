@@ -8,7 +8,7 @@ import java.util.ArrayList;
 
 public class CCaseHistoryTest extends TestCase
 {
-  public void testBeginningWithDigitAndQuotes() throws Throwable {
+  public void testBeginningWithDigitAndQuotes() {
     final String contents = "0\u000104-\u0444\u0435\u0432-09.19:46:00\n" +
                             "1\u0001Irina Chernushina\n" +
                             "2\u0001checkout version\n" +
