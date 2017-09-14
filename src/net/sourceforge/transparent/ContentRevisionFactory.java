@@ -50,13 +50,15 @@ public class ContentRevisionFactory
   private static class VFSKeysListener implements VirtualFileListener {
     public VFSKeysListener() {}
 
-    public void beforeFileMovement( @NotNull VirtualFileMoveEvent e )
+    @Override
+    public void beforeFileMovement(@NotNull VirtualFileMoveEvent e )
     {
       String oldPath = e.getOldParent().getPath() + "/" + e.getFileName();
       analyzeEvent( oldPath );
     }
 
-    public void beforePropertyChange( @NotNull VirtualFilePropertyEvent e )
+    @Override
+    public void beforePropertyChange(@NotNull VirtualFilePropertyEvent e )
     {
       final VirtualFile file = e.getFile();
       if( e.getPropertyName() == VirtualFile.PROP_NAME )
