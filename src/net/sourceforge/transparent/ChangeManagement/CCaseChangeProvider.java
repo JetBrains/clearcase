@@ -642,8 +642,7 @@ public class CCaseChangeProvider implements ChangeProvider {
   private void addRemovedFiles( final ChangelistBuilder builder )
   {
     //  Use additional set to remove async modification conflicts
-    final HashSet<String> files = new HashSet<>();
-    files.addAll( host.removedFolders );
+    final HashSet<String> files = new HashSet<>(host.removedFolders);
     for( String path : files )
       builder.processLocallyDeletedFile( VcsUtil.getFilePath( path, true ) );
 
