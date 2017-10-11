@@ -25,8 +25,6 @@ import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileListener;
-import com.intellij.ultimate.PluginVerifier;
-import com.intellij.ultimate.UltimateVerifier;
 import com.intellij.util.ArrayUtil;
 import com.intellij.util.containers.HashSet;
 import com.intellij.vcsUtil.VcsUtil;
@@ -127,9 +125,8 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
   private boolean myActivatePolicyCalculateUCM;
   private static final boolean ourActivatePolicyCalculateUCMDefault = false;
 
-  public TransparentVcs(@NotNull Project project, UltimateVerifier verifier) {
+  public TransparentVcs(@NotNull Project project) {
     super( project, NAME);
-    PluginVerifier.verifyUltimatePlugin(verifier);
 
     removedFiles = Collections.synchronizedSet(new HashSet<String>());
     removedFolders = Collections.synchronizedSet(new HashSet<String>());
