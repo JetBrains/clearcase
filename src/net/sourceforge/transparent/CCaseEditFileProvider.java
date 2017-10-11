@@ -113,8 +113,7 @@ public class CCaseEditFileProvider implements EditFileProvider
     return comment;
   }
 
-  public static void hijackFile( final VirtualFile file ) throws VcsException
-  {
+  public static void hijackFile( final VirtualFile file ) {
     WaitForProgressToShow.runOrInvokeAndWaitAboveProgress(() -> ApplicationManager.getApplication().runWriteAction(() -> {
       try {
         ReadOnlyAttributeUtil.setReadOnlyAttribute(file, false);

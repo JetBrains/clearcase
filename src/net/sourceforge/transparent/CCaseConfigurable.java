@@ -91,8 +91,7 @@ public class CCaseConfigurable implements Configurable
            !vcsConfig.scrTextFileName.equals( scrText.getText() );
   }
 
-  public void apply() throws ConfigurationException
-  {
+  public void apply() {
     final boolean ucmFlagChanged = mySharedConfig.isUseUcmModel() != myUseUCMModel.isSelected();
     boolean need2ReloadActivities = ucmFlagChanged && myUseUCMModel.isSelected();
     vcsConfig.checkoutReserved = myReservedCheckoutsCheckBox.isSelected();

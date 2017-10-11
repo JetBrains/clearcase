@@ -190,7 +190,7 @@ public class CheckOutAction extends SynchronousAction {
   }
 
   @Override
-  protected void perform(VirtualFile file, final Project project) throws VcsException {
+  protected void perform(VirtualFile file, final Project project) {
     //  We should never reach this point. Most methods are overloaded to support
     //  adding uniform data (here - comment) to the operation.
     throw new UnsupportedOperationException();

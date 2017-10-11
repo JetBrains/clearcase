@@ -55,7 +55,7 @@ public class CCaseFileRevision implements VcsFileRevision
     return null;
   }
 
-  public byte[] getContent() throws IOException, VcsException { return content;    }
+  public byte[] getContent() { return content;    }
   public String getBranchName()   { return null;       }
   public Date getRevisionDate() { return null; }
   public String getChangeCcaseDate() { return changeCcaseDate; }
@@ -68,8 +68,7 @@ public class CCaseFileRevision implements VcsFileRevision
   @NotNull
   public VcsRevisionNumber getRevisionNumber() {  return new CCaseRevisionNumber(version, order );  }
 
-  public byte[] loadContent() throws IOException, VcsException
-  {
+  public byte[] loadContent() {
     @NonNls final String TMP_FILE_NAME = "idea_ccase";
     @NonNls final String EXT = ".tmp";
     @NonNls final String TITLE = "Can not issue Get command";

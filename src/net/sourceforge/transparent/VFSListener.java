@@ -283,11 +283,8 @@ public class VFSListener implements CommandListener, VirtualFileListener {
 
     //  Do not ask user if the file operation is caused by the vcs operation
     //  like UPDATE.
-    if (e.isFromRefresh()) {
-      return true;
-    }
+      return e.isFromRefresh();
 
-    return false;
   }
 
   @Override

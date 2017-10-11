@@ -571,8 +571,7 @@ public class TransparentVcs extends AbstractVcs implements ProjectComponent, JDO
     }
   }
 
-  private boolean checkoutFile( File ioFile, boolean keepHijacked, String comment ) throws VcsException
-  {
+  private boolean checkoutFile( File ioFile, boolean keepHijacked, String comment ) {
     File newFile = null;
     if( keepHijacked )
     {
