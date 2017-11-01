@@ -9,6 +9,8 @@
         <li>Dedicated page under the Version Control node in the Settings/Preferences dialog.</li>
         <li>When ClearCase is enabled, the ClearCase node appears on the VCS menu, and on the context menu of the editor.
         </ul>
+      The plugin support is <a href="https://blog.jetbrains.com/idea/2017/10/end-of-support-for-visual-sourcesafe-and-clearcase/">discontinued</a> since October 17, 2017
+
       ]]>
   </description>
   <version>2.0</version>
