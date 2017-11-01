@@ -10,6 +10,6 @@
     </content>
     <orderEntry type="jdk" jdkName="IntelliJ IDEA SDK" jdkType="IDEA JDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="vcs-impl-tests" level="project" />
+    <orderEntry type="library" scope="TEST" name="vcs-impl-tests" level="project" />
   </component>
 </module>
