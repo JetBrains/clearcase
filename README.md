@@ -5,8 +5,6 @@ IntelliJ ClearCase Integration
 
 The plugin provides IntelliJ integration with IBM Rational ClearCase.
 
-Supported TFS versions: up to TFS 2015.
-
 The following features are available:
 * Dedicated page under the Version Control node in the Settings/Preferences dialog.</li>
 * When ClearCase is enabled, the ClearCase node appears on the VCS menu, and on the context menu of the editor.
