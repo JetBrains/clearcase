@@ -8,8 +8,8 @@ import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.AbstractVcsHelper;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.TransparentVcs;
 import org.jetbrains.annotations.NonNls;
 
@@ -36,7 +36,7 @@ public class MergeAction extends AsynchronousAction
 
         file.putUserData( TransparentVcs.MERGE_CONFLICT, null );
         file.refresh( false, false );
-        VcsUtil.markFileAsDirty( project, file );
+        VcsDirtyScopeManager.getInstance(project).fileDirty(file);
       });
     }
     else

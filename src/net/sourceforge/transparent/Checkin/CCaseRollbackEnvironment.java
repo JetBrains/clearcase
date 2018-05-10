@@ -9,6 +9,8 @@ import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.rollback.RollbackProgressListener;
+import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import net.sourceforge.transparent.Status;
@@ -21,6 +23,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+
+import static com.intellij.util.containers.ContainerUtil.map;
+import static com.intellij.util.containers.ContainerUtil.map2Array;
 
 public class CCaseRollbackEnvironment implements RollbackEnvironment
 {
@@ -57,7 +62,8 @@ public class CCaseRollbackEnvironment implements RollbackEnvironment
     rollbackDeleted( changes, processedFiles, errors, listener);
     rollbackChanged( changes, processedFiles, errors, listener);
 
-    VcsUtil.refreshFiles( project, processedFiles );
+    VfsUtil.markDirtyAndRefresh(true, true, false, map2Array(processedFiles, VirtualFile.class, FilePath::getVirtualFile));
+    VcsDirtyScopeManager.getInstance(project).filesDirty(map(processedFiles, FilePath::getVirtualFile), null);
   }
 
   private void rollbackRenamedFolders( List<Change> changes, HashSet<FilePath> processedFiles, @NotNull final RollbackProgressListener listener)
@@ -80,7 +86,7 @@ public class CCaseRollbackEnvironment implements RollbackEnvironment
         host.renamedFolders.remove( VcsUtil.getCanonicalLocalPath( folderNew.getPath() ) );
 
         processedFiles.add( oldFolderPath );
-        VcsUtil.waitForTheFile( folderOld.getPath() );
+        LocalFileSystem.getInstance().refreshAndFindFileByPath(folderOld.getPath());
       }
     }
   }

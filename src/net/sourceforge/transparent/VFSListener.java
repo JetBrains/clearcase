@@ -389,7 +389,7 @@ public class VFSListener implements CommandListener, VirtualFileListener {
       host.deletedFolders.remove(path);
 
       host.add2NewFile(file);
-      VcsUtil.markFileAsDirty(project, file);
+      VcsDirtyScopeManager.getInstance(project).fileDirty(file);
     }
   }
 
@@ -436,7 +436,7 @@ public class VFSListener implements CommandListener, VirtualFileListener {
         files.add(path);
       }
 
-      VcsUtil.markFileAsDirty(project, fpath);
+      VcsDirtyScopeManager.getInstance(project).fileDirty(fpath);
     }
   }
 

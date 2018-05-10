@@ -15,6 +15,7 @@ import com.intellij.openapi.vcs.*;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
+import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.FunctionUtil;
 import com.intellij.util.NullableFunction;
@@ -34,6 +35,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static com.intellij.util.containers.ContainerUtil.map;
+import static com.intellij.util.containers.ContainerUtil.map2Array;
 
 public class CCaseCheckinEnvironment implements CheckinEnvironment
 {
@@ -177,7 +181,8 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     }
     checkForUnchangedFolders(changes, errors, comment);
 
-    VcsUtil.refreshFiles( project, processedFiles );
+    VfsUtil.markDirtyAndRefresh(true, true, false, map2Array(processedFiles, VirtualFile.class, FilePath::getVirtualFile));
+    VcsDirtyScopeManager.getInstance(project).filesDirty(map(processedFiles, FilePath::getVirtualFile), null);
 
     return errors;
   }
@@ -538,19 +543,6 @@ public class CCaseCheckinEnvironment implements CheckinEnvironment
     return vcsExceptions;
   }
 
-  private void extendStatus( VirtualFile file ) throws VcsException {
-    FileStatusManager mgr = FileStatusManager.getInstance( project );
-    VirtualFile parent = file.getParent();
-
-    if( mgr.getStatus( parent ) == FileStatus.UNKNOWN )
-    {
-      host.add2NewFile( parent );
-      VcsUtil.markFileAsDirty( project, parent );
-
-      extendStatus( parent );
-    }
-  }
-  
   private Set<VirtualFile> getNecessaryRenamedFoldersForList( List<Change> changes )
   {
     Set<VirtualFile> set = new HashSet<>();

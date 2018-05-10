@@ -17,7 +17,7 @@
   <vendor>JetBrains</vendor>
   <category>VCS Integration</category>
   <depends>com.intellij.modules.vcs</depends>
-  <idea-version since-build="173.3188"></idea-version>
+  <idea-version since-build="182.2258"></idea-version>
 
   <project-components>
     <component>
