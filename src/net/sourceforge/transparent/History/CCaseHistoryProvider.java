@@ -216,10 +216,6 @@ public class CCaseHistoryProvider implements VcsHistoryProvider, VcsCacheableHis
     return null;
   }
 
-  public Boolean getAddinionallyCachedData(CCaseHistorySession session) {
-    return null;
-  }
-
   public CCaseHistorySession createFromCachedData(@Nullable Boolean aBoolean,
                                                   @NotNull List<VcsFileRevision> revisions,
                                                   @NotNull FilePath filePath,
